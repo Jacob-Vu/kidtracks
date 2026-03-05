@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import useStore from '../store/useStore'
+import { useFireActions } from '../hooks/useFirebaseSync'
 import Modal from '../components/Modal'
 
 export default function Templates() {
-    const { templates, addTemplate, updateTemplate, deleteTemplate } = useStore()
+    const { templates } = useStore()
+    const { addTemplate, updateTemplate, deleteTemplate } = useFireActions()
     const [showAdd, setShowAdd] = useState(false)
     const [editItem, setEditItem] = useState(null)
     const [title, setTitle] = useState('')
@@ -12,13 +14,13 @@ export default function Templates() {
     const openAdd = () => { setTitle(''); setDescription(''); setShowAdd(true) }
     const openEdit = (t) => { setEditItem(t); setTitle(t.title); setDescription(t.description) }
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!title.trim()) return
         if (editItem) {
-            updateTemplate(editItem.id, { title: title.trim(), description: description.trim() })
+            await updateTemplate(editItem.id, { title: title.trim(), description: description.trim() })
             setEditItem(null)
         } else {
-            addTemplate(title.trim(), description.trim())
+            await addTemplate(title.trim(), description.trim())
             setShowAdd(false)
         }
         setTitle(''); setDescription('')
@@ -51,12 +53,8 @@ export default function Templates() {
                                 {t.description && <div className="task-desc">{t.description}</div>}
                             </div>
                             <div className="task-actions" style={{ opacity: 1 }}>
-                                <button className="btn btn-ghost btn-icon btn-sm" onClick={() => openEdit(t)} title="Edit">✏️</button>
-                                <button
-                                    className="btn btn-danger btn-icon btn-sm"
-                                    onClick={() => deleteTemplate(t.id)}
-                                    title="Delete"
-                                >🗑️</button>
+                                <button className="btn btn-ghost btn-icon btn-sm" onClick={() => openEdit(t)}>✏️</button>
+                                <button className="btn btn-danger btn-icon btn-sm" onClick={() => deleteTemplate(t.id)}>🗑️</button>
                             </div>
                         </div>
                     ))}
@@ -69,8 +67,7 @@ export default function Templates() {
                         <div className="form-group">
                             <label>Task Title</label>
                             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-                                placeholder="e.g. Make your bed" autoFocus
-                                onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
+                                placeholder="e.g. Make your bed" autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
                         </div>
                         <div className="form-group">
                             <label>Description (optional)</label>

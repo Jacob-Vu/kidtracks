@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
+import { useFireActions } from '../hooks/useFirebaseSync'
 import Modal from '../components/Modal'
 import { formatMoney } from '../utils/format'
 
-const AVATARS = ['🧒', '👦', '👧', '🧑', '👶', '🦸', '🧙', '👸', '🤴', '🦊', '🐱', '🐶']
+const AVATARS = ['🧒', '👦', '👧', '🧑', '👶', '🦸', '🧙', '👸', '🤴', '🏃', '🦊', '🐱', '🐶', '🐻', '🦁', '🐯']
 
 export default function Dashboard() {
-    const { kids, addKid, updateKid, deleteKid } = useStore()
+    const { kids } = useStore()
+    const { addKid, updateKid, deleteKid } = useFireActions()
     const navigate = useNavigate()
     const [showAdd, setShowAdd] = useState(false)
     const [editKid, setEditKid] = useState(null)
@@ -15,23 +17,23 @@ export default function Dashboard() {
     const [avatar, setAvatar] = useState(AVATARS[0])
 
     const openAdd = () => { setName(''); setAvatar(AVATARS[0]); setShowAdd(true) }
-    const openEdit = (kid, e) => { e.stopPropagation(); setEditKid(kid); setName(kid.name); setAvatar(kid.avatar); }
+    const openEdit = (kid, e) => { e.stopPropagation(); setEditKid(kid); setName(kid.name); setAvatar(kid.avatar) }
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!name.trim()) return
         if (editKid) {
-            updateKid(editKid.id, { name: name.trim(), avatar })
+            await updateKid(editKid.id, { name: name.trim(), avatar })
             setEditKid(null)
         } else {
-            addKid(name.trim(), avatar)
+            await addKid(name.trim(), avatar)
             setShowAdd(false)
         }
         setName('')
     }
 
-    const handleDelete = (kid, e) => {
+    const handleDelete = async (kid, e) => {
         e.stopPropagation()
-        if (confirm(`Remove ${kid.name}? All their data will be lost.`)) deleteKid(kid.id)
+        if (confirm(`Remove ${kid.name}? All their data will be lost.`)) await deleteKid(kid.id)
     }
 
     return (
@@ -41,9 +43,7 @@ export default function Dashboard() {
                     <h1 className="page-title">👨‍👩‍👧‍👦 Dashboard</h1>
                     <p className="page-subtitle">Manage your kids and their pocket balances</p>
                 </div>
-                <button className="btn btn-primary" onClick={openAdd}>
-                    + Add Kid
-                </button>
+                <button className="btn btn-primary" onClick={openAdd}>+ Add Kid</button>
             </div>
 
             {kids.length === 0 ? (
@@ -62,12 +62,8 @@ export default function Dashboard() {
                             <div className="kid-balance">{formatMoney(kid.balance)}</div>
                             <div className="kid-balance-label">💰 Pocket Money</div>
                             <div className="row" style={{ marginTop: 16, justifyContent: 'center', gap: 8 }}>
-                                <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/daily/${kid.id}`) }}>
-                                    📅 Tasks
-                                </button>
-                                <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/ledger/${kid.id}`) }}>
-                                    💰 Ledger
-                                </button>
+                                <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/daily/${kid.id}`) }}>📅 Tasks</button>
+                                <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/ledger/${kid.id}`) }}>💰 Ledger</button>
                                 <button className="btn btn-ghost btn-sm" onClick={(e) => openEdit(kid, e)}>✏️</button>
                                 <button className="btn btn-danger btn-sm" onClick={(e) => handleDelete(kid, e)}>🗑️</button>
                             </div>
@@ -76,60 +72,37 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* Add Kid Modal */}
             {showAdd && (
-                <KidModal
-                    title="Add Kid"
-                    name={name} setName={setName}
-                    avatar={avatar} setAvatar={setAvatar}
-                    onSave={handleSave}
-                    onClose={() => setShowAdd(false)}
-                />
+                <KidModal title="Add Kid" name={name} setName={setName} avatar={avatar} setAvatar={setAvatar}
+                    onSave={handleSave} onClose={() => setShowAdd(false)} />
             )}
-
-            {/* Edit Kid Modal */}
             {editKid && (
-                <KidModal
-                    title="Edit Kid"
-                    name={name} setName={setName}
-                    avatar={avatar} setAvatar={setAvatar}
-                    onSave={handleSave}
-                    onClose={() => setEditKid(null)}
-                />
+                <KidModal title="Edit Kid" name={name} setName={setName} avatar={avatar} setAvatar={setAvatar}
+                    onSave={handleSave} onClose={() => setEditKid(null)} />
             )}
         </div>
     )
 }
 
 function KidModal({ title, name, setName, avatar, setAvatar, onSave, onClose }) {
-    const AVATARS = ['🧒', '👦', '👧', '🧑', '👶', '🦸', '🧙', '👸', '🤴', '🏃', '🦊', '🐱', '🐶', '🐻', '🦁', '🐯']
     return (
         <Modal title={title} onClose={onClose}>
             <div className="col">
                 <div className="form-group">
                     <label>Name</label>
-                    <input
-                        type="text" value={name} onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter child's name" autoFocus
-                        onKeyDown={(e) => e.key === 'Enter' && onSave()}
-                    />
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter child's name" autoFocus onKeyDown={(e) => e.key === 'Enter' && onSave()} />
                 </div>
                 <div className="form-group">
                     <label>Avatar</label>
                     <div className="chip-group">
                         {AVATARS.map((a) => (
-                            <button
-                                key={a}
-                                onClick={() => setAvatar(a)}
-                                style={{
-                                    background: avatar === a ? 'var(--gradient-purple)' : 'rgba(255,255,255,0.05)',
-                                    border: `2px solid ${avatar === a ? 'transparent' : 'var(--border)'}`,
-                                    borderRadius: 10, fontSize: 24, padding: '6px 10px', cursor: 'pointer',
-                                    transition: 'all 0.2s', transform: avatar === a ? 'scale(1.15)' : 'scale(1)',
-                                }}
-                            >
-                                {a}
-                            </button>
+                            <button key={a} onClick={() => setAvatar(a)} style={{
+                                background: avatar === a ? 'var(--gradient-purple)' : 'rgba(255,255,255,0.05)',
+                                border: `2px solid ${avatar === a ? 'transparent' : 'var(--border)'}`,
+                                borderRadius: 10, fontSize: 24, padding: '6px 10px', cursor: 'pointer',
+                                transition: 'all 0.2s', transform: avatar === a ? 'scale(1.15)' : 'scale(1)',
+                            }}>{a}</button>
                         ))}
                     </div>
                 </div>

@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import useStore from '../store/useStore'
+import { useFireActions } from '../hooks/useFirebaseSync'
 import Modal from '../components/Modal'
 import { formatMoney, formatMoneyFull } from '../utils/format'
 
 export default function Ledger() {
     const { kidId: paramKidId } = useParams()
     const navigate = useNavigate()
-    const { kids, ledger, addManualTransaction } = useStore()
+    const { kids, ledger } = useStore()
+    const { addManualTransaction } = useFireActions()
     const [selectedKidId, setSelectedKidId] = useState(paramKidId || kids[0]?.id || '')
     const [showAdd, setShowAdd] = useState(false)
     const [amount, setAmount] = useState('')
@@ -23,13 +25,11 @@ export default function Ledger() {
     const totalEarned = entries.filter((e) => e.amount > 0).reduce((sum, e) => sum + e.amount, 0)
     const totalPenalties = entries.filter((e) => e.amount < 0).reduce((sum, e) => sum + e.amount, 0)
 
-    const handleAddManual = () => {
+    const handleAddManual = async () => {
         if (!amount || isNaN(parseInt(amount))) return
         const amtRaw = parseInt(amount) * 1000
-        addManualTransaction(selectedKidId, isDeduction ? -amtRaw : amtRaw, label.trim() || undefined)
-        setAmount('')
-        setLabel('')
-        setShowAdd(false)
+        await addManualTransaction(selectedKidId, isDeduction ? -amtRaw : amtRaw, label.trim() || undefined)
+        setAmount(''); setLabel(''); setShowAdd(false)
     }
 
     if (kids.length === 0) {
@@ -52,20 +52,15 @@ export default function Ledger() {
                 <button className="btn btn-primary" onClick={() => setShowAdd(true)}>+ Manual Entry</button>
             </div>
 
-            {/* Kid Selector */}
             <div className="chip-group" style={{ marginBottom: 24 }}>
                 {kids.map((k) => (
-                    <button
-                        key={k.id}
-                        className={`chip ${k.id === selectedKidId ? 'selected' : ''}`}
-                        onClick={() => { setSelectedKidId(k.id); navigate(`/ledger/${k.id}`) }}
-                    >
+                    <button key={k.id} className={`chip ${k.id === selectedKidId ? 'selected' : ''}`}
+                        onClick={() => { setSelectedKidId(k.id); navigate(`/ledger/${k.id}`) }}>
                         {k.avatar} {k.name}
                     </button>
                 ))}
             </div>
 
-            {/* Summary Card */}
             {kid && (
                 <div className="card" style={{ marginBottom: 24 }}>
                     <div className="row wrap" style={{ gap: 32 }}>
@@ -94,7 +89,6 @@ export default function Ledger() {
                 </div>
             )}
 
-            {/* Entries */}
             {entries.length === 0 ? (
                 <div className="empty-state">
                     <span className="empty-state-icon">📭</span>
@@ -120,19 +114,14 @@ export default function Ledger() {
                 </div>
             )}
 
-            {/* Manual Transaction Modal */}
             {showAdd && (
                 <Modal title="Manual Transaction" onClose={() => setShowAdd(false)}>
                     <div className="col">
                         <div className="form-group">
                             <label>Type</label>
                             <div className="chip-group">
-                                <button className={`chip ${!isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(false)}>
-                                    🎁 Add Money
-                                </button>
-                                <button className={`chip ${isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(true)}>
-                                    💸 Deduct
-                                </button>
+                                <button className={`chip ${!isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(false)}>🎁 Add Money</button>
+                                <button className={`chip ${isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(true)}>💸 Deduct</button>
                             </div>
                         </div>
                         <div className="form-group">

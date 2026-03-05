@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { format, addDays, subDays, parseISO } from 'date-fns'
 import ReactConfetti from 'react-confetti'
 import useStore from '../store/useStore'
+import { useFireActions } from '../hooks/useFirebaseSync'
 import Modal from '../components/Modal'
 import { formatMoney } from '../utils/format'
 
@@ -12,12 +13,12 @@ const PENALTY_PRESETS = [5000, 10000, 20000]
 export default function DailyView() {
     const { kidId: paramKidId } = useParams()
     const navigate = useNavigate()
+    const { kids, templates, dailyTasks, dayConfigs } = useStore()
     const {
-        kids, templates, dailyTasks, dayConfigs,
         addDailyTask, updateDailyTask, deleteDailyTask,
         toggleTaskStatus, markTaskFailed,
         loadTemplatesForDay, setDayConfig, finalizeDay,
-    } = useStore()
+    } = useFireActions()
 
     const [selectedKidId, setSelectedKidId] = useState(paramKidId || kids[0]?.id || '')
     const [currentDate, setCurrentDate] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -39,6 +40,10 @@ export default function DailyView() {
     }, [paramKidId])
 
     useEffect(() => {
+        if (!selectedKidId && kids.length > 0) setSelectedKidId(kids[0].id)
+    }, [kids])
+
+    useEffect(() => {
         const handler = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight })
         window.addEventListener('resize', handler)
         return () => window.removeEventListener('resize', handler)
@@ -54,7 +59,6 @@ export default function DailyView() {
     const total = tasks.length
     const allDone = total > 0 && tasks.every((t) => t.status === 'completed')
     const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0
-
     const effectiveReward = config?.rewardAmount ?? rewardAmount
     const effectivePenalty = config?.penaltyAmount ?? penaltyAmount
     const isFinalized = config?.isFinalized ?? false
@@ -71,53 +75,43 @@ export default function DailyView() {
     const openAddTask = () => { setTaskTitle(''); setTaskDesc(''); setShowAddTask(true) }
     const openEditTask = (t) => { setEditTask(t); setTaskTitle(t.title); setTaskDesc(t.description) }
 
-    const handleSaveTask = () => {
+    const handleSaveTask = async () => {
         if (!taskTitle.trim()) return
         if (editTask) {
-            updateDailyTask(editTask.id, { title: taskTitle.trim(), description: taskDesc.trim() })
+            await updateDailyTask(editTask.id, { title: taskTitle.trim(), description: taskDesc.trim() })
             setEditTask(null)
         } else {
-            addDailyTask(selectedKidId, currentDate, taskTitle.trim(), taskDesc.trim())
+            await addDailyTask(selectedKidId, currentDate, taskTitle.trim(), taskDesc.trim())
             setShowAddTask(false)
         }
     }
 
-    const handleLoadTemplates = () => {
+    const handleLoadTemplates = async () => {
         if (templates.length === 0) { alert('No templates found! Create some in Task Templates first.'); return }
-        loadTemplatesForDay(selectedKidId, currentDate)
+        await loadTemplatesForDay(selectedKidId, currentDate)
     }
 
     const handleOpenConfig = () => {
-        if (config) {
-            setRewardAmount(config.rewardAmount)
-            setPenaltyAmount(config.penaltyAmount)
-        }
+        if (config) { setRewardAmount(config.rewardAmount); setPenaltyAmount(config.penaltyAmount) }
         setShowConfig(true)
     }
 
-    const handleSaveConfig = () => {
+    const handleSaveConfig = async () => {
         const r = customReward ? parseInt(customReward) * 1000 : rewardAmount
         const p = customPenalty ? parseInt(customPenalty) * 1000 : penaltyAmount
-        setDayConfig(selectedKidId, currentDate, r, p)
-        setCustomReward('')
-        setCustomPenalty('')
+        await setDayConfig(selectedKidId, currentDate, r, p)
+        setCustomReward(''); setCustomPenalty('')
         setShowConfig(false)
     }
 
-    const handleFinalize = () => {
-        if (!config) {
-            setShowConfig(true)
-            return
-        }
+    const handleFinalize = async () => {
+        if (!config) { setShowConfig(true); return }
         if (isFinalized) return
         const hasPending = tasks.some((t) => t.status === 'pending')
         if (hasPending && !confirm(`${pendingCount} task(s) are still pending. Finalize anyway? They will be treated as failures.`)) return
-        const result = finalizeDay(selectedKidId, currentDate)
+        const result = await finalizeDay(selectedKidId, currentDate)
         setFinalizeResult(result)
-        if (result.allCompleted) {
-            setShowConfetti(true)
-            setTimeout(() => setShowConfetti(false), 6000)
-        }
+        if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
         setTimeout(() => setFinalizeResult(null), 5000)
     }
 
@@ -135,14 +129,10 @@ export default function DailyView() {
     return (
         <div>
             {showConfetti && (
-                <ReactConfetti
-                    width={windowSize.width} height={windowSize.height}
-                    recycle={false} numberOfPieces={300}
-                    colors={['#7c3aed', '#ec4899', '#10b981', '#f59e0b', '#06b6d4']}
-                />
+                <ReactConfetti width={windowSize.width} height={windowSize.height} recycle={false} numberOfPieces={300}
+                    colors={['#7c3aed', '#ec4899', '#10b981', '#f59e0b', '#06b6d4']} />
             )}
 
-            {/* Finalize Result Toast */}
             {finalizeResult?.success && (
                 <div className="result-toast">
                     {finalizeResult.allCompleted ? (
@@ -168,34 +158,23 @@ export default function DailyView() {
                 <p className="page-subtitle">Track and complete tasks for each day</p>
             </div>
 
-            {/* Kid Selector + Date Nav */}
             <div className="row wrap center between" style={{ marginBottom: 24, gap: 12 }}>
                 <div className="chip-group">
                     {kids.map((k) => (
-                        <button
-                            key={k.id}
-                            className={`chip ${k.id === selectedKidId ? 'selected' : ''}`}
-                            onClick={() => { setSelectedKidId(k.id); navigate(`/daily/${k.id}`) }}
-                        >
+                        <button key={k.id} className={`chip ${k.id === selectedKidId ? 'selected' : ''}`}
+                            onClick={() => { setSelectedKidId(k.id); navigate(`/daily/${k.id}`) }}>
                             {k.avatar} {k.name}
                         </button>
                     ))}
                 </div>
                 <div className="date-nav">
-                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}>
-                        ◀
-                    </button>
+                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}>◀</button>
                     <span>{format(parseISO(currentDate), 'MMM d, yyyy')}</span>
-                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(addDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}>
-                        ▶
-                    </button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setCurrentDate(format(new Date(), 'yyyy-MM-dd'))}>
-                        Today
-                    </button>
+                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(addDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}>▶</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setCurrentDate(format(new Date(), 'yyyy-MM-dd'))}>Today</button>
                 </div>
             </div>
 
-            {/* Stats Row */}
             {kid && (
                 <div className="card" style={{ marginBottom: 24 }}>
                     <div className="row between center wrap" style={{ gap: 16 }}>
@@ -221,8 +200,6 @@ export default function DailyView() {
                             </div>
                         </div>
                     </div>
-
-                    {/* All Done Banner */}
                     {allDone && !isFinalized && (
                         <div className="reward-banner" style={{ marginTop: 16 }}>
                             <div style={{ fontSize: 28, marginBottom: 4 }}>🎉</div>
@@ -240,28 +217,18 @@ export default function DailyView() {
                 </div>
             )}
 
-            {/* Action Buttons */}
             <div className="row wrap" style={{ marginBottom: 20, gap: 10 }}>
-                <button className="btn btn-teal" onClick={handleLoadTemplates} disabled={isFinalized}>
-                    📋 Load Templates
-                </button>
-                <button className="btn btn-primary" onClick={openAddTask} disabled={isFinalized}>
-                    + Add Task
-                </button>
+                <button className="btn btn-teal" onClick={handleLoadTemplates} disabled={isFinalized}>📋 Load Templates</button>
+                <button className="btn btn-primary" onClick={openAddTask} disabled={isFinalized}>+ Add Task</button>
                 <button className="btn btn-amber" onClick={handleOpenConfig} disabled={isFinalized}>
                     💰 Set Rewards ({formatMoney(effectiveReward)})
                 </button>
-                <button
-                    className={`btn ${allDone ? 'btn-green' : 'btn-danger'}`}
-                    onClick={handleFinalize}
-                    disabled={isFinalized || total === 0}
-                    style={{ marginLeft: 'auto' }}
-                >
+                <button className={`btn ${allDone ? 'btn-green' : 'btn-danger'}`} onClick={handleFinalize}
+                    disabled={isFinalized || total === 0} style={{ marginLeft: 'auto' }}>
                     {isFinalized ? '✅ Finalized' : allDone ? '🎁 Claim Reward!' : '🔒 Finalize Day'}
                 </button>
             </div>
 
-            {/* Task List */}
             {tasks.length === 0 ? (
                 <div className="empty-state">
                     <span className="empty-state-icon">📭</span>
@@ -272,32 +239,21 @@ export default function DailyView() {
                 <div className="col">
                     {tasks.map((task, i) => (
                         <div key={task.id} className={`task-item ${task.status}`} style={{ animationDelay: `${i * 30}ms` }}>
-                            {/* Complete checkbox */}
-                            <div
-                                className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
-                                onClick={() => !isFinalized && toggleTaskStatus(task.id)}
-                                title="Mark complete"
-                            >
+                            <div className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
+                                onClick={() => !isFinalized && toggleTaskStatus(task.id)} title="Mark complete">
                                 {task.status === 'completed' ? '✓' : ''}
                             </div>
-
                             <div style={{ flex: 1 }}>
                                 <div className={`task-title ${task.status}`}>{task.title}</div>
                                 {task.description && <div className="task-desc">{task.description}</div>}
                             </div>
-
                             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                                 {!isFinalized && (
                                     <>
-                                        <button
-                                            className={`btn btn-sm ${task.status === 'failed' ? 'btn-danger' : 'btn-ghost'}`}
-                                            onClick={() => markTaskFailed(task.id)}
-                                            title="Mark as failed"
-                                        >
-                                            ❌
-                                        </button>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => openEditTask(task)} title="Edit">✏️</button>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => deleteDailyTask(task.id)} title="Remove">🗑️</button>
+                                        <button className={`btn btn-sm ${task.status === 'failed' ? 'btn-danger' : 'btn-ghost'}`}
+                                            onClick={() => markTaskFailed(task.id)} title="Mark as failed">❌</button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => openEditTask(task)}>✏️</button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => deleteDailyTask(task.id)}>🗑️</button>
                                     </>
                                 )}
                                 {task.status === 'failed' && isFinalized && <span className="badge badge-red">Failed</span>}
@@ -309,20 +265,17 @@ export default function DailyView() {
                 </div>
             )}
 
-            {/* Add/Edit Task Modal */}
             {(showAddTask || editTask) && (
                 <Modal title={editTask ? 'Edit Task' : 'Add Task'} onClose={() => { setShowAddTask(false); setEditTask(null) }}>
                     <div className="col">
                         <div className="form-group">
                             <label>Task Title</label>
                             <input type="text" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)}
-                                placeholder="What needs to be done?" autoFocus
-                                onKeyDown={(e) => e.key === 'Enter' && handleSaveTask()} />
+                                placeholder="What needs to be done?" autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSaveTask()} />
                         </div>
                         <div className="form-group">
                             <label>Description (optional)</label>
-                            <textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)}
-                                placeholder="Additional details..." rows={3} />
+                            <textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} placeholder="Additional details..." rows={3} />
                         </div>
                         <div className="modal-footer">
                             <button className="btn btn-ghost" onClick={() => { setShowAddTask(false); setEditTask(null) }}>Cancel</button>
@@ -332,7 +285,6 @@ export default function DailyView() {
                 </Modal>
             )}
 
-            {/* Config Modal */}
             {showConfig && (
                 <Modal title="💰 Set Day Reward & Penalty" onClose={() => setShowConfig(false)}>
                     <div className="col">
