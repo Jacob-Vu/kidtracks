@@ -3,31 +3,12 @@ import { format } from 'date-fns'
 
 const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
 
-// ─── Family ID ─────────────────────────────────────────────────────────────────
-// Stored in localStorage so it persists across browser sessions on the same device.
-// Users can share this code to access the same Firestore data on other devices.
-const getOrCreateFamilyId = () => {
-    let id = localStorage.getItem('kidstrack-family-id')
-    if (!id) {
-        id = generateId()
-        localStorage.setItem('kidstrack-family-id', id)
-    }
-    return id
-}
-
 const useStore = create((set, get) => ({
-    // ─── App State ─────────────────────────────────────────────────────────────
-    familyId: getOrCreateFamilyId(),
+    // ─── App State ──────────────────────────────────────────────────────────────
     isLoading: true,
     firestoreError: null,
-
     setIsLoading: (v) => set({ isLoading: v }),
     setError: (err) => set({ firestoreError: err }),
-
-    setFamilyId: (id) => {
-        localStorage.setItem('kidstrack-family-id', id)
-        set({ familyId: id, isLoading: true })
-    },
 
     // ─── Hydrate from Firestore (called by useFirebaseSync) ────────────────────
     setKids: (kids) => set({ kids }),
@@ -36,30 +17,25 @@ const useStore = create((set, get) => ({
     setDayConfigs: (dayConfigs) => set({ dayConfigs }),
     setLedger: (ledger) => set({ ledger }),
 
-    // ─── DATA ──────────────────────────────────────────────────────────────────
+    // ─── Data ──────────────────────────────────────────────────────────────────
     kids: [],
     templates: [],
     dailyTasks: [],
     dayConfigs: [],
     ledger: [],
 
-    // ─── KIDS ──────────────────────────────────────────────────────────────────
-    addKid: (name, avatar) => {
-        const kid = { id: generateId(), name, avatar: avatar || '🧒', balance: 0 }
-        return kid
-    },
+    // ─── Kids ──────────────────────────────────────────────────────────────────
+    addKid: (name, avatar) => ({ id: generateId(), name, avatar: avatar || '🧒', balance: 0 }),
 
     buildKidUpdate: (id, updates) => {
         const kid = get().kids.find((k) => k.id === id)
         return kid ? { ...kid, ...updates } : null
     },
 
-    // ─── TEMPLATES ─────────────────────────────────────────────────────────────
-    buildTemplate: (title, description) => ({
-        id: generateId(), title, description: description || '',
-    }),
+    // ─── Templates ─────────────────────────────────────────────────────────────
+    buildTemplate: (title, description) => ({ id: generateId(), title, description: description || '' }),
 
-    // ─── DAILY TASKS ───────────────────────────────────────────────────────────
+    // ─── Daily Tasks ───────────────────────────────────────────────────────────
     buildDailyTask: (kidId, date, title, description) => ({
         id: generateId(), kidId, date, title, description: description || '', status: 'pending',
     }),
@@ -82,7 +58,7 @@ const useStore = create((set, get) => ({
         return task ? { ...task, status: task.status === 'failed' ? 'pending' : 'failed' } : null
     },
 
-    // ─── DAY CONFIG ────────────────────────────────────────────────────────────
+    // ─── Day Config ────────────────────────────────────────────────────────────
     buildDayConfig: (kidId, date, rewardAmount, penaltyAmount) => {
         const existing = get().dayConfigs.find((c) => c.kidId === kidId && c.date === date)
         return existing
@@ -90,7 +66,7 @@ const useStore = create((set, get) => ({
             : { id: `${kidId}_${date}`, kidId, date, rewardAmount, penaltyAmount, isFinalized: false }
     },
 
-    // ─── FINALIZE (returns mutations to be written to Firestore) ───────────────
+    // ─── Finalize ──────────────────────────────────────────────────────────────
     computeFinalize: (kidId, date) => {
         const { dailyTasks, dayConfigs, kids } = get()
         const tasks = dailyTasks.filter((t) => t.kidId === kidId && t.date === date)
@@ -107,55 +83,44 @@ const useStore = create((set, get) => ({
 
         let delta = 0
         const ledgerEntries = []
-
         if (allCompleted) {
             delta += config.rewardAmount
-            ledgerEntries.push({
-                id: generateId(), kidId, date, type: 'reward',
-                amount: config.rewardAmount,
-                label: `🎉 All ${completedCount} tasks completed!`,
-            })
+            ledgerEntries.push({ id: generateId(), kidId, date, type: 'reward', amount: config.rewardAmount, label: `🎉 All ${completedCount} tasks completed!` })
         } else {
             if (failedCount > 0) {
-                const penalty = config.penaltyAmount * failedCount
-                delta -= penalty
-                ledgerEntries.push({
-                    id: generateId(), kidId, date, type: 'penalty',
-                    amount: -penalty,
-                    label: `😞 ${failedCount} task(s) failed — penalty applied`,
-                })
+                const p = config.penaltyAmount * failedCount
+                delta -= p
+                ledgerEntries.push({ id: generateId(), kidId, date, type: 'penalty', amount: -p, label: `😞 ${failedCount} task(s) failed` })
             }
             if (pendingCount > 0) {
-                const pendingPenalty = config.penaltyAmount * pendingCount
-                delta -= pendingPenalty
-                ledgerEntries.push({
-                    id: generateId(), kidId, date, type: 'penalty',
-                    amount: -pendingPenalty,
-                    label: `⏰ ${pendingCount} task(s) not completed`,
-                })
+                const p = config.penaltyAmount * pendingCount
+                delta -= p
+                ledgerEntries.push({ id: generateId(), kidId, date, type: 'penalty', amount: -p, label: `⏰ ${pendingCount} task(s) not completed` })
             }
         }
 
-        const newBalance = Math.max(0, kid.balance + delta)
-        const updatedKid = { ...kid, balance: newBalance }
-        const updatedConfig = { ...config, isFinalized: true }
-
-        return { success: true, allCompleted, delta, updatedKid, updatedConfig, ledgerEntries }
+        return {
+            success: true, allCompleted, delta,
+            updatedKid: { ...kid, balance: Math.max(0, kid.balance + delta) },
+            updatedConfig: { ...config, isFinalized: true },
+            ledgerEntries,
+        }
     },
 
-    // ─── MANUAL TRANSACTION ────────────────────────────────────────────────────
+    // ─── Manual Transaction ────────────────────────────────────────────────────
     buildManualTransaction: (kidId, amount, label) => {
         const kid = get().kids.find((k) => k.id === kidId)
         if (!kid) return null
-        const entry = {
-            id: generateId(), kidId,
-            date: format(new Date(), 'yyyy-MM-dd'),
-            type: amount >= 0 ? 'manual_reward' : 'manual_penalty',
-            amount,
-            label: label || (amount >= 0 ? 'Manual reward' : 'Manual deduction'),
+        return {
+            entry: {
+                id: generateId(), kidId,
+                date: format(new Date(), 'yyyy-MM-dd'),
+                type: amount >= 0 ? 'manual_reward' : 'manual_penalty',
+                amount,
+                label: label || (amount >= 0 ? 'Manual reward' : 'Manual deduction'),
+            },
+            updatedKid: { ...kid, balance: Math.max(0, kid.balance + amount) },
         }
-        const updatedKid = { ...kid, balance: Math.max(0, kid.balance + amount) }
-        return { entry, updatedKid }
     },
 }))
 

@@ -4,6 +4,7 @@ import { format, addDays, subDays, parseISO } from 'date-fns'
 import ReactConfetti from 'react-confetti'
 import useStore from '../store/useStore'
 import { useFireActions } from '../hooks/useFirebaseSync'
+import { useAuth } from '../contexts/AuthContext'
 import Modal from '../components/Modal'
 import { formatMoney } from '../utils/format'
 
@@ -13,6 +14,7 @@ const PENALTY_PRESETS = [5000, 10000, 20000]
 export default function DailyView() {
     const { kidId: paramKidId } = useParams()
     const navigate = useNavigate()
+    const { isParent } = useAuth()
     const { kids, templates, dailyTasks, dayConfigs } = useStore()
     const {
         addDailyTask, updateDailyTask, deleteDailyTask,
@@ -163,7 +165,7 @@ export default function DailyView() {
                     {kids.map((k) => (
                         <button key={k.id} className={`chip ${k.id === selectedKidId ? 'selected' : ''}`}
                             onClick={() => { setSelectedKidId(k.id); navigate(`/daily/${k.id}`) }}>
-                            {k.avatar} {k.name}
+                            {k.avatar} {k.displayName || k.name}
                         </button>
                     ))}
                 </div>
@@ -218,15 +220,19 @@ export default function DailyView() {
             )}
 
             <div className="row wrap" style={{ marginBottom: 20, gap: 10 }}>
-                <button className="btn btn-teal" onClick={handleLoadTemplates} disabled={isFinalized}>📋 Load Templates</button>
+                {isParent && <button className="btn btn-teal" onClick={handleLoadTemplates} disabled={isFinalized}>📋 Load Templates</button>}
                 <button className="btn btn-primary" onClick={openAddTask} disabled={isFinalized}>+ Add Task</button>
-                <button className="btn btn-amber" onClick={handleOpenConfig} disabled={isFinalized}>
-                    💰 Set Rewards ({formatMoney(effectiveReward)})
-                </button>
-                <button className={`btn ${allDone ? 'btn-green' : 'btn-danger'}`} onClick={handleFinalize}
-                    disabled={isFinalized || total === 0} style={{ marginLeft: 'auto' }}>
-                    {isFinalized ? '✅ Finalized' : allDone ? '🎁 Claim Reward!' : '🔒 Finalize Day'}
-                </button>
+                {isParent && (
+                    <button className="btn btn-amber" onClick={handleOpenConfig} disabled={isFinalized}>
+                        💰 Set Rewards ({formatMoney(effectiveReward)})
+                    </button>
+                )}
+                {isParent && (
+                    <button className={`btn ${allDone ? 'btn-green' : 'btn-danger'}`} onClick={handleFinalize}
+                        disabled={isFinalized || total === 0} style={{ marginLeft: 'auto' }}>
+                        {isFinalized ? '✅ Finalized' : allDone ? '🎁 Claim Reward!' : '🔒 Finalize Day'}
+                    </button>
+                )}
             </div>
 
             {tasks.length === 0 ? (
