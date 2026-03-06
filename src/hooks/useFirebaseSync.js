@@ -59,6 +59,27 @@ export function useFireActions() {
             if (tmpl) await saveDoc(familyId, 'templates', { ...tmpl, ...updates })
         },
         deleteTemplate: async (id) => removeDoc(familyId, 'templates', id),
+        importDefaultPack: async (pack) => {
+            const existingTitles = store.templates.map((t) => t.title)
+            const newTasks = pack.tasks.filter((t) => !existingTitles.includes(t.title))
+            const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
+            await Promise.all(
+                newTasks.map((t) =>
+                    saveDoc(familyId, 'templates', {
+                        id: generateId(),
+                        title: t.title,
+                        description: t.description,
+                        assignedKidIds: [],
+                        importedFrom: pack.id,
+                    })
+                )
+            )
+            return newTasks.length
+        },
+        assignTemplateToKids: async (templateId, kidIds) => {
+            const tmpl = store.templates.find((t) => t.id === templateId)
+            if (tmpl) await saveDoc(familyId, 'templates', { ...tmpl, assignedKidIds: kidIds })
+        },
         addDailyTask: async (kidId, date, title, description) => {
             await saveDoc(familyId, 'dailyTasks', store.buildDailyTask(kidId, date, title, description))
         },

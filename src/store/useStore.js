@@ -44,9 +44,14 @@ const useStore = create((set, get) => ({
         const { templates, dailyTasks } = get()
         const existing = dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title)
         return templates
-            .filter((t) => !existing.includes(t.title))
+            .filter((t) => {
+                const assigned = t.assignedKidIds
+                if (assigned && assigned.length > 0 && !assigned.includes(kidId)) return false
+                return !existing.includes(t.title)
+            })
             .map((t) => ({ id: generateId(), kidId, date, title: t.title, description: t.description, status: 'pending' }))
     },
+
 
     buildTaskToggle: (id) => {
         const task = get().dailyTasks.find((t) => t.id === id)
