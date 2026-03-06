@@ -59,9 +59,10 @@ export function useFireActions() {
             if (tmpl) await saveDoc(familyId, 'templates', { ...tmpl, ...updates })
         },
         deleteTemplate: async (id) => removeDoc(familyId, 'templates', id),
-        importDefaultPack: async (pack) => {
+        importDefaultPack: async (pack, selectedTasks) => {
+            const tasksToImport = selectedTasks || pack.tasks
             const existingTitles = store.templates.map((t) => t.title)
-            const newTasks = pack.tasks.filter((t) => !existingTitles.includes(t.title))
+            const newTasks = tasksToImport.filter((t) => !existingTitles.includes(t.title))
             const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
             await Promise.all(
                 newTasks.map((t) =>

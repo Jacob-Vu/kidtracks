@@ -86,6 +86,13 @@ const en = {
     'tmpl.saveAssign': 'Save Assignment',
     'tmpl.newTemplate': 'New Template',
     'tmpl.editTemplate': 'Edit Template',
+    'tmpl.importSelected': '📥 Import Tasks…',
+    'tmpl.importFrom': 'Import from',
+    'tmpl.selectTasksDesc': 'Select the tasks you want to import. Already imported tasks are grayed out.',
+    'tmpl.selectAll': '☑️ Select All',
+    'tmpl.deselectAll': '☐ Deselect All',
+    'tmpl.alreadyExists': 'exists',
+    'tmpl.importBtn': '📥 Import {count} task(s)',
 
     // ─── Daily View ────────────────────────────────
     'daily.title': '📅 Daily Tasks',

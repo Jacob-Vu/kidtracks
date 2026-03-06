@@ -22,6 +22,10 @@ export default function Templates() {
     const [importMsg, setImportMsg] = useState('')
     const [showPackDetail, setShowPackDetail] = useState(null)
 
+    // Import selection modal state
+    const [importPack, setImportPack] = useState(null)
+    const [selectedTasks, setSelectedTasks] = useState([])
+
     const getPackName = (pack) => lang === 'vi' ? (t(`pack.${toCamel(pack.id)}`) || pack.name) : pack.name
     const getPackDesc = (pack) => lang === 'vi' ? (t(`pack.${toCamel(pack.id)}Desc`) || pack.description) : pack.description
     const toCamel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
@@ -41,13 +45,38 @@ export default function Templates() {
         setTitle(''); setDescription(''); setAssignKids([])
     }
 
-    const handleImport = async (pack) => {
-        setImporting(pack.id); setImportMsg('')
+    // Open import selection modal (all tasks selected by default)
+    const openImportSelect = (pack) => {
+        const existingTitles = templates.map((t) => t.title)
+        setImportPack(pack)
+        // All tasks selected by default; mark already-imported ones
+        setSelectedTasks(pack.tasks.map((task) => task.title))
+    }
+
+    const toggleTaskSelect = (taskTitle) => {
+        setSelectedTasks((prev) =>
+            prev.includes(taskTitle) ? prev.filter((t) => t !== taskTitle) : [...prev, taskTitle]
+        )
+    }
+
+    const toggleAllTasks = () => {
+        if (!importPack) return
+        if (selectedTasks.length === importPack.tasks.length) {
+            setSelectedTasks([])
+        } else {
+            setSelectedTasks(importPack.tasks.map((t) => t.title))
+        }
+    }
+
+    const handleImportSelected = async () => {
+        if (!importPack || selectedTasks.length === 0) return
+        const tasksToImport = importPack.tasks.filter((t) => selectedTasks.includes(t.title))
+        setImporting(importPack.id); setImportMsg(''); setImportPack(null)
         try {
-            const count = await importDefaultPack(pack)
+            const count = await importDefaultPack(importPack, tasksToImport)
             setImportMsg(count > 0
-                ? t('tmpl.importedCount', { count, name: getPackName(pack) })
-                : t('tmpl.importedAll', { name: getPackName(pack) }))
+                ? t('tmpl.importedCount', { count, name: getPackName(importPack) })
+                : t('tmpl.importedAll', { name: getPackName(importPack) }))
             setTimeout(() => setImportMsg(''), 4000)
         } catch { setImportMsg(t('tmpl.importFailed')) }
         finally { setImporting(null) }
@@ -95,7 +124,7 @@ export default function Templates() {
                                 <div className="row" style={{ gap: 8, marginTop: 12 }}>
                                     <button className="btn btn-ghost btn-sm" onClick={() => setShowPackDetail(pack)}>{t('tmpl.preview')}</button>
                                     <button className={`btn btn-sm ${allImported ? 'btn-ghost' : 'btn-primary'}`}
-                                        onClick={() => handleImport(pack)} disabled={importing === pack.id || allImported} style={{ marginLeft: 'auto' }}>
+                                        onClick={() => openImportSelect(pack)} disabled={importing === pack.id || allImported} style={{ marginLeft: 'auto' }}>
                                         {importing === pack.id ? '⏳' : allImported ? t('tmpl.imported') : t('tmpl.import')}
                                     </button>
                                 </div>
@@ -148,7 +177,7 @@ export default function Templates() {
                 )}
             </section>
 
-            {/* Pack Preview */}
+            {/* Pack Preview (read-only) */}
             {showPackDetail && (
                 <Modal title={`${showPackDetail.icon} ${getPackName(showPackDetail)}`} onClose={() => setShowPackDetail(null)}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 16 }}>
@@ -167,7 +196,52 @@ export default function Templates() {
                     </div>
                     <div className="modal-footer">
                         <button className="btn btn-ghost" onClick={() => setShowPackDetail(null)}>{t('common.close')}</button>
-                        <button className="btn btn-primary" onClick={() => { handleImport(showPackDetail); setShowPackDetail(null) }}>{t('tmpl.importAll')}</button>
+                        <button className="btn btn-primary" onClick={() => { openImportSelect(showPackDetail); setShowPackDetail(null) }}>{t('tmpl.importSelected')}</button>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Import Selection Modal */}
+            {importPack && (
+                <Modal title={`📥 ${t('tmpl.importFrom')} "${getPackName(importPack)}"`} onClose={() => setImportPack(null)}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 12 }}>
+                        {t('tmpl.selectTasksDesc')}
+                    </p>
+                    <div style={{ marginBottom: 12 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={toggleAllTasks}>
+                            {selectedTasks.length === importPack.tasks.length ? t('tmpl.deselectAll') : t('tmpl.selectAll')}
+                        </button>
+                        <span style={{ marginLeft: 10, fontSize: 13, color: 'var(--text-muted)' }}>
+                            {selectedTasks.length}/{importPack.tasks.length} {lang === 'vi' ? 'đã chọn' : 'selected'}
+                        </span>
+                    </div>
+                    <div className="col" style={{ maxHeight: 350, overflowY: 'auto' }}>
+                        {importPack.tasks.map((task, i) => {
+                            const alreadyImported = templates.some((ft) => ft.title === task.title)
+                            const isSelected = selectedTasks.includes(task.title)
+                            return (
+                                <div key={i} className={`task-item ${alreadyImported ? 'imported' : ''}`}
+                                    style={{ cursor: alreadyImported ? 'default' : 'pointer', padding: '10px 14px', opacity: alreadyImported ? 0.5 : 1 }}
+                                    onClick={() => !alreadyImported && toggleTaskSelect(task.title)}>
+                                    <div className={`task-checkbox ${isSelected && !alreadyImported ? 'completed' : ''}`}
+                                        style={{ pointerEvents: 'none' }}>
+                                        {alreadyImported ? '✓' : isSelected ? '✓' : ''}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{task.title}</div>
+                                        {task.description && <div className="task-desc">{task.description}</div>}
+                                    </div>
+                                    {alreadyImported && <span className="badge badge-gray" style={{ fontSize: 10 }}>{t('tmpl.alreadyExists')}</span>}
+                                </div>
+                            )
+                        })}
+                    </div>
+                    <div className="modal-footer">
+                        <button className="btn btn-ghost" onClick={() => setImportPack(null)}>{t('common.cancel')}</button>
+                        <button className="btn btn-primary" onClick={handleImportSelected}
+                            disabled={selectedTasks.filter((title) => !templates.some((ft) => ft.title === title)).length === 0}>
+                            {t('tmpl.importBtn', { count: selectedTasks.filter((title) => !templates.some((ft) => ft.title === title)).length })}
+                        </button>
                     </div>
                 </Modal>
             )}

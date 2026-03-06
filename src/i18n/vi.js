@@ -86,6 +86,13 @@ const vi = {
     'tmpl.saveAssign': 'Lưu phân công',
     'tmpl.newTemplate': 'Tạo mẫu mới',
     'tmpl.editTemplate': 'Sửa mẫu',
+    'tmpl.importSelected': '📥 Nhập công việc…',
+    'tmpl.importFrom': 'Nhập từ',
+    'tmpl.selectTasksDesc': 'Chọn công việc bạn muốn nhập. Công việc đã nhập sẽ bị mờ.',
+    'tmpl.selectAll': '☑️ Chọn tất cả',
+    'tmpl.deselectAll': '☐ Bỏ chọn tất cả',
+    'tmpl.alreadyExists': 'đã có',
+    'tmpl.importBtn': '📥 Nhập {count} công việc',
 
     // ─── Daily View ────────────────────────────────
     'daily.title': '📅 Việc hàng ngày',
