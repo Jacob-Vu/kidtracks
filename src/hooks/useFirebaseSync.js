@@ -85,11 +85,23 @@ export function useFireActions() {
             await saveDoc(familyId, 'dailyTasks', store.buildDailyTask(kidId, date, title, description))
         },
         loadTemplatesForDay: async (kidId, date) => {
-            const tasks = store.buildLoadedTemplates(kidId, date, false)
+            const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title)
+            const tasks = store.templates.filter((t) => {
+                const assigned = t.assignedKidIds
+                if (assigned && assigned.length > 0 && !assigned.includes(kidId)) return false
+                return !existing.includes(t.title)
+            }).map((t) => store.buildDailyTask(kidId, date, t.title, t.description))
+
             await Promise.all(tasks.map((t) => saveDoc(familyId, 'dailyTasks', t)))
         },
         syncAssignedTemplatesForDay: async (kidId, date) => {
-            const tasks = store.buildLoadedTemplates(kidId, date, true)
+            const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title)
+            const tasks = store.templates.filter((t) => {
+                const assigned = t.assignedKidIds
+                if (!assigned || !assigned.includes(kidId)) return false
+                return !existing.includes(t.title)
+            }).map((t) => store.buildDailyTask(kidId, date, t.title, t.description))
+
             if (tasks.length > 0) {
                 await Promise.all(tasks.map((t) => saveDoc(familyId, 'dailyTasks', t)))
             }
