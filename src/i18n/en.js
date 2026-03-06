@@ -34,6 +34,16 @@ const en = {
     'login.kidLoggingIn': 'Logging in…',
     'login.cachedParent': 'Family account:',
     'login.changeFamily': 'Change',
+    'login.or': 'or',
+    'login.emailBtn': 'Sign in with Email',
+    'login.emailPlaceholder': 'your.email@gmail.com',
+    'login.emailSignIn': 'Sign In',
+    'login.emailSignUp': 'Create Account',
+    'login.noAccount': "Don't have an account?",
+    'login.registerLink': 'Register',
+    'login.hasAccount': 'Already have an account?',
+    'login.loginLink': 'Sign in',
+    'login.backToChoose': 'Back',
 
     // ─── Dashboard ─────────────────────────────────
     'dash.title': '👨‍👩‍👧‍👦 Dashboard',

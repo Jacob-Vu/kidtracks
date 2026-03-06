@@ -2,6 +2,7 @@ import {
     GoogleAuthProvider,
     signInWithPopup,
     signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
     signOut as fbSignOut,
     updatePassword,
     EmailAuthProvider,
@@ -24,6 +25,20 @@ export const kidAuthEmail = (username, familyId) =>
 export const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider()
     const result = await signInWithPopup(auth, provider)
+    const user = result.user
+    const profileSnap = await getDoc(doc(db, 'userProfiles', user.uid))
+    return { isNew: !profileSnap.exists(), user }
+}
+
+// ─── Parent: Email/Password Sign Up ──────────────────────────────────────────
+export const signUpParentEmail = async (email, password) => {
+    const result = await createUserWithEmailAndPassword(auth, email, password)
+    return { isNew: true, user: result.user }
+}
+
+// ─── Parent: Email/Password Sign In ──────────────────────────────────────────
+export const signInParentEmail = async (email, password) => {
+    const result = await signInWithEmailAndPassword(auth, email, password)
     const user = result.user
     const profileSnap = await getDoc(doc(db, 'userProfiles', user.uid))
     return { isNew: !profileSnap.exists(), user }

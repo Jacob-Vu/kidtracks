@@ -34,6 +34,16 @@ const vi = {
     'login.kidLoggingIn': 'Đang đăng nhập…',
     'login.cachedParent': 'Tài khoản gia đình:',
     'login.changeFamily': 'Đổi',
+    'login.or': 'hoặc',
+    'login.emailBtn': 'Đăng nhập bằng Email',
+    'login.emailPlaceholder': 'email.cua.ban@gmail.com',
+    'login.emailSignIn': 'Đăng nhập',
+    'login.emailSignUp': 'Tạo tài khoản',
+    'login.noAccount': 'Chưa có tài khoản?',
+    'login.registerLink': 'Đăng ký',
+    'login.hasAccount': 'Đã có tài khoản?',
+    'login.loginLink': 'Đăng nhập',
+    'login.backToChoose': 'Quay lại',
 
     // ─── Dashboard ─────────────────────────────────
     'dash.title': '👨‍👩‍👧‍👦 Tổng quan',
