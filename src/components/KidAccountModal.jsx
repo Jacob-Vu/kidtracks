@@ -1,152 +1,122 @@
 import { useState } from 'react'
-import Modal from './Modal'
-import { useFireActions } from '../hooks/useFirebaseSync'
+import { useAuth } from '../contexts/AuthContext'
+import { useT } from '../i18n/I18nContext'
+import useStore from '../store/useStore'
 import { createKidAuthAccount } from '../firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { useAuth } from '../contexts/AuthContext'
-import { kidAuthEmail } from '../firebase/auth'
+import Modal from './Modal'
 
-const AVATARS = ['🧒', '👦', '👧', '🧑', '👶', '🦸', '🧙', '👸', '🤴', '🏃', '🦊', '🐱', '🐶', '🐻', '🦁', '🐯']
-const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
+const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏿', '👦🏿', '👧🏿', '🦸', '🦸‍♂️', '🦸‍♀️', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐯', '🐰', '🐻']
 
 export default function KidAccountModal({ kid, onClose }) {
-    const { familyId } = useAuth()
-    const { addKid: buildKid, updateKid } = useFireActions()
+    const t = useT()
+    const { profile } = useAuth()
+    const { kids } = useStore()
     const isEdit = !!kid
 
-    // Create fields
-    const [displayName, setDisplayName] = useState(kid?.displayName || '')
+    const [displayName, setDisplayName] = useState(kid?.displayName || kid?.name || '')
     const [username, setUsername] = useState(kid?.username || '')
-    const [avatar, setAvatar] = useState(kid?.avatar || '🧒')
     const [password, setPassword] = useState('')
-    const [confirmPw, setConfirmPw] = useState('')
-    const [loading, setLoading] = useState(false)
+    const [avatar, setAvatar] = useState(kid?.avatar || '🧒')
+    const [busy, setBusy] = useState(false)
     const [error, setError] = useState('')
+    const [created, setCreated] = useState(false)
+
+    const familyId = profile?.familyId
 
     const handleCreate = async () => {
-        setError('')
-        if (!displayName.trim() || !username.trim() || !password) {
-            setError('All fields are required.'); return
-        }
-        if (password !== confirmPw) { setError('Passwords do not match.'); return }
-        if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
-        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            setError('Username can only contain letters, numbers, and underscores.'); return
-        }
-
-        setLoading(true)
+        if (!displayName.trim() || !username.trim() || password.length < 6) return
+        setError(''); setBusy(true)
         try {
-            // 1. Create Firebase Auth user via REST (parent stays signed in)
-            const kidUid = await createKidAuthAccount(username.trim(), password, familyId)
+            const syntheticEmail = `${username.trim().toLowerCase()}@${familyId}.kidstrack`
+            const kidUid = await createKidAuthAccount(syntheticEmail, password)
 
-            // 2. Create kid doc in Firestore
-            const kidId = generateId()
-            const kidDoc = {
-                id: kidId,
-                displayName: displayName.trim(),
-                username: username.trim().toLowerCase(),
-                avatar,
-                balance: 0,
-                firebaseUid: kidUid,
-            }
-            const { saveDoc } = await import('../firebase/db')
-            await saveDoc(familyId, 'kids', kidDoc)
-
-            // 3. Create userProfile for kid
-            await setDoc(doc(db, 'userProfiles', kidUid), {
-                role: 'kid',
-                familyId,
-                kidId,
-                displayName: displayName.trim(),
-                username: username.trim().toLowerCase(),
+            const kidId = Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
+            await setDoc(doc(db, 'families', familyId, 'kids', kidId), {
+                id: kidId, displayName: displayName.trim(), name: displayName.trim(),
+                username: username.trim().toLowerCase(), avatar, balance: 0,
             })
-
-            onClose()
-        } catch (e) {
-            setError(e.message)
-        } finally {
-            setLoading(false)
-        }
+            await setDoc(doc(db, 'users', kidUid), {
+                role: 'kid', familyId, kidId, username: username.trim().toLowerCase(),
+            })
+            setCreated(true)
+        } catch (err) {
+            setError(err.message)
+        } finally { setBusy(false) }
     }
 
-    const handleUpdate = async () => {
-        setError('')
-        setLoading(true)
+    const handleEdit = async () => {
+        if (!displayName.trim()) return
+        setBusy(true)
         try {
-            await updateKid(kid.id, { displayName: displayName.trim(), avatar })
+            await setDoc(doc(db, 'families', familyId, 'kids', kid.id), {
+                ...kid, displayName: displayName.trim(), avatar,
+            })
             onClose()
-        } catch (e) {
-            setError(e.message)
-        } finally {
-            setLoading(false)
-        }
+        } catch (err) { setError(err.message) }
+        finally { setBusy(false) }
+    }
+
+    if (created) {
+        return (
+            <Modal title="🎉" onClose={onClose}>
+                <div style={{ textAlign: 'center', padding: 20 }}>
+                    <div style={{ fontSize: 52, marginBottom: 12 }}>{avatar}</div>
+                    <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>{displayName}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+                        {t('kidModal.loginHint', { username: username.trim().toLowerCase() })}
+                    </div>
+                    <button className="btn btn-primary" onClick={onClose} style={{ marginTop: 20 }}>{t('common.close')}</button>
+                </div>
+            </Modal>
+        )
     }
 
     return (
-        <Modal title={isEdit ? `Edit ${kid.displayName}` : 'Add New Kid'} onClose={onClose}>
+        <Modal title={isEdit ? t('kidModal.editTitle') : t('kidModal.createTitle')} onClose={onClose}>
             <div className="col">
+                {error && <div className="login-error">{error}</div>}
                 <div className="form-group">
-                    <label>Display Name</label>
+                    <label>{t('kidModal.displayName')}</label>
                     <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="e.g. Bình" autoFocus />
+                        placeholder={t('kidModal.namePlaceholder')} autoFocus />
                 </div>
-
-                {!isEdit && (
-                    <div className="form-group">
-                        <label>Username <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 12 }}>(used to log in)</span></label>
-                        <input type="text" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                            placeholder="e.g. binh123 (letters, numbers, underscore)" />
-                    </div>
-                )}
-
-                <div className="form-group">
-                    <label>Avatar</label>
-                    <div className="chip-group">
-                        {AVATARS.map((a) => (
-                            <button key={a} onClick={() => setAvatar(a)} style={{
-                                background: avatar === a ? 'var(--gradient-purple)' : 'rgba(255,255,255,0.05)',
-                                border: `2px solid ${avatar === a ? 'transparent' : 'var(--border)'}`,
-                                borderRadius: 10, fontSize: 22, padding: '5px 9px', cursor: 'pointer',
-                                transform: avatar === a ? 'scale(1.2)' : 'scale(1)', transition: 'all 0.2s',
-                            }}>{a}</button>
-                        ))}
-                    </div>
-                </div>
-
                 {!isEdit && (
                     <>
                         <div className="form-group">
-                            <label>Initial Password</label>
-                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                                placeholder="At least 6 characters" />
+                            <label>{t('kidModal.username')}</label>
+                            <input type="text" value={username} onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
+                                placeholder={t('kidModal.usernamePlaceholder')} />
                         </div>
                         <div className="form-group">
-                            <label>Confirm Password</label>
-                            <input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
-                        </div>
-                        <div style={{
-                            background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
-                            borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: 12,
-                            color: 'var(--accent-amber)', lineHeight: 1.6,
-                        }}>
-                            📋 Login info for <strong>{displayName || 'kid'}</strong>:<br />
-                            Parent email: <em>your Google email</em><br />
-                            Username: <strong>{username || '(set above)'}</strong>
+                            <label>{t('kidModal.password')}</label>
+                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••" />
                         </div>
                     </>
                 )}
-
-                {error && <p style={{ color: 'var(--accent-red)', fontSize: 13 }}>{error}</p>}
-
+                <div className="form-group">
+                    <label>{t('kidModal.avatar')}</label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {AVATARS.map((a) => (
+                            <button key={a} onClick={() => setAvatar(a)}
+                                style={{
+                                    fontSize: 28, background: avatar === a ? 'rgba(124,58,237,0.2)' : 'transparent',
+                                    border: avatar === a ? '2px solid var(--accent-purple)' : '2px solid transparent',
+                                    borderRadius: 'var(--radius-sm)', padding: 6, cursor: 'pointer'
+                                }}>
+                                {a}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <div className="modal-footer">
-                    <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={isEdit ? handleUpdate : handleCreate}
-                        disabled={loading || !displayName.trim() || (!isEdit && (!username.trim() || !password))}
-                    >
-                        {loading ? 'Saving…' : isEdit ? 'Save Changes' : '+ Create Account'}
+                    <button className="btn btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
+                    <button className="btn btn-primary"
+                        onClick={isEdit ? handleEdit : handleCreate}
+                        disabled={busy || !displayName.trim() || (!isEdit && (password.length < 6 || !username.trim()))}>
+                        {busy ? t('kidModal.creating') : isEdit ? t('kidModal.saveBtn') : t('kidModal.createBtn')}
                     </button>
                 </div>
             </div>

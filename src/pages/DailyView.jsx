@@ -5,6 +5,7 @@ import ReactConfetti from 'react-confetti'
 import useStore from '../store/useStore'
 import { useFireActions } from '../hooks/useFirebaseSync'
 import { useAuth } from '../contexts/AuthContext'
+import { useT } from '../i18n/I18nContext'
 import Modal from '../components/Modal'
 import { formatMoney } from '../utils/format'
 
@@ -12,6 +13,7 @@ const REWARD_PRESETS = [10000, 20000, 50000]
 const PENALTY_PRESETS = [5000, 10000, 20000]
 
 export default function DailyView() {
+    const t = useT()
     const { kidId: paramKidId } = useParams()
     const navigate = useNavigate()
     const { isParent } = useAuth()
@@ -89,7 +91,7 @@ export default function DailyView() {
     }
 
     const handleLoadTemplates = async () => {
-        if (templates.length === 0) { alert('No templates found! Create some in Task Templates first.'); return }
+        if (templates.length === 0) { alert(t('daily.noTemplatesAlert')); return }
         await loadTemplatesForDay(selectedKidId, currentDate)
     }
 
@@ -110,7 +112,7 @@ export default function DailyView() {
         if (!config) { setShowConfig(true); return }
         if (isFinalized) return
         const hasPending = tasks.some((t) => t.status === 'pending')
-        if (hasPending && !confirm(`${pendingCount} task(s) are still pending. Finalize anyway? They will be treated as failures.`)) return
+        if (hasPending && !confirm(t('daily.pendingConfirm', { count: pendingCount }))) return
         const result = await finalizeDay(selectedKidId, currentDate)
         setFinalizeResult(result)
         if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
@@ -121,9 +123,9 @@ export default function DailyView() {
         return (
             <div className="empty-state">
                 <span className="empty-state-icon">🧒</span>
-                <p className="empty-state-title">No kids yet</p>
-                <p className="empty-state-desc">Go to the Dashboard and add your first kid to start tracking daily tasks.</p>
-                <button className="btn btn-primary" onClick={() => navigate('/')}>Go to Dashboard</button>
+                <p className="empty-state-title">{t('daily.noKids')}</p>
+                <p className="empty-state-desc">{t('daily.noKidsDesc')}</p>
+                <button className="btn btn-primary" onClick={() => navigate('/')}>{t('daily.goToDash')}</button>
             </div>
         )
     }
@@ -140,24 +142,24 @@ export default function DailyView() {
                     {finalizeResult.allCompleted ? (
                         <>
                             <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
-                            <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>All tasks completed!</div>
+                            <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>{t('daily.allCompleted')}</div>
                             <div className="money-positive" style={{ fontSize: 22 }}>+{formatMoney(finalizeResult.delta)}</div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>Added to {kid?.name}'s pocket!</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>{t('daily.addToPocker', { name: kid?.displayName || kid?.name })}</div>
                         </>
                     ) : (
                         <>
                             <div style={{ fontSize: 28, marginBottom: 8 }}>😞</div>
-                            <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>Day finalized with penalties</div>
+                            <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>{t('daily.penalties')}</div>
                             <div className="money-negative" style={{ fontSize: 22 }}>{formatMoney(finalizeResult.delta)}</div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>Deducted from pocket</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>{t('daily.deducted')}</div>
                         </>
                     )}
                 </div>
             )}
 
             <div className="page-header">
-                <h1 className="page-title">📅 Daily Tasks</h1>
-                <p className="page-subtitle">Track and complete tasks for each day</p>
+                <h1 className="page-title">{t('daily.title')}</h1>
+                <p className="page-subtitle">{t('daily.subtitle')}</p>
             </div>
 
             <div className="row wrap center between" style={{ marginBottom: 24, gap: 12 }}>
@@ -173,7 +175,7 @@ export default function DailyView() {
                     <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}>◀</button>
                     <span>{format(parseISO(currentDate), 'MMM d, yyyy')}</span>
                     <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(addDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}>▶</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setCurrentDate(format(new Date(), 'yyyy-MM-dd'))}>Today</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setCurrentDate(format(new Date(), 'yyyy-MM-dd'))}>{t('daily.today')}</button>
                 </div>
             </div>
 
@@ -185,7 +187,7 @@ export default function DailyView() {
                             <div>
                                 <div style={{ fontWeight: 800, fontSize: 18 }}>{kid.name}</div>
                                 <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-                                    💰 Pocket: <span style={{ color: 'var(--accent-amber)', fontWeight: 800 }}>{formatMoney(kid.balance)}</span>
+                                    💰 {t('daily.pocket')}: <span style={{ color: 'var(--accent-amber)', fontWeight: 800 }}>{formatMoney(kid.balance)}</span>
                                 </div>
                             </div>
                         </div>
@@ -193,7 +195,7 @@ export default function DailyView() {
                             <span className="badge badge-green">✅ {completedCount}</span>
                             <span className="badge badge-red">❌ {failedCount}</span>
                             <span className="badge badge-amber">⏳ {pendingCount}</span>
-                            <span className="badge badge-gray">📝 {total} total</span>
+                            <span className="badge badge-gray">📝 {total} {t('daily.total')}</span>
                         </div>
                         <div style={{ textAlign: 'right', minWidth: 120 }}>
                             <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent-green)' }}>{progress}%</div>
@@ -205,32 +207,32 @@ export default function DailyView() {
                     {allDone && !isFinalized && (
                         <div className="reward-banner" style={{ marginTop: 16 }}>
                             <div style={{ fontSize: 28, marginBottom: 4 }}>🎉</div>
-                            <div style={{ fontWeight: 800, fontSize: 16 }}>All tasks completed!</div>
+                            <div style={{ fontWeight: 800, fontSize: 16 }}>{t('daily.allCompleted')}</div>
                             <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>
-                                Finalize to add <strong style={{ color: 'var(--accent-green)' }}>{formatMoney(effectiveReward)}</strong> to {kid.name}'s pocket!
+                                {t('daily.finalizeReward', { amount: formatMoney(effectiveReward), name: kid.displayName || kid.name })}
                             </div>
                         </div>
                     )}
                     {isFinalized && (
                         <div style={{ marginTop: 16, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
-                            ✅ This day has been finalized
+                            {t('daily.dayFinalized')}
                         </div>
                     )}
                 </div>
             )}
 
             <div className="row wrap" style={{ marginBottom: 20, gap: 10 }}>
-                {isParent && <button className="btn btn-teal" onClick={handleLoadTemplates} disabled={isFinalized}>📋 Load Templates</button>}
-                <button className="btn btn-primary" onClick={openAddTask} disabled={isFinalized}>+ Add Task</button>
+                {isParent && <button className="btn btn-teal" onClick={handleLoadTemplates} disabled={isFinalized}>{t('daily.loadTemplates')}</button>}
+                <button className="btn btn-primary" onClick={openAddTask} disabled={isFinalized}>{t('daily.addTask')}</button>
                 {isParent && (
                     <button className="btn btn-amber" onClick={handleOpenConfig} disabled={isFinalized}>
-                        💰 Set Rewards ({formatMoney(effectiveReward)})
+                        {t('daily.setRewards', { amount: formatMoney(effectiveReward) })}
                     </button>
                 )}
                 {isParent && (
                     <button className={`btn ${allDone ? 'btn-green' : 'btn-danger'}`} onClick={handleFinalize}
                         disabled={isFinalized || total === 0} style={{ marginLeft: 'auto' }}>
-                        {isFinalized ? '✅ Finalized' : allDone ? '🎁 Claim Reward!' : '🔒 Finalize Day'}
+                        {isFinalized ? t('daily.finalized') : allDone ? t('daily.claimReward') : t('daily.finalizeDay')}
                     </button>
                 )}
             </div>
@@ -238,8 +240,8 @@ export default function DailyView() {
             {tasks.length === 0 ? (
                 <div className="empty-state">
                     <span className="empty-state-icon">📭</span>
-                    <p className="empty-state-title">No tasks for this day</p>
-                    <p className="empty-state-desc">Load tasks from templates or add individual tasks.</p>
+                    <p className="empty-state-title">{t('daily.noTasks')}</p>
+                    <p className="empty-state-desc">{t('daily.noTasksDesc')}</p>
                 </div>
             ) : (
                 <div className="col">
@@ -272,30 +274,30 @@ export default function DailyView() {
             )}
 
             {(showAddTask || editTask) && (
-                <Modal title={editTask ? 'Edit Task' : 'Add Task'} onClose={() => { setShowAddTask(false); setEditTask(null) }}>
+                <Modal title={editTask ? t('daily.editTask') : t('daily.addTaskTitle')} onClose={() => { setShowAddTask(false); setEditTask(null) }}>
                     <div className="col">
                         <div className="form-group">
-                            <label>Task Title</label>
+                            <label>{t('tmpl.taskTitle')}</label>
                             <input type="text" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)}
-                                placeholder="What needs to be done?" autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSaveTask()} />
+                                placeholder={t('daily.whatTodo')} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSaveTask()} />
                         </div>
                         <div className="form-group">
-                            <label>Description (optional)</label>
-                            <textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} placeholder="Additional details..." rows={3} />
+                            <label>{t('tmpl.descLabel')}</label>
+                            <textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} placeholder={t('daily.additionalDetails')} rows={3} />
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-ghost" onClick={() => { setShowAddTask(false); setEditTask(null) }}>Cancel</button>
-                            <button className="btn btn-primary" onClick={handleSaveTask} disabled={!taskTitle.trim()}>Save</button>
+                            <button className="btn btn-ghost" onClick={() => { setShowAddTask(false); setEditTask(null) }}>{t('common.cancel')}</button>
+                            <button className="btn btn-primary" onClick={handleSaveTask} disabled={!taskTitle.trim()}>{t('common.save')}</button>
                         </div>
                     </div>
                 </Modal>
             )}
 
             {showConfig && (
-                <Modal title="💰 Set Day Reward & Penalty" onClose={() => setShowConfig(false)}>
+                <Modal title={t('daily.rewardTitle')} onClose={() => setShowConfig(false)}>
                     <div className="col">
                         <div className="form-group">
-                            <label>Reward Amount (if all tasks completed)</label>
+                            <label>{t('daily.rewardLabel')}</label>
                             <div className="chip-group" style={{ marginBottom: 8 }}>
                                 {REWARD_PRESETS.map((p) => (
                                     <button key={p} className={`chip ${rewardAmount === p && !customReward ? 'selected' : ''}`}
@@ -305,11 +307,11 @@ export default function DailyView() {
                                 ))}
                             </div>
                             <input type="number" value={customReward} onChange={(e) => setCustomReward(e.target.value)}
-                                placeholder="Custom (in thousands, e.g. 30 = 30,000đ)" />
+                                placeholder={t('daily.customReward')} />
                         </div>
                         <div className="divider" />
                         <div className="form-group">
-                            <label>Penalty per failed task</label>
+                            <label>{t('daily.penaltyLabel')}</label>
                             <div className="chip-group" style={{ marginBottom: 8 }}>
                                 {PENALTY_PRESETS.map((p) => (
                                     <button key={p} className={`chip ${penaltyAmount === p && !customPenalty ? 'selected' : ''}`}
@@ -319,11 +321,11 @@ export default function DailyView() {
                                 ))}
                             </div>
                             <input type="number" value={customPenalty} onChange={(e) => setCustomPenalty(e.target.value)}
-                                placeholder="Custom (in thousands, e.g. 3 = 3,000đ)" />
+                                placeholder={t('daily.customPenalty')} />
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-ghost" onClick={() => setShowConfig(false)}>Cancel</button>
-                            <button className="btn btn-primary" onClick={handleSaveConfig}>Save Settings</button>
+                            <button className="btn btn-ghost" onClick={() => setShowConfig(false)}>{t('common.cancel')}</button>
+                            <button className="btn btn-primary" onClick={handleSaveConfig}>{t('daily.saveSettings')}</button>
                         </div>
                     </div>
                 </Modal>

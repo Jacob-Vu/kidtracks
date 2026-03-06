@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import useStore from '../store/useStore'
 import { useFireActions } from '../hooks/useFirebaseSync'
+import { useT } from '../i18n/I18nContext'
 import Modal from '../components/Modal'
 import { formatMoney, formatMoneyFull } from '../utils/format'
 
 export default function Ledger() {
+    const t = useT()
     const { kidId: paramKidId } = useParams()
     const navigate = useNavigate()
     const { kids, ledger } = useStore()
@@ -18,10 +20,7 @@ export default function Ledger() {
     const [label, setLabel] = useState('')
 
     const kid = kids.find((k) => k.id === selectedKidId)
-    const entries = ledger
-        .filter((e) => e.kidId === selectedKidId)
-        .sort((a, b) => b.id.localeCompare(a.id))
-
+    const entries = ledger.filter((e) => e.kidId === selectedKidId).sort((a, b) => b.id.localeCompare(a.id))
     const totalEarned = entries.filter((e) => e.amount > 0).reduce((sum, e) => sum + e.amount, 0)
     const totalPenalties = entries.filter((e) => e.amount < 0).reduce((sum, e) => sum + e.amount, 0)
 
@@ -36,8 +35,8 @@ export default function Ledger() {
         return (
             <div className="empty-state">
                 <span className="empty-state-icon">💰</span>
-                <p className="empty-state-title">No kids yet</p>
-                <button className="btn btn-primary" onClick={() => navigate('/')}>Go to Dashboard</button>
+                <p className="empty-state-title">{t('daily.noKids')}</p>
+                <button className="btn btn-primary" onClick={() => navigate('/')}>{t('daily.goToDash')}</button>
             </div>
         )
     }
@@ -46,17 +45,17 @@ export default function Ledger() {
         <div>
             <div className="page-header row between center">
                 <div>
-                    <h1 className="page-title">💰 Pocket Ledger</h1>
-                    <p className="page-subtitle">Transaction history of rewards and penalties</p>
+                    <h1 className="page-title">{t('ledger.title')}</h1>
+                    <p className="page-subtitle">{t('ledger.subtitle')}</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowAdd(true)}>+ Manual Entry</button>
+                <button className="btn btn-primary" onClick={() => setShowAdd(true)}>{t('ledger.addManual')}</button>
             </div>
 
             <div className="chip-group" style={{ marginBottom: 24 }}>
                 {kids.map((k) => (
                     <button key={k.id} className={`chip ${k.id === selectedKidId ? 'selected' : ''}`}
                         onClick={() => { setSelectedKidId(k.id); navigate(`/ledger/${k.id}`) }}>
-                        {k.avatar} {k.name}
+                        {k.avatar} {k.displayName || k.name}
                     </button>
                 ))}
             </div>
@@ -66,7 +65,7 @@ export default function Ledger() {
                     <div className="row wrap" style={{ gap: 32 }}>
                         <div style={{ flex: 1, textAlign: 'center' }}>
                             <div style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
-                                💰 Current Balance
+                                💰 {t('kidDash.balance')}
                             </div>
                             <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: 36, fontWeight: 800, background: 'var(--gradient-amber)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                                 {formatMoney(kid.balance)}
@@ -75,13 +74,13 @@ export default function Ledger() {
                         </div>
                         <div style={{ flex: 1, textAlign: 'center' }}>
                             <div style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
-                                🎉 Total Earned
+                                🎉 {t('ledger.allKids').replace('📊 ', '')}
                             </div>
                             <div className="money-positive" style={{ fontFamily: 'Outfit, sans-serif', fontSize: 28 }}>+{formatMoney(totalEarned)}</div>
                         </div>
                         <div style={{ flex: 1, textAlign: 'center' }}>
                             <div style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
-                                😞 Total Penalties
+                                😞 Penalties
                             </div>
                             <div className="money-negative" style={{ fontFamily: 'Outfit, sans-serif', fontSize: 28 }}>{formatMoney(totalPenalties)}</div>
                         </div>
@@ -92,8 +91,8 @@ export default function Ledger() {
             {entries.length === 0 ? (
                 <div className="empty-state">
                     <span className="empty-state-icon">📭</span>
-                    <p className="empty-state-title">No transactions yet</p>
-                    <p className="empty-state-desc">Complete daily tasks and finalize days to see reward and penalty history here.</p>
+                    <p className="empty-state-title">{t('ledger.noEntries')}</p>
+                    <p className="empty-state-desc">{t('ledger.noEntriesDesc')}</p>
                 </div>
             ) : (
                 <div className="col">
@@ -115,30 +114,30 @@ export default function Ledger() {
             )}
 
             {showAdd && (
-                <Modal title="Manual Transaction" onClose={() => setShowAdd(false)}>
+                <Modal title={t('ledger.manualTitle')} onClose={() => setShowAdd(false)}>
                     <div className="col">
                         <div className="form-group">
                             <label>Type</label>
                             <div className="chip-group">
-                                <button className={`chip ${!isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(false)}>🎁 Add Money</button>
+                                <button className={`chip ${!isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(false)}>🎁 {t('ledger.addTransaction').split(' ')[0]}</button>
                                 <button className={`chip ${isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(true)}>💸 Deduct</button>
                             </div>
                         </div>
                         <div className="form-group">
-                            <label>Amount (in thousands đ)</label>
+                            <label>{t('ledger.amount')}</label>
                             <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
-                                placeholder="e.g. 10 = 10,000đ" autoFocus />
+                                placeholder={t('ledger.amountPlaceholder')} autoFocus />
                         </div>
                         <div className="form-group">
-                            <label>Note (optional)</label>
+                            <label>{t('ledger.label')}</label>
                             <input type="text" value={label} onChange={(e) => setLabel(e.target.value)}
-                                placeholder="e.g. Bonus for helping around the house" />
+                                placeholder={t('ledger.labelPlaceholder')} />
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
+                            <button className="btn btn-ghost" onClick={() => setShowAdd(false)}>{t('common.cancel')}</button>
                             <button className={`btn ${isDeduction ? 'btn-danger' : 'btn-green'}`}
                                 onClick={handleAddManual} disabled={!amount || isNaN(parseInt(amount))}>
-                                {isDeduction ? 'Deduct' : 'Add Money'}
+                                {t('ledger.addTransaction')}
                             </button>
                         </div>
                     </div>

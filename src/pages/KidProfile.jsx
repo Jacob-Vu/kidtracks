@@ -1,174 +1,132 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '../firebase/config'
-import { changeKidPassword, linkKidEmail } from '../firebase/auth'
+import { useT } from '../i18n/I18nContext'
 import useStore from '../store/useStore'
-import { useFireActions } from '../hooks/useFirebaseSync'
-import KidLayout from '../layouts/KidLayout'
+import { changeKidPassword, linkKidEmail } from '../firebase/auth'
+import { doc, updateDoc } from 'firebase/firestore'
+import { db } from '../firebase/config'
 
-const AVATARS = ['🧒', '👦', '👧', '🧑', '👶', '🦸', '🧙', '👸', '🤴', '🏃', '🦊', '🐱', '🐶', '🐻', '🦁', '🐯']
+const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏿', '👦🏿', '👧🏿', '🦸', '🦸‍♂️', '🦸‍♀️', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐯', '🐰', '🐻']
 
 export default function KidProfile() {
-    const { kidId, familyId, user } = useAuth()
+    const t = useT()
+    const { user, profile } = useAuth()
     const { kids } = useStore()
-    const { updateKid } = useFireActions()
-    const kid = kids.find((k) => k.id === kidId)
+    const kid = kids.find((k) => k.id === profile?.kidId)
 
-    // Profile edit
-    const [displayName, setDisplayName] = useState(kid?.displayName || '')
+    const [displayName, setDisplayName] = useState(kid?.displayName || kid?.name || '')
     const [avatar, setAvatar] = useState(kid?.avatar || '🧒')
-    const [profileSaving, setProfileSaving] = useState(false)
-    const [profileMsg, setProfileMsg] = useState('')
+    const [saving, setSaving] = useState(false)
+    const [saved, setSaved] = useState(false)
 
-    // Password change
     const [currentPw, setCurrentPw] = useState('')
     const [newPw, setNewPw] = useState('')
-    const [confirmPw, setConfirmPw] = useState('')
-    const [pwLoading, setPwLoading] = useState(false)
+    const [pwBusy, setPwBusy] = useState(false)
     const [pwMsg, setPwMsg] = useState('')
-    const [pwError, setPwError] = useState('')
 
-    // Link email
-    const [linkPw, setLinkPw] = useState('')
-    const [linkEmail, setLinkEmail] = useState('')
-    const [linkLoading, setLinkLoading] = useState(false)
-    const [linkMsg, setLinkMsg] = useState('')
-    const [linkError, setLinkError] = useState('')
-
-    const saveProfile = async () => {
-        if (!displayName.trim()) return
-        setProfileSaving(true)
-        try {
-            await updateKid(kidId, { displayName: displayName.trim(), avatar })
-            setProfileMsg('✅ Profile updated!')
-            setTimeout(() => setProfileMsg(''), 3000)
-        } catch {
-            setProfileMsg('❌ Failed to update profile.')
-        } finally {
-            setProfileSaving(false)
-        }
-    }
-
-    const handleChangePw = async (e) => {
-        e.preventDefault()
-        setPwError('')
-        if (newPw !== confirmPw) { setPwError('Passwords do not match.'); return }
-        if (newPw.length < 6) { setPwError('Password must be at least 6 characters.'); return }
-        setPwLoading(true)
-        try {
-            await changeKidPassword(currentPw, newPw)
-            setPwMsg('✅ Password changed!')
-            setCurrentPw(''); setNewPw(''); setConfirmPw('')
-            setTimeout(() => setPwMsg(''), 3000)
-        } catch (err) {
-            setPwError(err.message.includes('INVALID_LOGIN') || err.message.includes('wrong-password')
-                ? 'Current password is incorrect.'
-                : err.message)
-        } finally {
-            setPwLoading(false)
-        }
-    }
-
-    const handleLinkEmail = async (e) => {
-        e.preventDefault()
-        setLinkError('')
-        setLinkLoading(true)
-        try {
-            await linkKidEmail(linkPw, linkEmail)
-            setLinkMsg('✅ Email linked successfully!')
-            setLinkPw(''); setLinkEmail('')
-            setTimeout(() => setLinkMsg(''), 3000)
-        } catch (err) {
-            setLinkError(err.message)
-        } finally {
-            setLinkLoading(false)
-        }
-    }
+    const [email, setEmail] = useState('')
+    const [emailBusy, setEmailBusy] = useState(false)
+    const [emailMsg, setEmailMsg] = useState('')
 
     if (!kid) return null
 
-    return (
-        <div>
-            <div className="page-header">
-                <h1 className="page-title">⚙️ My Profile</h1>
-                <p className="page-subtitle">Update your info and account settings</p>
-            </div>
+    const handleSaveProfile = async () => {
+        setSaving(true)
+        try {
+            const familyId = profile.familyId
+            await updateDoc(doc(db, 'families', familyId, 'kids', kid.id), { displayName: displayName.trim(), avatar })
+            setSaved(true); setTimeout(() => setSaved(false), 2000)
+        } catch (err) { alert(err.message) }
+        finally { setSaving(false) }
+    }
 
-            {/* Profile */}
+    const handleChangePw = async () => {
+        if (newPw.length < 6) return
+        setPwBusy(true); setPwMsg('')
+        try {
+            await changeKidPassword(user, currentPw, newPw)
+            setPwMsg(t('kidProf.passwordUpdated')); setCurrentPw(''); setNewPw('')
+            setTimeout(() => setPwMsg(''), 3000)
+        } catch (err) { setPwMsg(err.message) }
+        finally { setPwBusy(false) }
+    }
+
+    const handleLinkEmail = async () => {
+        if (!email.trim()) return
+        setEmailBusy(true); setEmailMsg('')
+        try {
+            await linkKidEmail(email.trim())
+            setEmailMsg(t('kidProf.linked'))
+            setTimeout(() => setEmailMsg(''), 3000)
+        } catch (err) { setEmailMsg(err.message) }
+        finally { setEmailBusy(false) }
+    }
+
+    return (
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+            <h1 className="page-title" style={{ marginBottom: 24 }}>{t('kidProf.title')}</h1>
+
+            {/* Profile section */}
             <div className="card" style={{ marginBottom: 24 }}>
-                <h3 style={{ fontWeight: 700, marginBottom: 16 }}>👤 Display Name & Avatar</h3>
                 <div className="col">
                     <div className="form-group">
-                        <label>Display Name</label>
+                        <label>{t('kidProf.displayName')}</label>
                         <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
                     </div>
                     <div className="form-group">
-                        <label>Avatar</label>
-                        <div className="chip-group">
+                        <label>{t('kidProf.avatar')}</label>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             {AVATARS.map((a) => (
-                                <button key={a} onClick={() => setAvatar(a)} style={{
-                                    background: avatar === a ? 'var(--gradient-purple)' : 'rgba(255,255,255,0.05)',
-                                    border: `2px solid ${avatar === a ? 'transparent' : 'var(--border)'}`,
-                                    borderRadius: 10, fontSize: 22, padding: '5px 9px', cursor: 'pointer',
-                                    transform: avatar === a ? 'scale(1.2)' : 'scale(1)', transition: 'all 0.2s',
-                                }}>{a}</button>
+                                <button key={a} onClick={() => setAvatar(a)}
+                                    style={{
+                                        fontSize: 28, background: avatar === a ? 'rgba(124,58,237,0.2)' : 'transparent',
+                                        border: avatar === a ? '2px solid var(--accent-purple)' : '2px solid transparent',
+                                        borderRadius: 'var(--radius-sm)', padding: 6, cursor: 'pointer'
+                                    }}>
+                                    {a}
+                                </button>
                             ))}
                         </div>
                     </div>
-                    {profileMsg && <p style={{ color: 'var(--accent-green)', fontSize: 13 }}>{profileMsg}</p>}
-                    <button className="btn btn-primary" onClick={saveProfile}
-                        disabled={profileSaving || !displayName.trim()}>
-                        {profileSaving ? 'Saving…' : 'Save Changes'}
+                    <button className="btn btn-primary" onClick={handleSaveProfile} disabled={saving}>
+                        {saving ? t('kidProf.saving') : saved ? t('kidProf.saved') : t('kidProf.saveProfile')}
                     </button>
                 </div>
             </div>
 
-            {/* Change Password */}
+            {/* Change password */}
             <div className="card" style={{ marginBottom: 24 }}>
-                <h3 style={{ fontWeight: 700, marginBottom: 16 }}>🔑 Change Password</h3>
-                <form onSubmit={handleChangePw} className="col">
+                <h3 style={{ fontWeight: 800, fontSize: 16, marginBottom: 16 }}>{t('kidProf.changePassword')}</h3>
+                <div className="col">
                     <div className="form-group">
-                        <label>Current Password</label>
+                        <label>{t('kidProf.currentPassword')}</label>
                         <input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
                     </div>
                     <div className="form-group">
-                        <label>New Password</label>
+                        <label>{t('kidProf.newPassword')}</label>
                         <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
                     </div>
-                    <div className="form-group">
-                        <label>Confirm New Password</label>
-                        <input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
-                    </div>
-                    {pwError && <p style={{ color: 'var(--accent-red)', fontSize: 13 }}>{pwError}</p>}
-                    {pwMsg && <p style={{ color: 'var(--accent-green)', fontSize: 13 }}>{pwMsg}</p>}
-                    <button type="submit" className="btn btn-primary" disabled={pwLoading || !currentPw || !newPw || !confirmPw}>
-                        {pwLoading ? 'Changing…' : 'Change Password'}
+                    {pwMsg && <div style={{ fontSize: 13, color: pwMsg.includes('✅') ? 'var(--accent-green)' : 'var(--accent-red)' }}>{pwMsg}</div>}
+                    <button className="btn btn-primary" onClick={handleChangePw} disabled={pwBusy || newPw.length < 6}>
+                        {pwBusy ? t('kidProf.updating') : t('kidProf.updatePassword')}
                     </button>
-                </form>
+                </div>
             </div>
 
-            {/* Link Real Email */}
+            {/* Link email */}
             <div className="card">
-                <h3 style={{ fontWeight: 700, marginBottom: 8 }}>📧 Link Your Email</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 16, lineHeight: 1.6 }}>
-                    Link your real email so you can reset your own password in the future.
-                </p>
-                <form onSubmit={handleLinkEmail} className="col">
+                <h3 style={{ fontWeight: 800, fontSize: 16, marginBottom: 8 }}>{t('kidProf.linkEmail')}</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 16 }}>{t('kidProf.linkEmailDesc')}</p>
+                <div className="col">
                     <div className="form-group">
-                        <label>Your Email</label>
-                        <input type="email" value={linkEmail} onChange={(e) => setLinkEmail(e.target.value)} placeholder="your@email.com" />
+                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                            placeholder={t('kidProf.emailPlaceholder')} />
                     </div>
-                    <div className="form-group">
-                        <label>Confirm Password</label>
-                        <input type="password" value={linkPw} onChange={(e) => setLinkPw(e.target.value)} />
-                    </div>
-                    {linkError && <p style={{ color: 'var(--accent-red)', fontSize: 13 }}>{linkError}</p>}
-                    {linkMsg && <p style={{ color: 'var(--accent-green)', fontSize: 13 }}>{linkMsg}</p>}
-                    <button type="submit" className="btn btn-primary" disabled={linkLoading || !linkEmail || !linkPw}>
-                        {linkLoading ? 'Linking…' : 'Link Email'}
+                    {emailMsg && <div style={{ fontSize: 13, color: emailMsg.includes('✅') ? 'var(--accent-green)' : 'var(--accent-red)' }}>{emailMsg}</div>}
+                    <button className="btn btn-primary" onClick={handleLinkEmail} disabled={emailBusy || !email.trim()}>
+                        {emailBusy ? t('kidProf.linking') : t('kidProf.linkBtn')}
                     </button>
-                </form>
+                </div>
             </div>
         </div>
     )
