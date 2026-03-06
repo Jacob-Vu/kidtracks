@@ -4,19 +4,26 @@ import useStore from '../store/useStore'
 import { useFireActions } from '../hooks/useFirebaseSync'
 import { format, subDays } from 'date-fns'
 import { formatMoney } from '../utils/format'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Modal from '../components/Modal'
 
 export default function KidDashboard() {
     const t = useT()
     const { profile } = useAuth()
     const { kids, dailyTasks, ledger } = useStore()
-    const { toggleTaskStatus, addDailyTask, updateDailyTask } = useFireActions()
+    const { toggleTaskStatus, addDailyTask, updateDailyTask, syncAssignedTemplatesForDay } = useFireActions()
 
     const kid = kids.find((k) => k.id === profile?.kidId)
+    const today = format(new Date(), 'yyyy-MM-dd')
+
+    useEffect(() => {
+        if (kid?.id && today) {
+            syncAssignedTemplatesForDay(kid.id, today)
+        }
+    }, [kid?.id, today])
+
     if (!kid) return <div className="empty-state"><span className="empty-state-icon">⏳</span><p>{t('common.loading')}</p></div>
 
-    const today = format(new Date(), 'yyyy-MM-dd')
     const todayTasks = dailyTasks.filter((t) => t.kidId === kid.id && t.date === today)
     const completedToday = todayTasks.filter((t) => t.status === 'completed').length
     const totalToday = todayTasks.length

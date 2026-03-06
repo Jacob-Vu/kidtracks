@@ -21,6 +21,7 @@ export default function Templates() {
     const [importing, setImporting] = useState(null)
     const [importMsg, setImportMsg] = useState('')
     const [showPackDetail, setShowPackDetail] = useState(null)
+    const [filterKidId, setFilterKidId] = useState('all')
 
     // Import selection modal state
     const [importPack, setImportPack] = useState(null)
@@ -136,12 +137,23 @@ export default function Templates() {
 
             {/* Family Templates */}
             <section>
-                <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 16 }}>
-                    {t('tmpl.familyTemplates')}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 13, marginLeft: 10 }}>
-                        {templates.length} {lang === 'vi' ? 'mẫu' : (templates.length !== 1 ? 'templates' : 'template')}
-                    </span>
-                </h2>
+                <div className="row between center" style={{ marginBottom: 16 }}>
+                    <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 18, fontWeight: 800 }}>
+                        {t('tmpl.familyTemplates')}
+                        <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 13, marginLeft: 10 }}>
+                            {templates.length} {lang === 'vi' ? 'mẫu' : (templates.length !== 1 ? 'templates' : 'template')}
+                        </span>
+                    </h2>
+                    {kids.length > 0 && (
+                        <select className="form-select" style={{ fontSize: 13, padding: '6px 30px 6px 12px', width: 'auto' }}
+                            value={filterKidId} onChange={(e) => setFilterKidId(e.target.value)}>
+                            <option value="all">{t('tmpl.allKids')}</option>
+                            {kids.map((k) => (
+                                <option key={k.id} value={k.id}>{k.displayName || k.name}</option>
+                            ))}
+                        </select>
+                    )}
+                </div>
                 {templates.length === 0 ? (
                     <div className="empty-state" style={{ padding: '40px 20px' }}>
                         <span className="empty-state-icon">📋</span>
@@ -150,7 +162,11 @@ export default function Templates() {
                     </div>
                 ) : (
                     <div className="col">
-                        {templates.map((tmpl, i) => {
+                        {templates.filter((tmpl) => {
+                            if (filterKidId === 'all') return true
+                            const assigned = tmpl.assignedKidIds || []
+                            return assigned.length === 0 || assigned.includes(filterKidId)
+                        }).map((tmpl, i) => {
                             const assigned = tmpl.assignedKidIds || []
                             const assignedKidsList = assigned.length > 0 ? kids.filter((k) => assigned.includes(k.id)) : []
                             return (

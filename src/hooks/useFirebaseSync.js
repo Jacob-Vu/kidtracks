@@ -85,8 +85,14 @@ export function useFireActions() {
             await saveDoc(familyId, 'dailyTasks', store.buildDailyTask(kidId, date, title, description))
         },
         loadTemplatesForDay: async (kidId, date) => {
-            const tasks = store.buildLoadedTemplates(kidId, date)
+            const tasks = store.buildLoadedTemplates(kidId, date, false)
             await Promise.all(tasks.map((t) => saveDoc(familyId, 'dailyTasks', t)))
+        },
+        syncAssignedTemplatesForDay: async (kidId, date) => {
+            const tasks = store.buildLoadedTemplates(kidId, date, true)
+            if (tasks.length > 0) {
+                await Promise.all(tasks.map((t) => saveDoc(familyId, 'dailyTasks', t)))
+            }
         },
         updateDailyTask: async (id, updates) => {
             const task = store.dailyTasks.find((t) => t.id === id)

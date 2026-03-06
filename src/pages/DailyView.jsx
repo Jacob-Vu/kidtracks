@@ -21,7 +21,7 @@ export default function DailyView() {
     const {
         addDailyTask, updateDailyTask, deleteDailyTask,
         toggleTaskStatus, markTaskFailed,
-        loadTemplatesForDay, setDayConfig, finalizeDay,
+        loadTemplatesForDay, syncAssignedTemplatesForDay, setDayConfig, finalizeDay,
     } = useFireActions()
 
     const [selectedKidId, setSelectedKidId] = useState(paramKidId || kids[0]?.id || '')
@@ -46,6 +46,12 @@ export default function DailyView() {
     useEffect(() => {
         if (!selectedKidId && kids.length > 0) setSelectedKidId(kids[0].id)
     }, [kids])
+
+    useEffect(() => {
+        if (selectedKidId && currentDate && !config?.isFinalized) {
+            syncAssignedTemplatesForDay(selectedKidId, currentDate)
+        }
+    }, [selectedKidId, currentDate, config?.isFinalized])
 
     useEffect(() => {
         const handler = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight })

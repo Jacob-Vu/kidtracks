@@ -40,13 +40,19 @@ const useStore = create((set, get) => ({
         id: generateId(), kidId, date, title, description: description || '', status: 'pending',
     }),
 
-    buildLoadedTemplates: (kidId, date) => {
+    buildLoadedTemplates: (kidId, date, onlyAssigned = false) => {
         const { templates, dailyTasks } = get()
         const existing = dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title)
         return templates
             .filter((t) => {
                 const assigned = t.assignedKidIds
-                if (assigned && assigned.length > 0 && !assigned.includes(kidId)) return false
+                if (onlyAssigned) {
+                    // Only include tasks strictly assigned to this kid
+                    if (!assigned || !assigned.includes(kidId)) return false
+                } else {
+                    // Manual load: include family-wide + assigned to this kid
+                    if (assigned && assigned.length > 0 && !assigned.includes(kidId)) return false
+                }
                 return !existing.includes(t.title)
             })
             .map((t) => ({ id: generateId(), kidId, date, title: t.title, description: t.description, status: 'pending' }))
