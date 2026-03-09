@@ -47,6 +47,10 @@ export default function DailyView() {
         if (!selectedKidId && kids.length > 0) setSelectedKidId(kids[0].id)
     }, [kids])
 
+    const kid = kids.find((k) => k.id === selectedKidId)
+    const tasks = dailyTasks.filter((t) => t.kidId === selectedKidId && t.date === currentDate)
+    const config = dayConfigs.find((c) => c.kidId === selectedKidId && c.date === currentDate)
+
     useEffect(() => {
         if (selectedKidId && currentDate && !config?.isFinalized) {
             syncAssignedTemplatesForDay(selectedKidId, currentDate)
@@ -58,10 +62,6 @@ export default function DailyView() {
         window.addEventListener('resize', handler)
         return () => window.removeEventListener('resize', handler)
     }, [])
-
-    const kid = kids.find((k) => k.id === selectedKidId)
-    const tasks = dailyTasks.filter((t) => t.kidId === selectedKidId && t.date === currentDate)
-    const config = dayConfigs.find((c) => c.kidId === selectedKidId && c.date === currentDate)
 
     const completedCount = tasks.filter((t) => t.status === 'completed').length
     const failedCount = tasks.filter((t) => t.status === 'failed').length
