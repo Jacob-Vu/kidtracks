@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useT } from '../i18n/I18nContext'
-import useStore from '../store/useStore'
 import { createKidAuthAccount } from '../firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
@@ -12,7 +11,6 @@ const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '�
 export default function KidAccountModal({ kid, onClose }) {
     const t = useT()
     const { profile } = useAuth()
-    const { kids } = useStore()
     const isEdit = !!kid
 
     const [displayName, setDisplayName] = useState(kid?.displayName || kid?.name || '')
@@ -29,16 +27,21 @@ export default function KidAccountModal({ kid, onClose }) {
         if (!displayName.trim() || !username.trim() || password.length < 6) return
         setError(''); setBusy(true)
         try {
-            const syntheticEmail = `${username.trim().toLowerCase()}@${familyId}.kidstrack`
-            const kidUid = await createKidAuthAccount(syntheticEmail, password)
+            const normalizedUsername = username.trim().toLowerCase()
+            const kidUid = await createKidAuthAccount(normalizedUsername, password, familyId)
 
             const kidId = Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
             await setDoc(doc(db, 'families', familyId, 'kids', kidId), {
                 id: kidId, displayName: displayName.trim(), name: displayName.trim(),
-                username: username.trim().toLowerCase(), avatar, balance: 0,
+                username: normalizedUsername, avatar, balance: 0,
             })
-            await setDoc(doc(db, 'users', kidUid), {
-                role: 'kid', familyId, kidId, username: username.trim().toLowerCase(),
+            await setDoc(doc(db, 'userProfiles', kidUid), {
+                role: 'kid',
+                familyId,
+                kidId,
+                username: normalizedUsername,
+                displayName: displayName.trim(),
+                email: `${normalizedUsername}@${familyId}.kidstrack`,
             })
             setCreated(true)
         } catch (err) {

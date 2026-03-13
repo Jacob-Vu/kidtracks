@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from './config'
-import { clearE2EState, isE2EMode } from '../testing/e2e'
+import { clearE2EState, isE2EMode, updateE2EState } from '../testing/e2e'
 
 const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
 
@@ -123,6 +123,7 @@ export const resetKidPasswordAdmin = async (username, newPassword, familyId) => 
 
 // ─── Kid: Change own password ─────────────────────────────────────────────────
 export const changeKidPassword = async (currentPassword, newPassword) => {
+    if (isE2EMode()) return
     const user = auth.currentUser
     if (!user) throw new Error('Not signed in')
     const credential = EmailAuthProvider.credential(user.email, currentPassword)
@@ -132,6 +133,14 @@ export const changeKidPassword = async (currentPassword, newPassword) => {
 
 // ─── Kid: Link real email ────────────────────────────────────────────────────
 export const linkKidEmail = async (currentPassword, newEmail) => {
+    if (isE2EMode()) {
+        updateE2EState((state) => ({
+            ...state,
+            user: state.user ? { ...state.user, email: newEmail } : state.user,
+            profile: state.profile ? { ...state.profile, linkedEmail: newEmail, email: newEmail } : state.profile,
+        }))
+        return
+    }
     const user = auth.currentUser
     if (!user) throw new Error('Not signed in')
     const credential = EmailAuthProvider.credential(user.email, currentPassword)
