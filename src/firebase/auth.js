@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from './config'
+import { clearE2EState, isE2EMode } from '../testing/e2e'
 
 const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
 
@@ -141,4 +142,10 @@ export const linkKidEmail = async (currentPassword, newEmail) => {
 }
 
 // ─── Sign out ─────────────────────────────────────────────────────────────────
-export const signOut = () => fbSignOut(auth)
+export const signOut = () => {
+    if (isE2EMode()) {
+        clearE2EState()
+        return Promise.resolve()
+    }
+    return fbSignOut(auth)
+}
