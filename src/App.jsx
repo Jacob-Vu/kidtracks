@@ -13,6 +13,7 @@ import KidDashboard from './pages/KidDashboard'
 import KidProfile from './pages/KidProfile'
 import KidLayout from './layouts/KidLayout'
 import ProtectedRoute from './components/ProtectedRoute'
+import MobileHeader from './components/MobileHeader'
 
 function LangSwitcher() {
   const { lang, setLang } = useLang()
@@ -103,16 +104,28 @@ function ParentLayout() {
           </button>
         </div>
       </aside>
-      <main className="main-content">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/templates" element={<Templates />} />
-          <Route path="/daily" element={<DailyView />} />
-          <Route path="/daily/:kidId" element={<DailyView />} />
-          <Route path="/ledger" element={<Ledger />} />
-          <Route path="/ledger/:kidId" element={<Ledger />} />
-        </Routes>
-      </main>
+      <div className="main-wrapper">
+        <MobileHeader />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/templates" element={<Templates />} />
+            <Route path="/daily" element={<DailyView />} />
+            <Route path="/daily/:kidId" element={<DailyView />} />
+            <Route path="/ledger" element={<Ledger />} />
+            <Route path="/ledger/:kidId" element={<Ledger />} />
+          </Routes>
+        </main>
+        <nav className="bottom-nav">
+          {NAV.map(({ path, icon, label }) => (
+            <NavLink key={path} to={path} end={path === '/'}
+              className={({ isActive }) => `bottom-nav-link${isActive ? ' active' : ''}`}>
+              <span className="bottom-nav-icon">{icon}</span>
+              <span className="bottom-nav-label">{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
     </div>
   )
 }

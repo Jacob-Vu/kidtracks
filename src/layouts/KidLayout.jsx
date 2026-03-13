@@ -4,6 +4,7 @@ import { useT, useLang } from '../i18n/I18nContext'
 import { signOut } from '../firebase/auth'
 import useStore from '../store/useStore'
 import { formatMoney } from '../utils/format'
+import MobileHeader from '../components/MobileHeader'
 
 export default function KidLayout({ children }) {
     const t = useT()
@@ -44,9 +45,22 @@ export default function KidLayout({ children }) {
                     </button>
                 </div>
             </aside>
-            <main className="main-content">
-                {children || <Outlet />}
-            </main>
+            <div className="main-wrapper">
+                <MobileHeader />
+                <main className="main-content">
+                    {children || <Outlet />}
+                </main>
+                <nav className="bottom-nav">
+                    <NavLink to="/kid" end className={({ isActive }) => `bottom-nav-link${isActive ? ' active' : ''}`}>
+                        <span className="bottom-nav-icon">🌟</span>
+                        <span className="bottom-nav-label">{t('nav.kidDashboard')}</span>
+                    </NavLink>
+                    <NavLink to="/kid/profile" className={({ isActive }) => `bottom-nav-link${isActive ? ' active' : ''}`}>
+                        <span className="bottom-nav-icon">👤</span>
+                        <span className="bottom-nav-label">{t('nav.kidProfile')}</span>
+                    </NavLink>
+                </nav>
+            </div>
         </div>
     )
 }

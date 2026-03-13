@@ -1,0 +1,47 @@
+# Responsive Design & Mobile Navigation Implementation Plan
+
+We'll convert the existing desktop layout to fully support mobile devices by introducing a dedicated Mobile Header (with Back/Home options) and a Bottom Navigation bar for primary tabs, hiding the desktop Sidebar on small screens.
+
+## User Review Required
+
+Please review the proposed components and layout adjustments.
+
+## Proposed Changes
+
+### Global CSS
+Summarizing the foundational responsive updates.
+#### [MODIFY] src/index.css
+- Add a `@media (max-width: 768px)` media query block.
+- Hide `.sidebar` layout on mobile.
+- Adjust `.main-content` padding to accommodate fixed top header and bottom nav.
+- Add `.bottom-nav` styles (fixed at bottom, flexbox layout, icon+label).
+- Add `.mobile-header` styles (fixed at top, flexbox, back/home buttons, title).
+- Reduce font sizes slightly for page headers and kid heroes on mobile.
+
+---
+
+### App Layouts & Routing
+Summarizing the UI component injections to adapt to mobile.
+
+#### [NEW] src/components/MobileHeader.jsx
+- Extracted component using `useLocation` and `useNavigate` from `react-router-dom`.
+- If the route is deeper than the root (`/`), display a **Back (`<`)** or **Home (`🏠`)** button.
+- Will display the App Title in the center.
+
+#### [MODIFY] src/App.jsx
+- Import `MobileHeader`.
+- In [ParentLayout](file:///d:/Docs/Learn%20Tech/AIAgent/Refs/TodoList/src/App.jsx#70-119), render `<MobileHeader />` above `<main className="main-content">`.
+- In [ParentLayout](file:///d:/Docs/Learn%20Tech/AIAgent/Refs/TodoList/src/App.jsx#70-119), render `<div className="bottom-nav">...</div>` below `<main>` mapped to the existing `NAV` array.
+
+#### [MODIFY] src/layouts/KidLayout.jsx
+- Import `MobileHeader`.
+- Similar to [ParentLayout](file:///d:/Docs/Learn%20Tech/AIAgent/Refs/TodoList/src/App.jsx#70-119), render `<MobileHeader />` and the bottom navigation elements specific to Kid views.
+
+## Verification Plan
+
+### Manual Verification
+1. Run application testing with `npm start` or the correct dev script.
+2. Open Browser Developer Tools and enable "Device Toolbar" to simulate mobile resolutions (iPhone 12/13).
+3. Verify the desktop sidebar is hidden and replaced by Bottom Nav and Top Mobile Header.
+4. Verify routing using the Bottom Nav.
+5. Navigate into an inner deep link (e.g. Daily view of a specific kid) and verify the Back/Home button returns cleanly to the parent view.
