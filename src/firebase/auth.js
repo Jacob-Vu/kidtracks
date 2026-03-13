@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from './config'
-import { clearE2EState, isE2EMode, updateE2EState } from '../testing/e2e'
+import { clearE2EState, getE2EState, isE2EMode, updateE2EState } from '../testing/e2e'
 
 const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
 
@@ -69,6 +69,12 @@ export const createFamily = async (user, familyName) => {
 
 // ─── Kid: Lookup family by parent email (public, pre-auth) ──────────────────
 export const lookupFamilyByParentEmail = async (parentEmail) => {
+    if (isE2EMode()) {
+        const state = getE2EState()
+        const lookup = state.authFixtures?.familyLookup?.[sanitizeEmail(parentEmail)]
+        if (!lookup) throw new Error('No family found for that parent email.')
+        return lookup
+    }
     const snap = await getDoc(doc(db, 'parentEmailLookup', sanitizeEmail(parentEmail)))
     if (!snap.exists()) throw new Error('No family found for that parent email.')
     return snap.data() // { familyId, parentName }
@@ -76,6 +82,29 @@ export const lookupFamilyByParentEmail = async (parentEmail) => {
 
 // ─── Kid: Sign in ────────────────────────────────────────────────────────────
 export const signInKid = async (username, password, familyId) => {
+    if (isE2EMode()) {
+        const state = getE2EState()
+        const normalizedUsername = username.trim().toLowerCase()
+        const account = state.authFixtures?.kidAccounts?.find((item) =>
+            item.username === normalizedUsername &&
+            item.password === password &&
+            item.familyId === familyId
+        )
+
+        if (!account) {
+            const error = new Error('Wrong username or password.')
+            error.code = 'auth/invalid-credential'
+            throw error
+        }
+
+        updateE2EState((current) => ({
+            ...current,
+            user: account.user,
+            profile: account.profile,
+        }))
+
+        return account.user
+    }
     const email = kidAuthEmail(username, familyId)
     const result = await signInWithEmailAndPassword(auth, email, password)
     return result.user

@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useT, useLang } from '../i18n/I18nContext'
 import { signInWithGoogle, signInParentEmail, signUpParentEmail, signInKid, lookupFamilyByParentEmail, createFamily } from '../firebase/auth'
-import { doc, setDoc, getDoc } from 'firebase/firestore'
-import { db } from '../firebase/config'
 
 export default function Login() {
     const navigate = useNavigate()
@@ -27,7 +25,9 @@ export default function Login() {
     const [parentPassword, setParentPassword] = useState('')
 
     // Kid login
-    const [kidParentEmail, setKidParentEmail] = useState(() => localStorage.getItem('kidstrack-parent-email') || '')
+    const savedKidParentEmail = localStorage.getItem('kidstrack-parent-email') || ''
+    const [kidParentEmail, setKidParentEmail] = useState(savedKidParentEmail)
+    const [isEditingKidParentEmail, setIsEditingKidParentEmail] = useState(!savedKidParentEmail)
     const [kidUsername, setKidUsername] = useState('')
     const [kidPassword, setKidPassword] = useState('')
 
@@ -230,15 +230,19 @@ export default function Login() {
                 ) : (
                     <div className="login-panel">
                         <div className="col" style={{ gap: 14 }}>
-                            {kidParentEmail && (
+                            {!isEditingKidParentEmail && savedKidParentEmail && (
                                 <div className="login-cached-parent">
-                                    <span>{t('login.cachedParent')} {kidParentEmail}</span>
-                                    <button className="btn btn-ghost btn-sm" onClick={() => { setKidParentEmail(''); localStorage.removeItem('kidstrack-parent-email') }}>
+                                    <span>{t('login.cachedParent')} {savedKidParentEmail}</span>
+                                    <button className="btn btn-ghost btn-sm" onClick={() => {
+                                        setKidParentEmail('')
+                                        setIsEditingKidParentEmail(true)
+                                        localStorage.removeItem('kidstrack-parent-email')
+                                    }}>
                                         {t('login.changeFamily')}
                                     </button>
                                 </div>
                             )}
-                            {!kidParentEmail && (
+                            {isEditingKidParentEmail && (
                                 <div className="form-group">
                                     <label>{t('login.kidParentEmail')}</label>
                                     <input type="text" value={kidParentEmail} onChange={(e) => setKidParentEmail(e.target.value)}
