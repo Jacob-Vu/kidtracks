@@ -1,0 +1,43 @@
+# PWA Support & App Install Prompts Implementation Plan
+
+We will configure Vite to build a Progressive Web App (PWA) and implement a custom "Install App" prompt that seamlessly handles both Android (using the native `beforeinstallprompt` event) and iOS (providing step-by-step instructions since Apple restricts automatic prompts).
+
+## Proposed Changes
+
+### Configuration
+#### [MODIFY] [package.json](file:///d:/Docs/Learn%20Tech/AIAgent/Refs/TodoList/package.json)
+- Install `vite-plugin-pwa` as a dev dependency to automate service worker generation and manifest injection.
+
+#### [MODIFY] [vite.config.js](file:///d:/Docs/Learn%20Tech/AIAgent/Refs/TodoList/vite.config.js)
+- Import and configure `VitePWA`.
+- Define the Web App Manifest (name: KidsTrack, short_name: KidsTrack, theme_color: #0f0c29).
+- Setup `registerType: 'autoUpdate'` for seamless background updates.
+
+### Assets & Icons
+#### [NEW] `public/pwa-192x192.png` & `public/pwa-512x512.png`
+- Generate standard PWA icons (a simple Star icon matching the app's aesthetic) to satisfy the manifest requirements.
+#### [NEW] `public/apple-touch-icon.png`
+- For iOS home screen compatibility.
+
+### Application Logic (React)
+#### [NEW] `src/hooks/useInstallPrompt.js`
+- Create a custom hook to:
+  1. Capture the `beforeinstallprompt` event (Android/Chrome).
+  2. Detect if the user is on an iOS device (`navigator.userAgent`).
+  3. Detect if the app is already installed (`window.matchMedia('(display-mode: standalone)')`).
+
+#### [NEW] `src/components/InstallPrompt.jsx`
+- Create a global overlay component to invite the user to install the app.
+  - **On Android**: Clicking "Install" will trigger the native system prompt.
+  - **On iOS**: Displays a helpful tip pointing to the Safari "Share" icon and "Add to Home Screen".
+  - **Dismissible**: Users can close the prompt, saving the preference to `localStorage`.
+
+#### [MODIFY] [src/App.jsx](file:///d:/Docs/Learn%20Tech/AIAgent/Refs/TodoList/src/App.jsx)
+- Import and render `<InstallPrompt />` near the root of the application.
+
+## Verification Plan
+
+### Automated/Manual Testing
+1. Run `npm install` and start the development server.
+2. Open the app in a desktop browser and verify the "Install" icon appears in the address bar (validating the manifest and service worker).
+3. Test the React `<InstallPrompt />` component by manually triggering its display states for both Android logic and iOS fallback instructions.

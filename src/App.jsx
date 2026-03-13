@@ -14,6 +14,7 @@ import KidProfile from './pages/KidProfile'
 import KidLayout from './layouts/KidLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import MobileHeader from './components/MobileHeader'
+import InstallPrompt from './components/InstallPrompt'
 
 function LangSwitcher() {
   const { lang, setLang } = useLang()
@@ -59,12 +60,15 @@ function AppContent() {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/kid" element={<ProtectedRoute role="kid"><KidLayout><KidDashboard /></KidLayout></ProtectedRoute>} />
-      <Route path="/kid/profile" element={<ProtectedRoute role="kid"><KidLayout><KidProfile /></KidLayout></ProtectedRoute>} />
-      <Route path="/*" element={<ProtectedRoute role="parent"><ParentLayout /></ProtectedRoute>} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/kid" element={<ProtectedRoute role="kid"><KidLayout><KidDashboard /></KidLayout></ProtectedRoute>} />
+        <Route path="/kid/profile" element={<ProtectedRoute role="kid"><KidLayout><KidProfile /></KidLayout></ProtectedRoute>} />
+        <Route path="/*" element={<ProtectedRoute role="parent"><ParentLayout /></ProtectedRoute>} />
+      </Routes>
+      <InstallPrompt />
+    </>
   )
 }
 
