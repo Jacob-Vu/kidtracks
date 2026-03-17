@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useT } from '../i18n/I18nContext'
 import Modal from '../components/Modal'
 import { formatMoney } from '../utils/format'
+import DayJournal from '../components/DayJournal'
 
 const REWARD_PRESETS = [10000, 20000, 50000]
 const PENALTY_PRESETS = [5000, 10000, 20000]
@@ -371,6 +372,10 @@ export default function DailyView() {
                         <button className="btn btn-danger" onClick={confirmFinalizeWithPending}>{t('daily.finalizeDay')}</button>
                     </div>
                 </Modal>
+            )}
+
+            {kid && (
+                <DayJournal kidId={selectedKidId} date={currentDate} role="parent" kidName={kid.displayName || kid.name} />
             )}
         </div>
     )

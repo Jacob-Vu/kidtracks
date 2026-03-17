@@ -220,6 +220,25 @@ const en = {
     'kidModal.saveBtn': 'Save Changes',
     'kidModal.loginHint': '🎉 Kid can log in with username: {username}',
 
+    // ─── Daily Journal ─────────────────────────────
+    'journal.title': 'Daily Journal',
+    'journal.roleParent': 'Parent',
+    'journal.roleKid': 'Mine',
+    'journal.empty': 'No note for today.',
+    'journal.recordBtn': 'Record voice',
+    'journal.writeBtn': 'Write note',
+    'journal.recording': 'Recording...',
+    'journal.stop': 'Stop',
+    'journal.reRecord': 'Re-record',
+    'journal.placeholder': 'Write a note about today...',
+    'journal.previewAudio': 'Preview:',
+    'journal.micDenied': 'Microphone access denied. Please allow and try again.',
+    'journal.history': 'View history',
+    'journal.historyTitle': 'Journal history',
+    'journal.historyEmpty': 'No past journal entries.',
+    'journal.deleteTitle': 'Delete journal entry',
+    'journal.deleteConfirm': 'This will permanently delete this journal entry and its audio.',
+
     // ─── Common ────────────────────────────────────
     'common.save': 'Save',
     'common.cancel': 'Cancel',

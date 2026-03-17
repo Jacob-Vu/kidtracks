@@ -7,6 +7,7 @@ import { formatMoney } from '../utils/format'
 import { useState, useEffect } from 'react'
 import Modal from '../components/Modal'
 import CelebrationOverlay from '../components/CelebrationOverlay'
+import DayJournal from '../components/DayJournal'
 
 export default function KidDashboard() {
     const t = useT()
@@ -162,6 +163,8 @@ export default function KidDashboard() {
                     ))}
                 </div>
             )}
+
+            <DayJournal kidId={kid.id} date={today} role="kid" kidName={kid.displayName || kid.name} />
 
             {/* Add/Edit modal */}
             {(showAdd || editTask) && (

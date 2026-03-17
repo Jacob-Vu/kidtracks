@@ -220,6 +220,25 @@ const vi = {
     'kidModal.saveBtn': 'Lưu thay đổi',
     'kidModal.loginHint': '🎉 Con đăng nhập bằng tên: {username}',
 
+    // ─── Daily Journal ─────────────────────────────
+    'journal.title': 'Nhật ký',
+    'journal.roleParent': 'Phụ huynh',
+    'journal.roleKid': 'Của tôi',
+    'journal.empty': 'Chưa có ghi chú nào hôm nay.',
+    'journal.recordBtn': 'Ghi âm',
+    'journal.writeBtn': 'Viết ghi chú',
+    'journal.recording': 'Đang ghi âm...',
+    'journal.stop': 'Dừng',
+    'journal.reRecord': 'Ghi lại',
+    'journal.placeholder': 'Viết ghi chú về hôm nay...',
+    'journal.previewAudio': 'Nghe lại:',
+    'journal.micDenied': 'Không có quyền truy cập mic. Vui lòng cho phép và thử lại.',
+    'journal.history': 'Xem lịch sử',
+    'journal.historyTitle': 'Lịch sử nhật ký',
+    'journal.historyEmpty': 'Chưa có ghi chú nào.',
+    'journal.deleteTitle': 'Xoá ghi chú',
+    'journal.deleteConfirm': 'Ghi chú và âm thanh sẽ bị xoá vĩnh viễn.',
+
     // ─── Common ────────────────────────────────────
     'common.save': 'Lưu',
     'common.cancel': 'Huỷ',
