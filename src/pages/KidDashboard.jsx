@@ -6,6 +6,7 @@ import { format, subDays } from 'date-fns'
 import { formatMoney } from '../utils/format'
 import { useState, useEffect } from 'react'
 import Modal from '../components/Modal'
+import CelebrationOverlay from '../components/CelebrationOverlay'
 
 export default function KidDashboard() {
     const t = useT()
@@ -16,17 +17,35 @@ export default function KidDashboard() {
     const kid = kids.find((k) => k.id === profile?.kidId)
     const today = format(new Date(), 'yyyy-MM-dd')
 
+    const todayTasks = kid ? dailyTasks.filter((t) => t.kidId === kid.id && t.date === today) : []
+    const completedToday = todayTasks.filter((t) => t.status === 'completed').length
+    const totalToday = todayTasks.length
+
+    const celebrationKey = `kidstrack-celebrated-${kid?.id}-${today}`
+
+    // All hooks must be before any early return
+    const [showAdd, setShowAdd] = useState(false)
+    const [editTask, setEditTask] = useState(null)
+    const [taskTitle, setTaskTitle] = useState('')
+    const [taskDesc, setTaskDesc] = useState('')
+    const [showCelebration, setShowCelebration] = useState(false)
+
     useEffect(() => {
         if (kid?.id && today) {
             syncAssignedTemplatesForDay(kid.id, today)
         }
     }, [kid?.id, today])
 
-    if (!kid) return <div className="empty-state"><span className="empty-state-icon">⏳</span><p>{t('common.loading')}</p></div>
+    useEffect(() => {
+        if (completedToday > 0 && completedToday === totalToday && totalToday > 0) {
+            if (!localStorage.getItem(celebrationKey)) {
+                localStorage.setItem(celebrationKey, '1')
+                setShowCelebration(true)
+            }
+        }
+    }, [completedToday, totalToday, celebrationKey])
 
-    const todayTasks = dailyTasks.filter((t) => t.kidId === kid.id && t.date === today)
-    const completedToday = todayTasks.filter((t) => t.status === 'completed').length
-    const totalToday = todayTasks.length
+    if (!kid) return <div className="empty-state"><span className="empty-state-icon">⏳</span><p>{t('common.loading')}</p></div>
 
     // 10-day history
     const last10 = Array.from({ length: 10 }, (_, i) => {
@@ -37,11 +56,6 @@ export default function KidDashboard() {
     })
 
     const recentLedger = ledger.filter((e) => e.kidId === kid.id).sort((a, b) => b.id.localeCompare(a.id)).slice(0, 8)
-
-    const [showAdd, setShowAdd] = useState(false)
-    const [editTask, setEditTask] = useState(null)
-    const [taskTitle, setTaskTitle] = useState('')
-    const [taskDesc, setTaskDesc] = useState('')
 
     const openAdd = () => { setTaskTitle(''); setTaskDesc(''); setShowAdd(true) }
     const openEdit = (task) => { setEditTask(task); setTaskTitle(task.title); setTaskDesc(task.description) }
@@ -169,6 +183,8 @@ export default function KidDashboard() {
                     </div>
                 </Modal>
             )}
+
+            {showCelebration && <CelebrationOverlay kid={kid} onClose={() => setShowCelebration(false)} />}
         </div>
     )
 }

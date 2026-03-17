@@ -632,6 +632,11 @@ textarea {
   margin-top: 2px;
 }
 
+.template-desc-highlight {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 .task-actions {
   display: flex;
   gap: 6px;
@@ -1702,6 +1707,106 @@ textarea {
     left: auto;
     max-width: 360px;
   }
+}
+
+/* ─── Celebration Overlay ──────────────────── */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 12, 41, 0.82);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.25s ease;
+}
+
+.celebration-card {
+  position: relative;
+  z-index: 201;
+  text-align: center;
+  padding: 40px 48px;
+  max-width: 340px;
+  width: 90%;
+  background: linear-gradient(135deg, rgba(124,58,237,0.22), rgba(236,72,153,0.14));
+  border: 1px solid rgba(124,58,237,0.45);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 40px rgba(124,58,237,0.2);
+  animation: celebrationPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.celebration-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+.celebration-close-btn:hover { color: var(--text-primary); }
+
+.celebration-star {
+  font-size: 80px;
+  display: block;
+  margin-bottom: 12px;
+  animation: starBounce 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
+  filter: drop-shadow(0 0 20px rgba(245,158,11,0.6));
+}
+
+.celebration-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  background: var(--gradient-purple);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.celebration-subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 28px;
+  line-height: 1.4;
+}
+
+.confetti-piece {
+  position: fixed;
+  top: -14px;
+  pointer-events: none;
+  z-index: 199;
+  animation: confettiFall linear forwards;
+}
+
+@keyframes celebrationPop {
+  from { transform: scale(0.4) translateY(30px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes starBounce {
+  from { transform: scale(0) rotate(-20deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg);    opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(105vh) rotate(700deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti-piece { display: none; }
+  .celebration-card { animation: none; }
+  .celebration-star { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

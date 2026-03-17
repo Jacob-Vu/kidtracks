@@ -233,6 +233,11 @@ const en = {
     'common.permissionDesc': 'Update your Firestore security rules in the Firebase Console.',
     'common.back': 'Back',
 
+    // ─── Celebration ───────────────────────────────
+    'celebrate.allDone': '🎉 All Done!',
+    'celebrate.congrats': 'Amazing work, {name}!',
+    'celebrate.close': 'Awesome! 🌟',
+
     // ─── Default Pack Names ────────────────────────
     'pack.littleStar': 'Little Star',
     'pack.littleStarDesc': 'Simple daily habits for little ones',

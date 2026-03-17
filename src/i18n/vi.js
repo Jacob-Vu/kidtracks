@@ -233,6 +233,11 @@ const vi = {
     'common.permissionDesc': 'Cập nhật quy tắc bảo mật Firestore trong Firebase Console.',
     'common.back': 'Quay lại',
 
+    // ─── Celebration ───────────────────────────────
+    'celebrate.allDone': '🎉 Xong hết rồi!',
+    'celebrate.congrats': 'Tuyệt vời lắm, {name}!',
+    'celebrate.close': 'Tuyệt! 🌟',
+
     // ─── Default Pack Names ────────────────────────
     'pack.littleStar': 'Ngôi sao nhỏ',
     'pack.littleStarDesc': 'Thói quen đơn giản cho bé',
