@@ -1555,21 +1555,34 @@ textarea {
   }
   
   .mobile-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background: rgba(15, 12, 41, 0.85); /* var(--bg-primary) but with opacity */
+    padding: 10px 12px;
+    background: rgba(15, 12, 41, 0.85);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 50;
+    gap: 8px;
   }
-  
+
+  .mobile-header-left {
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
   .mobile-header-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border-radius: var(--radius-sm);
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -1578,25 +1591,56 @@ textarea {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 15px;
+    flex-shrink: 0;
   }
-  
-  .mobile-header-logo {
-    font-size: 24px;
-    width: 36px;
+
+  .mobile-header-lang-btn {
+    width: auto;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+
+  .mobile-header-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
+  .mobile-header-avatar--initials {
+    background: var(--gradient-purple);
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  
+
+  .mobile-header-logo {
+    font-size: 22px;
+    width: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .mobile-header-title {
     font-family: 'Outfit', sans-serif;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 800;
     background: var(--gradient-purple);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .main-content {
