@@ -466,6 +466,27 @@
     'pack.activeGirlDesc': 'Stay active and develop healthy routines',
     'pack.homeHelper': 'Home Helper',
     'pack.homeHelperDesc': 'Learn to contribute to the household',
+
+    // Landing social proof
+    'landing.social.sectionAria': 'Social proof',
+    'landing.social.metrics.families': 'Active families',
+    'landing.social.metrics.tasks': 'Tasks completed',
+    'landing.social.metrics.streak': 'Avg weekly streak',
+    'landing.social.testimonialsTitle': 'What parents say',
+    'landing.social.testimonial1.name': 'Linh, mom of two',
+    'landing.social.testimonial1.role': 'Hanoi',
+    'landing.social.testimonial1.quote': 'Our evening routine now runs without reminders. The kids ask to check off tasks first.',
+    'landing.social.testimonial2.name': 'David, father of one',
+    'landing.social.testimonial2.role': 'Ho Chi Minh City',
+    'landing.social.testimonial2.quote': 'Pocket money became a clear system, not a negotiation. We have fewer arguments at home.',
+    'landing.social.testimonial3.name': 'Thao, mom of three',
+    'landing.social.testimonial3.role': 'Da Nang',
+    'landing.social.testimonial3.quote': 'Streaks and badges keep all siblings engaged, even on busy school weeks.',
+    'landing.social.communityEyebrow': 'Used by families in Vietnam',
+    'landing.social.communityTitle': 'Built for real family routines in VN',
+    'landing.social.communityDesc': 'Parents use KidsTrack daily to keep chores clear, rewards fair, and progress visible for every child.',
+    'landing.social.communityTrustCopy': 'Start in under 30 seconds. No credit card required.',
+    'landing.social.communityCta': '🚀 Try KidsTrack free',
 }
 
 export default en

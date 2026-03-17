@@ -465,6 +465,27 @@
     'pack.activeGirlDesc': 'Váº­n Ä‘á»™ng vÃ  chÄƒm sÃ³c báº£n thÃ¢n',
     'pack.homeHelper': 'Trá»£ thá»§ gia Ä‘Ã¬nh',
     'pack.homeHelperDesc': 'Há»c cÃ¡ch Ä‘Ã³ng gÃ³p cho gia Ä‘Ã¬nh',
+
+    // Landing social proof
+    'landing.social.sectionAria': 'Bằng chứng xã hội',
+    'landing.social.metrics.families': 'Gia đình hoạt động',
+    'landing.social.metrics.tasks': 'Nhiệm vụ đã hoàn thành',
+    'landing.social.metrics.streak': 'Chuỗi trung bình mỗi tuần',
+    'landing.social.testimonialsTitle': 'Phụ huynh nói gì',
+    'landing.social.testimonial1.name': 'Linh, mẹ của 2 bé',
+    'landing.social.testimonial1.role': 'Hà Nội',
+    'landing.social.testimonial1.quote': 'Buổi tối của nhà mình chạy mượt hơn hẳn. Các con tự hỏi nhau đã tick việc chưa.',
+    'landing.social.testimonial2.name': 'David, bố của 1 bé',
+    'landing.social.testimonial2.role': 'TP. Hồ Chí Minh',
+    'landing.social.testimonial2.quote': 'Tiền tiêu vặt giờ có quy tắc rõ ràng, không còn mặc cả. Không khí trong nhà nhẹ nhàng hơn.',
+    'landing.social.testimonial3.name': 'Thảo, mẹ của 3 bé',
+    'landing.social.testimonial3.role': 'Đà Nẵng',
+    'landing.social.testimonial3.quote': 'Chuỗi ngày và huy hiệu giúp cả ba anh em hào hứng, kể cả tuần học rất bận.',
+    'landing.social.communityEyebrow': 'Được các gia đình tại Việt Nam tin dùng',
+    'landing.social.communityTitle': 'Thiết kế cho nếp sinh hoạt gia đình Việt',
+    'landing.social.communityDesc': 'Phụ huynh dùng KidsTrack mỗi ngày để giao việc rõ ràng, thưởng phạt công bằng và theo dõi tiến bộ của từng con.',
+    'landing.social.communityTrustCopy': 'Bắt đầu trong chưa tới 30 giây. Không cần thẻ tín dụng.',
+    'landing.social.communityCta': '🚀 Dùng thử KidsTrack miễn phí',
 }
 
 export default vi
