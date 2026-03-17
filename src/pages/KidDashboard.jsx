@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import Modal from '../components/Modal'
 import CelebrationOverlay from '../components/CelebrationOverlay'
 import DayJournal from '../components/DayJournal'
+import VoiceMicButton from '../components/VoiceMicButton'
 import { trackTaskCompleted, trackAllTasksDone, trackCelebrationShown } from '../hooks/useAnalytics'
 
 export default function KidDashboard() {
@@ -178,12 +179,18 @@ export default function KidDashboard() {
                     <div className="col">
                         <div className="form-group">
                             <label>{t('tmpl.taskTitle')}</label>
-                            <input type="text" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)}
-                                placeholder={t('daily.whatTodo')} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
+                            <div className="form-group-row">
+                                <input type="text" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)}
+                                    placeholder={t('daily.whatTodo')} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
+                                <VoiceMicButton onAppend={(text) => setTaskTitle((prev) => prev ? prev + ' ' + text : text)} />
+                            </div>
                         </div>
                         <div className="form-group">
                             <label>{t('tmpl.descLabel')}</label>
-                            <textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} placeholder={t('daily.additionalDetails')} rows={3} />
+                            <div className="form-group-row">
+                                <textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} placeholder={t('daily.additionalDetails')} rows={3} />
+                                <VoiceMicButton onAppend={(text) => setTaskDesc((prev) => prev ? prev + ' ' + text : text)} />
+                            </div>
                         </div>
                         <div className="modal-footer">
                             <button className="btn btn-ghost" onClick={() => { setShowAdd(false); setEditTask(null) }}>{t('common.cancel')}</button>

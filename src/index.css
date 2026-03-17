@@ -1853,6 +1853,73 @@ textarea {
   .celebration-star { animation: none; }
 }
 
+/* ─── Voice Input (task form mic button) ─────── */
+.form-group-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-group-row input,
+.form-group-row textarea {
+  flex: 1;
+}
+
+.voice-input-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.voice-input-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-light);
+  background: var(--bg-card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.voice-input-btn:hover:not(:disabled) {
+  border-color: var(--accent-purple);
+  background: rgba(124,58,237,0.12);
+}
+
+.voice-input-btn--active {
+  background: var(--accent-red) !important;
+  border-color: var(--accent-red) !important;
+  animation: pulseMic 1s ease-in-out infinite;
+}
+
+.voice-input-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.voice-input-live {
+  font-size: 10px;
+  color: var(--accent-purple);
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.voice-input-error {
+  font-size: 10px;
+  color: var(--accent-red);
+}
+
 /* ─── Daily Journal ──────────────────────────── */
 .day-journal {
   margin-top: 32px;

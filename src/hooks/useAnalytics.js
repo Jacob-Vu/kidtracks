@@ -73,3 +73,8 @@ export function trackLedgerEntry(params = {}) {
     // params: { kid_id, amount, type }
     log('ledger_entry_added', params)
 }
+
+export function trackVoiceTaskInput(params = {}) {
+    // params: { field: 'title' | 'description', role: 'kid' | 'parent' }
+    log('voice_task_input', params)
+}
