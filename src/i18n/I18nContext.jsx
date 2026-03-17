@@ -14,8 +14,13 @@ export function I18nProvider({ children }) {
         localStorage.setItem('kidstrack-lang', newLang)
     }, [])
 
-    const t = useCallback((key, params) => {
-        let str = translations[lang]?.[key] || translations.en[key] || key
+    const t = useCallback((key, paramsOrFallback, maybeFallback) => {
+        const params = typeof paramsOrFallback === 'object' && paramsOrFallback !== null ? paramsOrFallback : null
+        const fallback = typeof paramsOrFallback === 'string'
+            ? paramsOrFallback
+            : (typeof maybeFallback === 'string' ? maybeFallback : undefined)
+
+        let str = translations[lang]?.[key] || translations.en[key] || fallback || key
         if (params) {
             Object.entries(params).forEach(([k, v]) => {
                 str = str.replace(`{${k}}`, v)

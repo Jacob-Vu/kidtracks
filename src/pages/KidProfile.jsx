@@ -5,7 +5,7 @@ import useStore from '../store/useStore'
 import { changeKidPassword, linkKidEmail } from '../firebase/auth'
 import { useFireActions } from '../hooks/useFirebaseSync'
 
-const AVATARS = ['ðŸ§’', 'ðŸ‘¦', 'ðŸ‘§', 'ðŸ§’ðŸ»', 'ðŸ‘¦ðŸ»', 'ðŸ‘§ðŸ»', 'ðŸ§’ðŸ½', 'ðŸ‘¦ðŸ½', 'ðŸ‘§ðŸ½', 'ðŸ§’ðŸ¿', 'ðŸ‘¦ðŸ¿', 'ðŸ‘§ðŸ¿', 'ðŸ¦¸', 'ðŸ¦¸â€â™‚ï¸', 'ðŸ¦¸â€â™€ï¸', 'ðŸ¶', 'ðŸ±', 'ðŸ¦Š', 'ðŸ¼', 'ðŸ¸', 'ðŸ¦', 'ðŸ¯', 'ðŸ°', 'ðŸ»']
+const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏿', '👦🏿', '👧🏿', '🦸', '🦸‍♂️', '🦸‍♀️', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐯', '🐰', '🐻']
 
 export default function KidProfile() {
     const t = useT()
@@ -15,36 +15,38 @@ export default function KidProfile() {
     const kid = kids.find((k) => k.id === profile?.kidId)
 
     const [displayName, setDisplayName] = useState('')
-    const [avatar, setAvatar] = useState('ðŸ§’')
+    const [avatar, setAvatar] = useState('🧒')
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
+    const [profileMsg, setProfileMsg] = useState(null)
 
     const [currentPw, setCurrentPw] = useState('')
     const [newPw, setNewPw] = useState('')
     const [pwBusy, setPwBusy] = useState(false)
-    const [pwMsg, setPwMsg] = useState('')
+    const [pwMsg, setPwMsg] = useState(null)
 
     const [email, setEmail] = useState('')
     const [emailCurrentPw, setEmailCurrentPw] = useState('')
     const [emailBusy, setEmailBusy] = useState(false)
-    const [emailMsg, setEmailMsg] = useState('')
+    const [emailMsg, setEmailMsg] = useState(null)
 
     useEffect(() => {
         if (!kid) return
         setDisplayName(kid.displayName || kid.name || '')
-        setAvatar(kid.avatar || 'ðŸ§’')
+        setAvatar(kid.avatar || '🧒')
     }, [kid])
 
     if (!kid) return null
 
     const handleSaveProfile = async () => {
         setSaving(true)
+        setProfileMsg(null)
         try {
             await updateKid(kid.id, { displayName: displayName.trim(), name: displayName.trim(), avatar })
             setSaved(true)
             setTimeout(() => setSaved(false), 2000)
         } catch (err) {
-            alert(err.message)
+            setProfileMsg({ type: 'error', text: err.message })
         } finally {
             setSaving(false)
         }
@@ -53,15 +55,15 @@ export default function KidProfile() {
     const handleChangePw = async () => {
         if (newPw.length < 6) return
         setPwBusy(true)
-        setPwMsg('')
+        setPwMsg(null)
         try {
             await changeKidPassword(currentPw, newPw)
-            setPwMsg(t('kidProf.passwordUpdated'))
+            setPwMsg({ type: 'success', text: t('kidProf.passwordUpdated') })
             setCurrentPw('')
             setNewPw('')
-            setTimeout(() => setPwMsg(''), 3000)
+            setTimeout(() => setPwMsg(null), 3000)
         } catch (err) {
-            setPwMsg(err.message)
+            setPwMsg({ type: 'error', text: err.message })
         } finally {
             setPwBusy(false)
         }
@@ -70,15 +72,15 @@ export default function KidProfile() {
     const handleLinkEmail = async () => {
         if (!email.trim() || !emailCurrentPw.trim()) return
         setEmailBusy(true)
-        setEmailMsg('')
+        setEmailMsg(null)
         try {
             await linkKidEmail(emailCurrentPw, email.trim())
-            setEmailMsg(t('kidProf.linked'))
+            setEmailMsg({ type: 'success', text: t('kidProf.linked') })
             setEmail('')
             setEmailCurrentPw('')
-            setTimeout(() => setEmailMsg(''), 3000)
+            setTimeout(() => setEmailMsg(null), 3000)
         } catch (err) {
-            setEmailMsg(err.message)
+            setEmailMsg({ type: 'error', text: err.message })
         } finally {
             setEmailBusy(false)
         }
@@ -112,6 +114,7 @@ export default function KidProfile() {
                     <button className="btn btn-primary" onClick={handleSaveProfile} disabled={saving}>
                         {saving ? t('kidProf.saving') : saved ? t('kidProf.saved') : t('kidProf.saveProfile')}
                     </button>
+                    {profileMsg && <div style={{ fontSize: 13, color: profileMsg.type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)' }}>{profileMsg.text}</div>}
                 </div>
             </div>
 
@@ -126,7 +129,7 @@ export default function KidProfile() {
                         <label>{t('kidProf.newPassword')}</label>
                         <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
                     </div>
-                    {pwMsg && <div style={{ fontSize: 13, color: pwMsg.includes('âœ…') ? 'var(--accent-green)' : 'var(--accent-red)' }}>{pwMsg}</div>}
+                    {pwMsg && <div style={{ fontSize: 13, color: pwMsg.type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)' }}>{pwMsg.text}</div>}
                     <button className="btn btn-primary" onClick={handleChangePw} disabled={pwBusy || newPw.length < 6}>
                         {pwBusy ? t('kidProf.updating') : t('kidProf.updatePassword')}
                     </button>
@@ -145,7 +148,7 @@ export default function KidProfile() {
                         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                             placeholder={t('kidProf.emailPlaceholder')} />
                     </div>
-                    {emailMsg && <div style={{ fontSize: 13, color: emailMsg.includes('âœ…') ? 'var(--accent-green)' : 'var(--accent-red)' }}>{emailMsg}</div>}
+                    {emailMsg && <div style={{ fontSize: 13, color: emailMsg.type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)' }}>{emailMsg.text}</div>}
                     <button className="btn btn-primary" onClick={handleLinkEmail} disabled={emailBusy || !email.trim() || !emailCurrentPw.trim()}>
                         {emailBusy ? t('kidProf.linking') : t('kidProf.linkBtn')}
                     </button>

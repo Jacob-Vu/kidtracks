@@ -74,7 +74,7 @@ export default function KidDashboard() {
             </div>
 
             {/* 10-day strip */}
-            <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 12 }}>📊 {t('kidDash.last10Days')}</h2>
+            <h2 className="section-title">📊 {t('kidDash.last10Days')}</h2>
             <div style={{ display: 'flex', gap: 8, marginBottom: 28, overflowX: 'auto' }}>
                 {last10.map((d) => {
                     const pct = d.total > 0 ? Math.round((d.done / d.total) * 100) : 0
@@ -100,7 +100,7 @@ export default function KidDashboard() {
 
             {/* Today's tasks */}
             <div className="row between center" style={{ marginBottom: 14 }}>
-                <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 16, fontWeight: 800 }}>
+                <h2 className="section-title" style={{ marginBottom: 0 }}>
                     {t('kidDash.todayTasks')} ({completedToday}/{totalToday})
                 </h2>
                 <button className="btn btn-primary btn-sm" onClick={openAdd}>+ {t('daily.addTask')}</button>
@@ -129,7 +129,7 @@ export default function KidDashboard() {
             )}
 
             {/* Recent history */}
-            <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 12 }}>{t('kidDash.recentHistory')}</h2>
+            <h2 className="section-title">{t('kidDash.recentHistory')}</h2>
             {recentLedger.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('kidDash.noHistory')}</p>
             ) : (

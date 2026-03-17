@@ -1,19 +1,26 @@
 import {
-    GoogleAuthProvider,
-    signInWithPopup,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut as fbSignOut,
-    updatePassword,
     EmailAuthProvider,
+    FacebookAuthProvider,
+    GoogleAuthProvider,
+    OAuthProvider,
+    createUserWithEmailAndPassword,
+    linkWithCredential,
+    linkWithPopup,
     reauthenticateWithCredential,
+    signInWithCustomToken,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    signOut as fbSignOut,
     updateEmail,
+    updatePassword,
 } from 'firebase/auth'
-import { doc, setDoc, getDoc } from 'firebase/firestore'
-import { auth, db } from './config'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { getFunctions, httpsCallable } from 'firebase/functions'
+import { app, auth, db } from './config'
 import { clearE2EState, getE2EState, isE2EMode, updateE2EState } from '../testing/e2e'
 
 const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
+const functions = getFunctions(app, 'asia-southeast1')
 
 // Sanitize email for Firestore doc ID (dots not allowed)
 export const sanitizeEmail = (email) => email.toLowerCase().replace(/\./g, ',')
@@ -22,30 +29,64 @@ export const sanitizeEmail = (email) => email.toLowerCase().replace(/\./g, ',')
 export const kidAuthEmail = (username, familyId) =>
     `${username.toLowerCase()}@${familyId}.kidstrack`
 
-// ─── Parent: Google Sign-In ──────────────────────────────────────────────────
-export const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider()
-    const result = await signInWithPopup(auth, provider)
-    const user = result.user
+const getProfileState = async (user) => {
     const profileSnap = await getDoc(doc(db, 'userProfiles', user.uid))
     return { isNew: !profileSnap.exists(), user }
 }
 
-// ─── Parent: Email/Password Sign Up ──────────────────────────────────────────
+export const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider()
+    const result = await signInWithPopup(auth, provider)
+    return getProfileState(result.user)
+}
+
+export const signInWithFacebook = async () => {
+    const provider = new FacebookAuthProvider()
+    const result = await signInWithPopup(auth, provider)
+    return getProfileState(result.user)
+}
+
+export const signInWithApple = async () => {
+    const provider = new OAuthProvider('apple.com')
+    const result = await signInWithPopup(auth, provider)
+    return getProfileState(result.user)
+}
+
 export const signUpParentEmail = async (email, password) => {
     const result = await createUserWithEmailAndPassword(auth, email, password)
     return { isNew: true, user: result.user }
 }
 
-// ─── Parent: Email/Password Sign In ──────────────────────────────────────────
 export const signInParentEmail = async (email, password) => {
     const result = await signInWithEmailAndPassword(auth, email, password)
-    const user = result.user
-    const profileSnap = await getDoc(doc(db, 'userProfiles', user.uid))
-    return { isNew: !profileSnap.exists(), user }
+    return getProfileState(result.user)
 }
 
-// ─── Parent: Create Family (first-time setup) ────────────────────────────────
+export const signInParentSimple = async (username, displayName) => {
+    if (isE2EMode()) {
+        const user = { uid: `simple_${username}`, displayName: displayName || username, email: null }
+        updateE2EState((state) => ({
+            ...state,
+            user,
+            profile: state.profile || {
+                role: 'parent',
+                displayName: displayName || username,
+                simpleLogin: true,
+                simpleUsername: username,
+            },
+        }))
+        return { isNew: !getE2EState().profile?.familyId, user }
+    }
+
+    const call = httpsCallable(functions, 'signInParentSimple')
+    const result = await call({ username, displayName })
+    const token = result.data?.token
+    if (!token) throw new Error('Unable to start simple login.')
+
+    const signInResult = await signInWithCustomToken(auth, token)
+    return { isNew: !!result.data?.isNew, user: signInResult.user }
+}
+
 export const createFamily = async (user, familyName) => {
     const familyId = generateId()
     await setDoc(doc(db, 'families', familyId), {
@@ -57,17 +98,19 @@ export const createFamily = async (user, familyName) => {
         role: 'parent',
         familyId,
         displayName: user.displayName || 'Parent',
-        email: user.email,
-    })
-    // Public lookup: kids find family by parent email
-    await setDoc(doc(db, 'parentEmailLookup', sanitizeEmail(user.email)), {
-        familyId,
-        parentName: user.displayName || 'Parent',
-    })
+        email: user.email || null,
+    }, { merge: true })
+
+    // Public lookup only available after parent has a linked email.
+    if (user.email) {
+        await setDoc(doc(db, 'parentEmailLookup', sanitizeEmail(user.email)), {
+            familyId,
+            parentName: user.displayName || 'Parent',
+        })
+    }
     return familyId
 }
 
-// ─── Kid: Lookup family by parent email (public, pre-auth) ──────────────────
 export const lookupFamilyByParentEmail = async (parentEmail) => {
     if (isE2EMode()) {
         const state = getE2EState()
@@ -80,7 +123,6 @@ export const lookupFamilyByParentEmail = async (parentEmail) => {
     return snap.data() // { familyId, parentName }
 }
 
-// ─── Kid: Sign in ────────────────────────────────────────────────────────────
 export const signInKid = async (username, password, familyId) => {
     if (isE2EMode()) {
         const state = getE2EState()
@@ -110,7 +152,6 @@ export const signInKid = async (username, password, familyId) => {
     return result.user
 }
 
-// ─── Parent: Create kid account (via REST so parent stays signed in) ─────────
 export const createKidAuthAccount = async (username, password, familyId) => {
     const email = kidAuthEmail(username, familyId)
     const apiKey = import.meta.env.VITE_FIREBASE_API_KEY
@@ -129,28 +170,13 @@ export const createKidAuthAccount = async (username, password, familyId) => {
         throw new Error(msg)
     }
     const data = await res.json()
-    return data.localId // Firebase UID of the new kid
+    return data.localId
 }
 
-// ─── Parent: Reset kid password via REST ─────────────────────────────────────
-export const resetKidPasswordAdmin = async (username, newPassword, familyId) => {
-    // 1. Get kid's Firebase UID from Firestore
-    const email = kidAuthEmail(username, familyId)
-    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY
-
-    // Need to get idToken of a user with the email — can't do this client-side without signing in.
-    // Instead, parent temporarily signs in as kid using current password, then resets.
-    // But we won't have the current password. Use Admin SDK approach workaround:
-    // Store a "pendingPasswordReset" flag in Firestore; kid sees it and is forced to change pw on next login.
-    // For now, we'll just update a flag so parent knows.
-    // A simpler UX: parent sets NEW password directly via the API (requires knowing current password).
-    // We'll store a temp password in Firestore (encrypted discussion is out of scope for now).
-    // Practical solution: parent sets temp password, kid must change it.
-    // We sign in as kid briefly, change password, sign back out, then sign parent back in.
+export const resetKidPasswordAdmin = async () => {
     throw new Error('Use KidProfile to change password (kid must do it themselves).')
 }
 
-// ─── Kid: Change own password ─────────────────────────────────────────────────
 export const changeKidPassword = async (currentPassword, newPassword) => {
     if (isE2EMode()) return
     const user = auth.currentUser
@@ -160,7 +186,6 @@ export const changeKidPassword = async (currentPassword, newPassword) => {
     await updatePassword(user, newPassword)
 }
 
-// ─── Kid: Link real email ────────────────────────────────────────────────────
 export const linkKidEmail = async (currentPassword, newEmail) => {
     if (isE2EMode()) {
         updateE2EState((state) => ({
@@ -175,11 +200,62 @@ export const linkKidEmail = async (currentPassword, newEmail) => {
     const credential = EmailAuthProvider.credential(user.email, currentPassword)
     await reauthenticateWithCredential(user, credential)
     await updateEmail(user, newEmail)
-    // Update userProfile
     await setDoc(doc(db, 'userProfiles', user.uid), { linkedEmail: newEmail }, { merge: true })
 }
 
-// ─── Sign out ─────────────────────────────────────────────────────────────────
+const mergeParentProfile = async (user, familyId) => {
+    await setDoc(doc(db, 'userProfiles', user.uid), {
+        role: 'parent',
+        familyId: familyId || null,
+        displayName: user.displayName || 'Parent',
+        email: user.email || null,
+        simpleLogin: false,
+    }, { merge: true })
+
+    if (user.email && familyId) {
+        await setDoc(doc(db, 'parentEmailLookup', sanitizeEmail(user.email)), {
+            familyId,
+            parentName: user.displayName || 'Parent',
+        }, { merge: true })
+    }
+}
+
+export const linkParentGoogle = async (familyId) => {
+    const user = auth.currentUser
+    if (!user) throw new Error('Not signed in')
+    const provider = new GoogleAuthProvider()
+    const result = await linkWithPopup(user, provider)
+    await mergeParentProfile(result.user, familyId)
+    return result.user
+}
+
+export const linkParentApple = async (familyId) => {
+    const user = auth.currentUser
+    if (!user) throw new Error('Not signed in')
+    const provider = new OAuthProvider('apple.com')
+    const result = await linkWithPopup(user, provider)
+    await mergeParentProfile(result.user, familyId)
+    return result.user
+}
+
+export const linkParentFacebook = async (familyId) => {
+    const user = auth.currentUser
+    if (!user) throw new Error('Not signed in')
+    const provider = new FacebookAuthProvider()
+    const result = await linkWithPopup(user, provider)
+    await mergeParentProfile(result.user, familyId)
+    return result.user
+}
+
+export const linkParentEmailPassword = async (email, password, familyId) => {
+    const user = auth.currentUser
+    if (!user) throw new Error('Not signed in')
+    const credential = EmailAuthProvider.credential(email, password)
+    const result = await linkWithCredential(user, credential)
+    await mergeParentProfile(result.user, familyId)
+    return result.user
+}
+
 export const signOut = () => {
     if (isE2EMode()) {
         clearE2EState()

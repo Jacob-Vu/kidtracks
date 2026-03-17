@@ -14,7 +14,8 @@ export default function Templates() {
     const [showAdd, setShowAdd] = useState(false)
     const [editItem, setEditItem] = useState(null)
     const [title, setTitle] = useState('')
-    const [description, setDescription] = useState('')
+    const [descriptionEn, setDescriptionEn] = useState('')
+    const [descriptionVi, setDescriptionVi] = useState('')
     const [assignKids, setAssignKids] = useState([])
     const [showAssign, setShowAssign] = useState(null)
     const [assignSelection, setAssignSelection] = useState([])
@@ -30,20 +31,42 @@ export default function Templates() {
     const getPackName = (pack) => lang === 'vi' ? (t(`pack.${toCamel(pack.id)}`) || pack.name) : pack.name
     const getPackDesc = (pack) => lang === 'vi' ? (t(`pack.${toCamel(pack.id)}Desc`) || pack.description) : pack.description
     const toCamel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+    const getTemplateDesc = (tmpl) => tmpl?.descriptions?.[lang] || tmpl?.descriptions?.en || tmpl?.descriptions?.vi || tmpl?.description || ''
 
-    const openAdd = () => { setTitle(''); setDescription(''); setAssignKids([]); setShowAdd(true) }
-    const openEdit = (tmpl) => { setEditItem(tmpl); setTitle(tmpl.title); setDescription(tmpl.description); setAssignKids(tmpl.assignedKidIds || []) }
+    const openAdd = () => {
+        setTitle('')
+        setDescriptionEn('')
+        setDescriptionVi('')
+        setAssignKids([])
+        setShowAdd(true)
+    }
+    const openEdit = (tmpl) => {
+        setEditItem(tmpl)
+        setTitle(tmpl.title)
+        setDescriptionEn(tmpl?.descriptions?.en || tmpl?.description || '')
+        setDescriptionVi(tmpl?.descriptions?.vi || tmpl?.description || '')
+        setAssignKids(tmpl.assignedKidIds || [])
+    }
 
     const handleSave = async () => {
         if (!title.trim()) return
+        const descriptions = { en: descriptionEn.trim(), vi: descriptionVi.trim() }
         if (editItem) {
-            await updateTemplate(editItem.id, { title: title.trim(), description: description.trim(), assignedKidIds: assignKids })
+            await updateTemplate(editItem.id, {
+                title: title.trim(),
+                descriptions,
+                description: descriptions.en || descriptions.vi || '',
+                assignedKidIds: assignKids,
+            })
             setEditItem(null)
         } else {
-            await addTemplate(title.trim(), description.trim())
+            await addTemplate(title.trim(), descriptions)
             setShowAdd(false)
         }
-        setTitle(''); setDescription(''); setAssignKids([])
+        setTitle('')
+        setDescriptionEn('')
+        setDescriptionVi('')
+        setAssignKids([])
     }
 
     // Open import selection modal (all tasks selected by default)
@@ -101,9 +124,9 @@ export default function Templates() {
 
             {/* Default Packs */}
             <section style={{ marginBottom: 36 }}>
-                <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 16 }}>
+                <h2 className="section-title">
                     {t('tmpl.defaultPacks')}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 13, marginLeft: 10 }}>{t('tmpl.defaultPacksDesc')}</span>
+                    <span className="section-note">{t('tmpl.defaultPacksDesc')}</span>
                 </h2>
                 <div className="pack-grid">
                     {DEFAULT_PACKS.map((pack) => {
@@ -138,9 +161,9 @@ export default function Templates() {
             {/* Family Templates */}
             <section>
                 <div className="row between center" style={{ marginBottom: 16 }}>
-                    <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 18, fontWeight: 800 }}>
+                    <h2 className="section-title" style={{ marginBottom: 0 }}>
                         {t('tmpl.familyTemplates')}
-                        <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 13, marginLeft: 10 }}>
+                        <span className="section-note">
                             {templates.length} {lang === 'vi' ? 'mẫu' : (templates.length !== 1 ? 'templates' : 'template')}
                         </span>
                     </h2>
@@ -174,7 +197,7 @@ export default function Templates() {
                                     <span style={{ fontSize: 22 }}>📌</span>
                                     <div style={{ flex: 1 }}>
                                         <div className="task-title">{tmpl.title}</div>
-                                        {tmpl.description && <div className="task-desc">{tmpl.description}</div>}
+                                        {getTemplateDesc(tmpl) && <div className="task-desc">{getTemplateDesc(tmpl)}</div>}
                                         <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                                             {assignedKidsList.length > 0 ? assignedKidsList.map((k) => (
                                                 <span key={k.id} className="badge badge-purple" style={{ fontSize: 11 }}>{k.avatar} {k.displayName || k.name}</span>
@@ -272,8 +295,12 @@ export default function Templates() {
                                 placeholder={t('tmpl.taskPlaceholder')} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
                         </div>
                         <div className="form-group">
-                            <label>{t('tmpl.descLabel')}</label>
-                            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('tmpl.descPlaceholder')} rows={3} />
+                            <label>{t('tmpl.descLabelEn', 'Description (English)')}</label>
+                            <textarea value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} placeholder={t('tmpl.descPlaceholder')} rows={3} />
+                        </div>
+                        <div className="form-group">
+                            <label>{t('tmpl.descLabelVi', 'Description (Vietnamese)')}</label>
+                            <textarea value={descriptionVi} onChange={(e) => setDescriptionVi(e.target.value)} placeholder={t('tmpl.descPlaceholderVi', 'Mô tả tiếng Việt...')} rows={3} />
                         </div>
                         {editItem && kids.length > 0 && (
                             <div className="form-group">

@@ -33,7 +33,16 @@ const useStore = create((set, get) => ({
     },
 
     // ─── Templates ─────────────────────────────────────────────────────────────
-    buildTemplate: (title, description) => ({ id: generateId(), title, description: description || '' }),
+    buildTemplate: (title, descriptionByLang) => ({
+        id: generateId(),
+        title,
+        descriptions: {
+            en: descriptionByLang?.en || '',
+            vi: descriptionByLang?.vi || '',
+        },
+        // Backward compatibility for existing UI/records.
+        description: descriptionByLang?.en || descriptionByLang?.vi || '',
+    }),
 
     // ─── Daily Tasks ───────────────────────────────────────────────────────────
     buildDailyTask: (kidId, date, title, description) => ({

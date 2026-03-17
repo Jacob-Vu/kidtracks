@@ -37,6 +37,8 @@ export default function DailyView() {
     const [customPenalty, setCustomPenalty] = useState('')
     const [showConfetti, setShowConfetti] = useState(false)
     const [finalizeResult, setFinalizeResult] = useState(null)
+    const [inlineMessage, setInlineMessage] = useState('')
+    const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false)
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
 
     useEffect(() => {
@@ -97,7 +99,11 @@ export default function DailyView() {
     }
 
     const handleLoadTemplates = async () => {
-        if (templates.length === 0) { alert(t('daily.noTemplatesAlert')); return }
+        if (templates.length === 0) {
+            setInlineMessage(t('daily.noTemplatesAlert'))
+            setTimeout(() => setInlineMessage(''), 3000)
+            return
+        }
         await loadTemplatesForDay(selectedKidId, currentDate)
     }
 
@@ -118,7 +124,18 @@ export default function DailyView() {
         if (!config) { setShowConfig(true); return }
         if (isFinalized) return
         const hasPending = tasks.some((t) => t.status === 'pending')
-        if (hasPending && !confirm(t('daily.pendingConfirm', { count: pendingCount }))) return
+        if (hasPending) {
+            setShowFinalizeConfirm(true)
+            return
+        }
+        const result = await finalizeDay(selectedKidId, currentDate)
+        setFinalizeResult(result)
+        if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
+        setTimeout(() => setFinalizeResult(null), 5000)
+    }
+
+    const confirmFinalizeWithPending = async () => {
+        setShowFinalizeConfirm(false)
         const result = await finalizeDay(selectedKidId, currentDate)
         setFinalizeResult(result)
         if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
@@ -150,7 +167,7 @@ export default function DailyView() {
                             <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
                             <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>{t('daily.allCompleted')}</div>
                             <div className="money-positive" style={{ fontSize: 22 }}>+{formatMoney(finalizeResult.delta)}</div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>{t('daily.addToPocker', { name: kid?.displayName || kid?.name })}</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>{t('daily.addToPocket', { name: kid?.displayName || kid?.name })}</div>
                         </>
                     ) : (
                         <>
@@ -167,6 +184,7 @@ export default function DailyView() {
                 <h1 className="page-title">{t('daily.title')}</h1>
                 <p className="page-subtitle">{t('daily.subtitle')}</p>
             </div>
+            {inlineMessage && <div className="toast-inline" style={{ marginBottom: 16 }}>{inlineMessage}</div>}
 
             <div className="row wrap center between" style={{ marginBottom: 24, gap: 12 }}>
                 <div className="chip-group">
@@ -178,9 +196,9 @@ export default function DailyView() {
                     ))}
                 </div>
                 <div className="date-nav">
-                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}>◀</button>
+                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))} aria-label="Previous day">◀</button>
                     <span>{format(parseISO(currentDate), 'MMM d, yyyy')}</span>
-                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(addDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}>▶</button>
+                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(addDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))} aria-label="Next day">▶</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => setCurrentDate(format(new Date(), 'yyyy-MM-dd'))}>{t('daily.today')}</button>
                 </div>
             </div>
@@ -253,10 +271,16 @@ export default function DailyView() {
                 <div className="col">
                     {tasks.map((task, i) => (
                         <div key={task.id} className={`task-item ${task.status}`} style={{ animationDelay: `${i * 30}ms` }}>
-                            <div className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
-                                onClick={() => !isFinalized && toggleTaskStatus(task.id)} title="Mark complete">
+                            <button
+                                type="button"
+                                className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
+                                onClick={() => !isFinalized && toggleTaskStatus(task.id)}
+                                title="Mark complete"
+                                aria-label="Mark complete"
+                                disabled={isFinalized}
+                            >
                                 {task.status === 'completed' ? '✓' : ''}
-                            </div>
+                            </button>
                             <div style={{ flex: 1 }}>
                                 <div className={`task-title ${task.status}`}>{task.title}</div>
                                 {task.description && <div className="task-desc">{task.description}</div>}
@@ -265,9 +289,9 @@ export default function DailyView() {
                                 {!isFinalized && (
                                     <>
                                         <button className={`btn btn-sm ${task.status === 'failed' ? 'btn-danger' : 'btn-ghost'}`}
-                                            onClick={() => markTaskFailed(task.id)} title="Mark as failed">❌</button>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => openEditTask(task)}>✏️</button>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => deleteDailyTask(task.id)}>🗑️</button>
+                                            onClick={() => markTaskFailed(task.id)} title="Mark as failed" aria-label="Mark as failed">❌</button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => openEditTask(task)} aria-label="Edit task">✏️</button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => deleteDailyTask(task.id)} aria-label="Delete task">🗑️</button>
                                     </>
                                 )}
                                 {task.status === 'failed' && isFinalized && <span className="badge badge-red">Failed</span>}
@@ -333,6 +357,18 @@ export default function DailyView() {
                             <button className="btn btn-ghost" onClick={() => setShowConfig(false)}>{t('common.cancel')}</button>
                             <button className="btn btn-primary" onClick={handleSaveConfig}>{t('daily.saveSettings')}</button>
                         </div>
+                    </div>
+                </Modal>
+            )}
+
+            {showFinalizeConfirm && (
+                <Modal title={t('daily.finalizeDay')} onClose={() => setShowFinalizeConfirm(false)}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
+                        {t('daily.pendingConfirm', { count: pendingCount })}
+                    </p>
+                    <div className="modal-footer">
+                        <button className="btn btn-ghost" onClick={() => setShowFinalizeConfirm(false)}>{t('common.cancel')}</button>
+                        <button className="btn btn-danger" onClick={confirmFinalizeWithPending}>{t('daily.finalizeDay')}</button>
                     </div>
                 </Modal>
             )}

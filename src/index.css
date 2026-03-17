@@ -3,11 +3,31 @@
    ============================================ */
 
 :root {
+  /* Typography */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.75rem;
+  --text-4xl: 2rem;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+
   /* Color Palette */
   --bg-primary: #0f0c29;
   --bg-secondary: #1a1740;
   --bg-card: rgba(255, 255, 255, 0.05);
-  --bg-card-hover: rgba(255, 255, 255, 0.09);
+  --bg-card-hover: rgba(255, 255, 255, 0.08);
   --border: rgba(255, 255, 255, 0.1);
   --border-light: rgba(255, 255, 255, 0.06);
 
@@ -38,10 +58,10 @@
   --radius-xl: 28px;
 
   /* Shadows */
-  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.3);
-  --shadow-glow-purple: 0 0 30px rgba(124, 58, 237, 0.25);
-  --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.3);
-  --shadow-glow-red: 0 0 20px rgba(239, 68, 68, 0.3);
+  --shadow-card: 0 10px 28px rgba(0, 0, 0, 0.28);
+  --shadow-glow-purple: 0 0 16px rgba(124, 58, 237, 0.22);
+  --shadow-glow-green: 0 0 12px rgba(16, 185, 129, 0.28);
+  --shadow-glow-red: 0 0 12px rgba(239, 68, 68, 0.28);
 }
 
 * {
@@ -131,7 +151,7 @@ body {
   padding: 10px 14px;
   border-radius: var(--radius-md);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   text-decoration: none;
   transition: all 0.2s ease;
@@ -155,7 +175,7 @@ body {
 
 .main-content {
   flex: 1;
-  padding: 32px;
+  padding: var(--space-8);
   overflow-y: auto;
   min-height: 100vh;
 }
@@ -167,7 +187,7 @@ body {
 
 .page-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 32px;
+  font-size: var(--text-4xl);
   font-weight: 800;
   letter-spacing: -0.5px;
   background: var(--gradient-purple);
@@ -178,8 +198,10 @@ body {
 
 .page-subtitle {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: var(--text-sm);
   margin-top: 4px;
+  max-width: 62ch;
+  line-height: 1.5;
 }
 
 /* ─── Cards ───────────────────────────────────── */
@@ -187,7 +209,7 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: var(--space-6);
   backdrop-filter: blur(16px);
   transition: all 0.25s ease;
 }
@@ -209,12 +231,12 @@ body {
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   padding: 10px 18px;
   border-radius: var(--radius-md);
   font-family: 'Nunito', sans-serif;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--text-sm);
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -224,12 +246,12 @@ body {
 .btn-primary {
   background: var(--gradient-purple);
   color: white;
-  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.24);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3);
 }
 
 .btn-teal {
@@ -298,6 +320,18 @@ body {
   transform: none !important;
 }
 
+.btn:focus-visible,
+.nav-link:focus-visible,
+.chip:focus-visible,
+.lang-switch:focus-visible,
+.mobile-header-btn:focus-visible,
+.bottom-nav-link:focus-visible,
+.modal-close:focus-visible,
+.task-checkbox:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 2px;
+}
+
 /* ─── Form Elements ───────────────────────────── */
 .form-group {
   display: flex;
@@ -306,7 +340,7 @@ body {
 }
 
 label {
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -323,7 +357,7 @@ select {
   padding: 10px 14px;
   color: var(--text-primary);
   font-family: 'Nunito', sans-serif;
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 500;
   transition: all 0.2s;
   outline: none;
@@ -366,7 +400,7 @@ textarea {
   background: #1a1740;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: 32px;
+  padding: var(--space-8);
   width: 100%;
   max-width: 480px;
   animation: slideUp 0.25s ease;
@@ -375,7 +409,7 @@ textarea {
 
 .modal-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 22px;
+  font-size: var(--text-2xl);
   font-weight: 800;
   margin-bottom: 24px;
 }
@@ -414,7 +448,7 @@ textarea {
   gap: 4px;
   padding: 3px 10px;
   border-radius: 99px;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
 }
 
@@ -543,6 +577,7 @@ textarea {
   height: 26px;
   border-radius: 50%;
   border: 2px solid var(--border);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -568,7 +603,7 @@ textarea {
 .task-title {
   flex: 1;
   font-weight: 700;
-  font-size: 15px;
+  font-size: var(--text-md);
 }
 
 .task-title.completed {
@@ -582,7 +617,7 @@ textarea {
 }
 
 .task-desc {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   margin-top: 2px;
 }
@@ -633,6 +668,11 @@ textarea {
   opacity: 1;
 }
 
+.kid-card:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 2px;
+}
+
 .kid-avatar {
   font-size: 48px;
   margin-bottom: 12px;
@@ -643,7 +683,7 @@ textarea {
 
 .kid-name {
   font-family: 'Outfit', sans-serif;
-  font-size: 20px;
+  font-size: var(--text-xl);
   font-weight: 800;
   text-align: center;
   margin-bottom: 12px;
@@ -651,7 +691,7 @@ textarea {
 
 .kid-balance {
   font-family: 'Outfit', sans-serif;
-  font-size: 28px;
+  font-size: var(--text-3xl);
   font-weight: 800;
   text-align: center;
   background: var(--gradient-amber);
@@ -687,13 +727,13 @@ textarea {
 }
 
 .empty-state-title {
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 700;
   color: var(--text-secondary);
 }
 
 .empty-state-desc {
-  font-size: 14px;
+  font-size: var(--text-sm);
   max-width: 300px;
 }
 
@@ -774,6 +814,21 @@ textarea {
   border-radius: 99px;
   background: var(--gradient-green);
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  margin-bottom: var(--space-3);
+}
+
+.section-note {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: var(--text-xs);
+  margin-left: var(--space-2);
 }
 
 /* ─── Date nav ────────────────────────────────── */
@@ -885,7 +940,7 @@ textarea {
   }
 
   .page-title {
-    font-size: 24px;
+    font-size: var(--text-3xl);
   }
 
   .card-grid {
@@ -1187,12 +1242,12 @@ textarea {
 
 /* ─── Inline Toast ────────────────────────────── */
 .toast-inline {
-  padding: 12px 18px;
+  padding: var(--space-3) var(--space-5);
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: var(--radius-md);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--accent-green);
   animation: fadeIn 0.25s ease;
 }
@@ -1355,15 +1410,16 @@ textarea {
     gap: 4px;
     color: var(--text-secondary);
     text-decoration: none;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
-    padding: 6px 12px;
+    padding: 7px 12px;
     border-radius: var(--radius-md);
     transition: all 0.2s;
   }
 
   .bottom-nav-link.active {
     color: white;
+    background: rgba(124, 58, 237, 0.2);
   }
   
   .bottom-nav-link.active .bottom-nav-icon {
@@ -1375,13 +1431,13 @@ textarea {
   }
 
   .bottom-nav-icon {
-    font-size: 20px;
+    font-size: 18px;
     transition: transform 0.2s;
   }
   
   /* Additional tweaks for mobile */
   .page-title {
-    font-size: 24px;
+    font-size: var(--text-3xl);
   }
   
   .kid-hero-card {
@@ -1434,5 +1490,16 @@ textarea {
     right: 24px;
     left: auto;
     max-width: 360px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

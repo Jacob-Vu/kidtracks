@@ -29,11 +29,11 @@ export default function InstallPrompt() {
                 </div>
                 <div className="row center" style={{ gap: 8 }}>
                     {!isIOS && (
-                        <button className="btn btn-primary btn-sm" onClick={handleInstall}>
+                        <button className="btn btn-primary btn-sm" onClick={handleInstall} aria-label={t('pwa.installBtn', 'Install')}>
                             {t('pwa.installBtn', 'Install')}
                         </button>
                     )}
-                    <button className="btn btn-ghost btn-icon" onClick={dismissPrompt} style={{ padding: 4 }}>
+                    <button className="btn btn-ghost btn-icon" onClick={dismissPrompt} style={{ padding: 4 }} aria-label={t('common.close')}>
                         ✕
                     </button>
                 </div>

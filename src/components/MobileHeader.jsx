@@ -13,7 +13,7 @@ export default function MobileHeader({ title }) {
             {isHome ? (
                 <div className="mobile-header-logo">⭐</div>
             ) : (
-                <button className="mobile-header-btn" onClick={() => navigate(-1)} title={t('common.back', 'Back')}>
+                <button className="mobile-header-btn" onClick={() => navigate(-1)} title={t('common.back')} aria-label={t('common.back')}>
                     ❮
                 </button>
             )}

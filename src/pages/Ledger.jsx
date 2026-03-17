@@ -80,7 +80,7 @@ export default function Ledger() {
                         </div>
                         <div style={{ flex: 1, textAlign: 'center' }}>
                             <div style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
-                                😞 Penalties
+                                😞 {t('ledger.penalties')}
                             </div>
                             <div className="money-negative" style={{ fontFamily: 'Outfit, sans-serif', fontSize: 28 }}>{formatMoney(totalPenalties)}</div>
                         </div>
@@ -117,10 +117,10 @@ export default function Ledger() {
                 <Modal title={t('ledger.manualTitle')} onClose={() => setShowAdd(false)}>
                     <div className="col">
                         <div className="form-group">
-                            <label>Type</label>
+                            <label>{t('ledger.type')}</label>
                             <div className="chip-group">
-                                <button className={`chip ${!isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(false)}>🎁 {t('ledger.addTransaction').split(' ')[0]}</button>
-                                <button className={`chip ${isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(true)}>💸 Deduct</button>
+                                <button className={`chip ${!isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(false)}>🎁 {t('ledger.add')}</button>
+                                <button className={`chip ${isDeduction ? 'selected' : ''}`} onClick={() => setIsDeduction(true)}>💸 {t('ledger.deduct')}</button>
                             </div>
                         </div>
                         <div className="form-group">

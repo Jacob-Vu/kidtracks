@@ -1,10 +1,14 @@
 import { useEffect } from 'react'
-import { saveDoc, removeDoc, subscribeToCol, batchDeleteByKidId } from '../firebase/db'
+import { subscribeToCol } from '../firebase/db'
+import { getFunctions, httpsCallable } from 'firebase/functions'
+import { app } from '../firebase/config'
 import useStore from '../store/useStore'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../i18n/I18nContext'
 import { getE2EState, isE2EMode, subscribeToE2EState, updateE2EState } from '../testing/e2e'
 
 const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
+const functions = getFunctions(app, 'asia-southeast1')
 
 export function useFireSync() {
     const { familyId, user } = useAuth()
@@ -42,6 +46,7 @@ export function useFireSync() {
             if (err?.code === 'permission-denied') { setError('permission-denied'); setIsLoading(false) }
         }
 
+        // Real-time reads remain unchanged for immediate UI updates
         const unsubKids = subscribeToCol(familyId, 'kids', (docs) => { setKids(docs); loaded.kids = true; checkAllLoaded() }, handleError)
         const unsubTemplates = subscribeToCol(familyId, 'templates', (docs) => { setTemplates(docs); loaded.templates = true; checkAllLoaded() }, handleError)
         const unsubTasks = subscribeToCol(familyId, 'dailyTasks', (docs) => { setDailyTasks(docs); loaded.dailyTasks = true; checkAllLoaded() }, handleError)
@@ -54,7 +59,15 @@ export function useFireSync() {
 
 export function useFireActions() {
     const { familyId } = useAuth()
+    const { lang } = useLang()
     const store = useStore()
+
+    const getTemplateDescription = (template) => {
+        if (template?.descriptions?.[lang]) return template.descriptions[lang]
+        if (template?.descriptions?.en) return template.descriptions.en
+        if (template?.descriptions?.vi) return template.descriptions.vi
+        return template?.description || ''
+    }
 
     if (isE2EMode()) {
         return {
@@ -97,12 +110,12 @@ export function useFireActions() {
                     },
                 }))
             },
-            addTemplate: async (title, description) => {
+            addTemplate: async (title, descriptionByLang) => {
                 updateE2EState((state) => ({
                     ...state,
                     collections: {
                         ...state.collections,
-                        templates: [...state.collections.templates, store.buildTemplate(title, description)],
+                        templates: [...state.collections.templates, store.buildTemplate(title, descriptionByLang)],
                     },
                 }))
             },
@@ -135,7 +148,8 @@ export function useFireActions() {
                         .map((task) => ({
                             id: generateId(),
                             title: task.title,
-                            description: task.description,
+                            descriptions: { en: task.description || '', vi: task.description || '' },
+                            description: task.description || '',
                             assignedKidIds: [],
                             importedFrom: pack.id,
                         }))
@@ -184,7 +198,7 @@ export function useFireActions() {
                             if (assigned && assigned.length > 0 && !assigned.includes(kidId)) return false
                             return !existingTitles.includes(tmpl.title)
                         })
-                        .map((tmpl) => store.buildDailyTask(kidId, date, tmpl.title, tmpl.description))
+                        .map((tmpl) => store.buildDailyTask(kidId, date, tmpl.title, getTemplateDescription(tmpl)))
 
                     return {
                         ...state,
@@ -207,7 +221,7 @@ export function useFireActions() {
                             if (!assigned || !assigned.includes(kidId)) return false
                             return !existingTitles.includes(tmpl.title)
                         })
-                        .map((tmpl) => store.buildDailyTask(kidId, date, tmpl.title, tmpl.description))
+                        .map((tmpl) => store.buildDailyTask(kidId, date, tmpl.title, getTemplateDescription(tmpl)))
 
                     if (tasks.length === 0) return state
 
@@ -309,102 +323,124 @@ export function useFireActions() {
 
     return {
         addKid: async (name, avatar) => {
-            const kid = { id: Math.random().toString(36).substr(2, 9) + Date.now().toString(36), displayName: name, name, avatar: avatar || '🧒', balance: 0 }
-            await saveDoc(familyId, 'kids', kid)
+            const id = Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            const call = httpsCallable(functions, 'addKid');
+            await call({ familyId, name, avatar, id });
         },
-        updateKid: async (id, updates) => {
-            const updated = store.buildKidUpdate(id, updates)
-            if (updated) await saveDoc(familyId, 'kids', updated)
-        },
-        deleteKid: async (id) => {
-            await removeDoc(familyId, 'kids', id)
-            await batchDeleteByKidId(familyId, id)
-        },
-        addTemplate: async (title, description) => {
-            await saveDoc(familyId, 'templates', store.buildTemplate(title, description))
-        },
-        updateTemplate: async (id, updates) => {
-            const tmpl = store.templates.find((t) => t.id === id)
-            if (tmpl) await saveDoc(familyId, 'templates', { ...tmpl, ...updates })
-        },
-        deleteTemplate: async (id) => removeDoc(familyId, 'templates', id),
-        importDefaultPack: async (pack, selectedTasks) => {
-            const tasksToImport = selectedTasks || pack.tasks
-            const existingTitles = store.templates.map((t) => t.title)
-            const newTasks = tasksToImport.filter((t) => !existingTitles.includes(t.title))
-            const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
-            await Promise.all(
-                newTasks.map((t) =>
-                    saveDoc(familyId, 'templates', {
-                        id: generateId(),
-                        title: t.title,
-                        description: t.description,
-                        assignedKidIds: [],
-                        importedFrom: pack.id,
-                    })
-                )
-            )
-            return newTasks.length
-        },
-        assignTemplateToKids: async (templateId, kidIds) => {
-            const tmpl = store.templates.find((t) => t.id === templateId)
-            if (tmpl) await saveDoc(familyId, 'templates', { ...tmpl, assignedKidIds: kidIds })
-        },
-        addDailyTask: async (kidId, date, title, description) => {
-            await saveDoc(familyId, 'dailyTasks', store.buildDailyTask(kidId, date, title, description))
-        },
-        loadTemplatesForDay: async (kidId, date) => {
-            const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title)
-            const tasks = store.templates.filter((t) => {
-                const assigned = t.assignedKidIds
-                if (assigned && assigned.length > 0 && !assigned.includes(kidId)) return false
-                return !existing.includes(t.title)
-            }).map((t) => store.buildDailyTask(kidId, date, t.title, t.description))
-
-            await Promise.all(tasks.map((t) => saveDoc(familyId, 'dailyTasks', t)))
-        },
-        syncAssignedTemplatesForDay: async (kidId, date) => {
-            const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title)
-            const tasks = store.templates.filter((t) => {
-                const assigned = t.assignedKidIds
-                if (!assigned || !assigned.includes(kidId)) return false
-                return !existing.includes(t.title)
-            }).map((t) => store.buildDailyTask(kidId, date, t.title, t.description))
-
-            if (tasks.length > 0) {
-                await Promise.all(tasks.map((t) => saveDoc(familyId, 'dailyTasks', t)))
+        updateKid: async (kidId, updates) => {
+            const updated = store.buildKidUpdate(kidId, updates)
+            if (updated) {
+                const call = httpsCallable(functions, 'updateKid');
+                await call({ familyId, kidId, updates: updated });
             }
         },
-        updateDailyTask: async (id, updates) => {
-            const task = store.dailyTasks.find((t) => t.id === id)
-            if (task) await saveDoc(familyId, 'dailyTasks', { ...task, ...updates })
+        deleteKid: async (kidId) => {
+            const call = httpsCallable(functions, 'deleteKid');
+            await call({ familyId, kidId });
         },
-        deleteDailyTask: async (id) => removeDoc(familyId, 'dailyTasks', id),
-        toggleTaskStatus: async (id) => {
-            const updated = store.buildTaskToggle(id)
-            if (updated) await saveDoc(familyId, 'dailyTasks', updated)
+        addTemplate: async (title, descriptionByLang) => {
+            const template = store.buildTemplate(title, descriptionByLang);
+            const call = httpsCallable(functions, 'addTemplate');
+            await call({ familyId, template });
         },
-        markTaskFailed: async (id) => {
-            const updated = store.buildTaskFailed(id)
-            if (updated) await saveDoc(familyId, 'dailyTasks', updated)
+        updateTemplate: async (templateId, updates) => {
+            const call = httpsCallable(functions, 'updateTemplate');
+            await call({ familyId, templateId, updates });
+        },
+        deleteTemplate: async (templateId) => {
+            const call = httpsCallable(functions, 'deleteTemplate');
+            await call({ familyId, templateId });
+        },
+        importDefaultPack: async (pack, selectedTasks) => {
+            const call = httpsCallable(functions, 'importDefaultPack');
+            const result = await call({ familyId, pack, selectedTasks });
+            return result.data.count;
+        },
+        assignTemplateToKids: async (templateId, kidIds) => {
+            const call = httpsCallable(functions, 'assignTemplateToKids');
+            await call({ familyId, templateId, kidIds });
+        },
+        addDailyTask: async (kidId, date, title, description) => {
+            const task = store.buildDailyTask(kidId, date, title, description);
+            const call = httpsCallable(functions, 'addDailyTask');
+            await call({ familyId, task });
+        },
+        loadTemplatesForDay: async (kidId, date) => {
+            const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title);
+            const tasksToCreate = store.templates.filter((t) => {
+                const assigned = t.assignedKidIds;
+                if (assigned && assigned.length > 0 && !assigned.includes(kidId)) return false;
+                return !existing.includes(t.title);
+            }).map((t) => store.buildDailyTask(kidId, date, t.title, getTemplateDescription(t)));
+
+            if (tasksToCreate.length > 0) {
+                const call = httpsCallable(functions, 'loadTemplatesForDay');
+                await call({ familyId, tasksToCreate });
+            }
+        },
+        syncAssignedTemplatesForDay: async (kidId, date) => {
+            const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title);
+            const tasksToCreate = store.templates.filter((t) => {
+                const assigned = t.assignedKidIds;
+                if (!assigned || !assigned.includes(kidId)) return false;
+                return !existing.includes(t.title);
+            }).map((t) => store.buildDailyTask(kidId, date, t.title, getTemplateDescription(t)));
+
+            if (tasksToCreate.length > 0) {
+                const call = httpsCallable(functions, 'syncAssignedTemplatesForDay');
+                await call({ familyId, tasksToCreate });
+            }
+        },
+        updateDailyTask: async (taskId, updates) => {
+            const call = httpsCallable(functions, 'updateDailyTask');
+            await call({ familyId, taskId, updates });
+        },
+        deleteDailyTask: async (taskId) => {
+            const call = httpsCallable(functions, 'deleteDailyTask');
+            await call({ familyId, taskId });
+        },
+        toggleTaskStatus: async (taskId) => {
+            const updated = store.buildTaskToggle(taskId);
+            if (updated) {
+                const call = httpsCallable(functions, 'updateDailyTask');
+                await call({ familyId, taskId, updates: updated });
+            }
+        },
+        markTaskFailed: async (taskId) => {
+            const updated = store.buildTaskFailed(taskId);
+            if (updated) {
+                const call = httpsCallable(functions, 'updateDailyTask');
+                await call({ familyId, taskId, updates: updated });
+            }
         },
         setDayConfig: async (kidId, date, rewardAmount, penaltyAmount) => {
-            await saveDoc(familyId, 'dayConfigs', store.buildDayConfig(kidId, date, rewardAmount, penaltyAmount))
+            const config = store.buildDayConfig(kidId, date, rewardAmount, penaltyAmount);
+            const call = httpsCallable(functions, 'setDayConfig');
+            await call({ familyId, config });
         },
         finalizeDay: async (kidId, date) => {
-            const result = store.computeFinalize(kidId, date)
-            if (!result.success) return result
-            await Promise.all([
-                saveDoc(familyId, 'kids', result.updatedKid),
-                saveDoc(familyId, 'dayConfigs', result.updatedConfig),
-                ...result.ledgerEntries.map((e) => saveDoc(familyId, 'ledger', e)),
-            ])
-            return result
+            const result = store.computeFinalize(kidId, date);
+            if (!result.success) return result;
+            
+            const call = httpsCallable(functions, 'finalizeDay');
+            await call({ 
+                familyId, 
+                updatedKid: result.updatedKid, 
+                updatedConfig: result.updatedConfig, 
+                ledgerEntries: result.ledgerEntries 
+            });
+            return result;
         },
         addManualTransaction: async (kidId, amount, label) => {
-            const result = store.buildManualTransaction(kidId, amount, label)
-            if (!result) return
-            await Promise.all([saveDoc(familyId, 'ledger', result.entry), saveDoc(familyId, 'kids', result.updatedKid)])
+            const result = store.buildManualTransaction(kidId, amount, label);
+            if (!result) return;
+
+            const call = httpsCallable(functions, 'addManualTransaction');
+            await call({ 
+                familyId, 
+                updatedKid: result.updatedKid, 
+                entry: result.entry 
+            });
         },
     }
 }
