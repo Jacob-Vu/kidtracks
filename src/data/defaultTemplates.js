@@ -16,10 +16,8 @@ const DEFAULT_PACKS = [
             { title: 'Brush teeth (morning)', description: 'Brush for 2 minutes after breakfast', descriptionVi: 'Đánh răng 2 phút sau bữa sáng' },
             { title: 'Brush teeth (evening)', description: 'Brush before bedtime', descriptionVi: 'Đánh răng trước khi đi ngủ' },
             { title: 'Pick up toys', description: 'Put all toys back in their place', descriptionVi: 'Cất gọn tất cả đồ chơi về đúng chỗ' },
-            { title: 'Say please & thank you', description: 'Use polite words all day', descriptionVi: 'Dùng lời nói lịch sự cả ngày' },
-            { title: 'Drink water', description: 'Finish your water bottle today', descriptionVi: 'Uống hết bình nước hôm nay' },
             { title: 'Wash hands before meals', description: 'Use soap and water', descriptionVi: 'Rửa tay bằng xà phòng trước bữa ăn' },
-            { title: 'Put dirty clothes in basket', description: 'After changing clothes', descriptionVi: 'Bỏ quần áo bẩn vào giỏ sau khi thay đồ' },
+            { title: 'Drink water', description: 'Finish your water bottle today', descriptionVi: 'Uống hết bình nước hôm nay' },
         ],
     },
     {
@@ -35,9 +33,7 @@ const DEFAULT_PACKS = [
             { title: 'Pack school bag', description: "Check tomorrow's schedule and pack books", descriptionVi: 'Kiểm tra thời khóa biểu và soạn cặp cho ngày mai' },
             { title: 'Do homework', description: 'Complete all assigned homework', descriptionVi: 'Hoàn thành đầy đủ bài tập được giao' },
             { title: 'Read for 15 minutes', description: 'Read a book or story of your choice', descriptionVi: 'Đọc sách hoặc truyện trong 15 phút' },
-            { title: 'Practice handwriting', description: 'Write 1 page neatly', descriptionVi: 'Luyện viết nắn nót 1 trang' },
             { title: 'Brush teeth (AM & PM)', description: 'Morning and evening', descriptionVi: 'Đánh răng buổi sáng và buổi tối' },
-            { title: 'Prepare school uniform', description: 'Lay out clothes for tomorrow', descriptionVi: 'Chuẩn bị đồng phục cho ngày mai' },
         ],
     },
     {
@@ -53,10 +49,7 @@ const DEFAULT_PACKS = [
             { title: 'Complete all homework', description: 'Check each subject carefully', descriptionVi: 'Hoàn thành bài tập và kiểm tra kỹ từng môn' },
             { title: 'Read for 30 minutes', description: 'Books, articles, or educational content', descriptionVi: 'Đọc sách/tài liệu học tập trong 30 phút' },
             { title: 'Help with 1 household chore', description: 'Ask parent what needs doing', descriptionVi: 'Phụ giúp ít nhất 1 việc nhà' },
-            { title: "Review tomorrow's schedule", description: 'Prepare materials and clothes', descriptionVi: 'Xem lịch ngày mai và chuẩn bị đồ dùng/quần áo' },
             { title: 'Limit screen time', description: 'Max 1 hour of entertainment screens', descriptionVi: 'Giới hạn thời gian giải trí màn hình tối đa 1 giờ' },
-            { title: 'Practice a skill', description: 'Music, art, coding, or any hobby', descriptionVi: 'Luyện một kỹ năng: nhạc, vẽ, code hoặc sở thích khác' },
-            { title: 'Write in journal', description: '3 things you learned or are grateful for', descriptionVi: 'Viết nhật ký 3 điều đã học hoặc biết ơn' },
         ],
     },
     {
@@ -71,9 +64,8 @@ const DEFAULT_PACKS = [
             { title: 'Morning exercise', description: '10 minutes of stretches or jumping jacks', descriptionVi: 'Tập thể dục buổi sáng 10 phút' },
             { title: 'Practice sports', description: 'Football, basketball, or any sport - 30 min', descriptionVi: 'Chơi thể thao (bóng đá/bóng rổ...) trong 30 phút' },
             { title: 'Shower after play', description: 'Clean up after sports or outdoor play', descriptionVi: 'Tắm sạch sau khi chơi thể thao/ngoài trời' },
-            { title: 'Tidy your room', description: 'Put things in their proper place', descriptionVi: 'Dọn phòng, để đồ đúng vị trí' },
             { title: 'Drink enough water', description: 'At least 6 glasses throughout the day', descriptionVi: 'Uống đủ nước, ít nhất 6 ly/ngày' },
-            { title: 'Help carry groceries', description: 'Assist parent with shopping bags', descriptionVi: 'Phụ ba mẹ mang đồ đi chợ' },
+            { title: 'Tidy your room', description: 'Put things in their proper place', descriptionVi: 'Dọn phòng, để đồ đúng vị trí' },
         ],
     },
     {
@@ -90,7 +82,6 @@ const DEFAULT_PACKS = [
             { title: 'Skincare routine', description: 'Wash face morning and night', descriptionVi: 'Rửa mặt sáng và tối' },
             { title: 'Organize desk & study area', description: 'Keep your workspace tidy', descriptionVi: 'Sắp xếp bàn học và góc học tập gọn gàng' },
             { title: 'Drink enough water', description: 'At least 6 glasses throughout the day', descriptionVi: 'Uống đủ nước, ít nhất 6 ly/ngày' },
-            { title: 'Creative time', description: 'Draw, paint, write, or craft for 20 min', descriptionVi: 'Dành 20 phút cho hoạt động sáng tạo' },
         ],
     },
     {
@@ -107,7 +98,6 @@ const DEFAULT_PACKS = [
             { title: 'Sweep the floor', description: 'Kitchen or living room', descriptionVi: 'Quét sàn bếp hoặc phòng khách' },
             { title: 'Take out trash', description: 'When the bin is full', descriptionVi: 'Đổ rác khi thùng đầy' },
             { title: 'Water the plants', description: 'Check which plants need water', descriptionVi: 'Tưới cây và kiểm tra cây nào cần nước' },
-            { title: 'Fold laundry', description: 'Fold your own clean clothes', descriptionVi: 'Gấp quần áo sạch của mình' },
         ],
     },
 ]

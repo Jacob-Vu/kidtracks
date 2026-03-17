@@ -10,7 +10,6 @@ import Modal from '../components/Modal'
 import { formatMoney } from '../utils/format'
 import DayJournal from '../components/DayJournal'
 import VoiceMicButton from '../components/VoiceMicButton'
-import TemplatePickerModal from '../components/TemplatePickerModal'
 import { trackTemplateImported } from '../hooks/useAnalytics'
 
 const REWARD_PRESETS = [10000, 20000, 50000]
@@ -48,7 +47,6 @@ export default function DailyView() {
     const [routineBanner, setRoutineBanner] = useState(0) // count of auto-loaded tasks
     const [routineSaved, setRoutineSaved] = useState(false)
     const [showClearConfirm, setShowClearConfirm] = useState(false)
-    const [showTemplatePicker, setShowTemplatePicker] = useState(false)
     const autoLoadKeyRef = useRef(null)
 
     useEffect(() => {
@@ -296,7 +294,7 @@ export default function DailyView() {
             )}
 
             <div className="row wrap" style={{ marginBottom: 20, gap: 10 }}>
-                {isParent && <button className="btn btn-teal" onClick={() => setShowTemplatePicker(true)} disabled={isFinalized}>{t('daily.loadTemplates')}</button>}
+                {isParent && <button className="btn btn-teal" onClick={() => navigate(`/daily/${selectedKidId}/pick-templates?date=${currentDate}`)} disabled={isFinalized}>{t('daily.loadTemplates')}</button>}
                 <button className="btn btn-primary" onClick={openAddTask} disabled={isFinalized}>{t('daily.addTask')}</button>
                 {tasks.length > 0 && !isFinalized && (
                     <button
@@ -459,14 +457,6 @@ export default function DailyView() {
                 <DayJournal kidId={selectedKidId} date={currentDate} role="parent" kidName={kid.displayName || kid.name} />
             )}
 
-            {showTemplatePicker && (
-                <TemplatePickerModal
-                    kidId={selectedKidId}
-                    date={currentDate}
-                    existingTaskTitles={tasks.map((t) => t.title)}
-                    onClose={() => setShowTemplatePicker(false)}
-                />
-            )}
         </div>
     )
 }

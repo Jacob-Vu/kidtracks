@@ -62,9 +62,13 @@ test('parent can manage templates, tasks, and ledger', async ({ page }) => {
     await page.getByRole('link', { name: /daily tasks/i }).click()
     await expect(page.getByRole('heading', { name: /daily tasks/i })).toBeVisible()
 
-    await page.getByRole('button', { name: /load templates/i }).click()
+    await page.getByRole('button', { name: /choose from templates/i }).click()
+    await expect(page).toHaveURL(/pick-templates/)
     await expect(page.getByText('Make bed')).toBeVisible()
     await expect(page.getByText('Pack school bag')).toBeVisible()
+    await page.getByRole('button', { name: /select all/i }).click()
+    await page.getByRole('button', { name: /add \d/i }).click()
+    await expect(page).toHaveURL(/\/daily\/kid-1$/)
 
     await page.getByRole('button', { name: /add task/i }).click()
     await page.getByPlaceholder(/what needs to be done/i).fill('Brush teeth')

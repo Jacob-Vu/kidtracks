@@ -11,6 +11,7 @@ import Ledger from './pages/Ledger'
 import Login from './pages/Login'
 import KidDashboard from './pages/KidDashboard'
 import KidProfile from './pages/KidProfile'
+import TemplatePickerPage from './pages/TemplatePickerPage'
 import KidLayout from './layouts/KidLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import MobileHeader from './components/MobileHeader'
@@ -118,6 +119,7 @@ function ParentLayout() {
             <Route path="/templates" element={<Templates />} />
             <Route path="/daily" element={<DailyView />} />
             <Route path="/daily/:kidId" element={<DailyView />} />
+            <Route path="/daily/:kidId/pick-templates" element={<TemplatePickerPage />} />
             <Route path="/ledger" element={<Ledger />} />
             <Route path="/ledger/:kidId" element={<Ledger />} />
           </Routes>

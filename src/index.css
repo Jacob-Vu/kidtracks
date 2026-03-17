@@ -1974,6 +1974,38 @@ textarea {
   max-width: 760px;
 }
 
+/* Template Picker full-page layout */
+.tpicker-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.tpicker-page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tpicker-page-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: var(--text-xl);
+  font-weight: 800;
+  margin: 0;
+}
+
+.tpicker-page-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
 .tpicker-filters {
   display: flex;
   flex-direction: column;
@@ -2013,8 +2045,7 @@ textarea {
 .tpicker-body {
   display: flex;
   gap: 16px;
-  min-height: 260px;
-  max-height: 400px;
+  min-height: 320px;
 }
 
 .tpicker-list {
@@ -2100,7 +2131,7 @@ textarea {
   margin: 0 0 8px;
 }
 
-.tpicker-preview-en {
+.tpicker-preview-secondary {
   font-size: 11.5px;
   color: var(--text-muted);
   font-style: italic;
