@@ -7,6 +7,7 @@ import {
     linkWithCredential,
     linkWithPopup,
     reauthenticateWithCredential,
+    sendPasswordResetEmail,
     signInWithCustomToken,
     signInWithEmailAndPassword,
     signInWithPopup,
@@ -98,6 +99,10 @@ export const signUpParentEmail = async (email, password) => {
     return { isNew: true, user: result.user }
 }
 
+export const sendParentPasswordReset = async (email) => {
+    await sendPasswordResetEmail(auth, email)
+}
+
 export const signInParentEmail = async (email, password) => {
     const result = await signInWithEmailAndPassword(auth, email, password)
     return getProfileState(result.user)
@@ -119,13 +124,26 @@ export const signInParentSimple = async (username, displayName) => {
         return { isNew: !getE2EState().profile?.familyId, user }
     }
 
-    const call = httpsCallable(functions, 'signInParentSimple')
-    const result = await call({ username, displayName })
-    const token = result.data?.token
-    if (!token) throw new Error('Unable to start simple login.')
+    // Synthetic email/password — no Cloud Function or IAM role needed.
+    const syntheticEmail = `${username}@parent.kidstrack`
+    const syntheticPassword = `kidstrack_simple_${username}_v1`
 
-    const signInResult = await signInWithCustomToken(auth, token)
-    return { isNew: !!result.data?.isNew, user: signInResult.user }
+    try {
+        const result = await signInWithEmailAndPassword(auth, syntheticEmail, syntheticPassword)
+        return getProfileState(result.user)
+    } catch (err) {
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+            const result = await createUserWithEmailAndPassword(auth, syntheticEmail, syntheticPassword)
+            // Mark profile so Dashboard can detect this is a simple (no real email) account.
+            await setDoc(doc(db, 'userProfiles', result.user.uid), {
+                role: 'parent',
+                simpleLogin: true,
+                simpleUsername: username,
+            }, { merge: true })
+            return { isNew: true, user: result.user }
+        }
+        throw err
+    }
 }
 
 export const createFamily = async (user, familyName) => {
@@ -157,15 +175,18 @@ export const createFamily = async (user, familyName) => {
         parentUids: [user.uid],
         createdAt: new Date().toISOString(),
     })
+    // Synthetic simple-login emails (@parent.kidstrack) must not be stored
+    // as real email — they are internal identifiers, not contactable addresses.
+    const isRealEmail = user.email && !user.email.endsWith('@parent.kidstrack')
     await setDoc(doc(db, 'userProfiles', user.uid), {
         role: 'parent',
         familyId,
         displayName: user.displayName || 'Parent',
-        email: user.email || null,
+        email: isRealEmail ? user.email : null,
     }, { merge: true })
 
-    // Public lookup only available after parent has a linked email.
-    if (user.email) {
+    // Public lookup only available after parent has a real (non-synthetic) email.
+    if (isRealEmail) {
         await setDoc(doc(db, 'parentEmailLookup', sanitizeEmail(user.email)), {
             familyId,
             parentName: user.displayName || 'Parent',
@@ -320,6 +341,26 @@ export const linkParentFacebook = async (familyId) => {
     const result = await linkWithPopup(user, provider)
     await mergeParentProfile(result.user, familyId)
     return result.user
+}
+
+/**
+ * For simple-login users: swap their synthetic email/password for a real one.
+ * Uses reauthentication so it works even after a long session.
+ */
+export const upgradeSimpleParentEmail = async (simpleUsername, newEmail, newPassword, familyId) => {
+    if (isE2EMode()) {
+        setParentE2EAuth('password', newEmail)
+        return getE2EState().user
+    }
+    const user = auth.currentUser
+    if (!user) throw new Error('Not signed in')
+    const syntheticEmail = `${simpleUsername}@parent.kidstrack`
+    const syntheticPassword = `kidstrack_simple_${simpleUsername}_v1`
+    const credential = EmailAuthProvider.credential(syntheticEmail, syntheticPassword)
+    await reauthenticateWithCredential(user, credential)
+    await updateEmail(user, newEmail)
+    await updatePassword(user, newPassword)
+    await mergeParentProfile({ ...user, email: newEmail }, familyId)
 }
 
 export const linkParentEmailPassword = async (email, password, familyId) => {

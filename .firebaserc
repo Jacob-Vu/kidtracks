@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "kidtracks-e50ac"
+  },
+  "targets": {
+    "kidtracks-e50ac": {
+      "hosting": {
+        "production": [
+          "kidtracks-e50ac"
+        ]
+      }
+    }
   }
 }

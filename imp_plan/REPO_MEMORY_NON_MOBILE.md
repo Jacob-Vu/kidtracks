@@ -101,3 +101,16 @@ For future tasks, treat this file as the first-pass map before re-exploring the 
 - Validation:
   - `npm run build` passes.
   - `node -c functions/index.js` passes.
+
+## Production Deploy Memory (2026-03-17)
+- Added Firebase hosting target mapping:
+  - `.firebaserc`: target `production` -> site `kidtracks-e50ac`.
+  - `firebase.json`: Hosting now uses `"target": "production"`.
+- Added root deploy scripts:
+  - `npm run deploy:prod`
+  - `npm run deploy:prod:hosting`
+  - `npm run deploy:prod:functions`
+- Added deploy playbook:
+  - `imp_plan/FIREBASE_PROD_DEPLOY.md`
+- Known environment caveat:
+  - If CLI times out, clear proxy vars (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`) for the deploy session.

@@ -58,7 +58,7 @@ test('kid parent email input accepts the full email while editing', async ({ pag
 
     await page.goto('/login?e2e=1')
 
-    await page.getByRole('button', { name: /kid/i }).click()
+    await page.getByRole('tab', { name: /kid/i }).click()
     await expect(page.getByText(/family account:\s*saved@example\.com/i)).toBeVisible()
 
     await page.getByRole('button', { name: /change/i }).click()
@@ -132,7 +132,7 @@ test('kid can log in from the login form', async ({ page }) => {
 
     await page.goto('/login?e2e=1')
 
-    await page.getByRole('button', { name: /kid/i }).click()
+    await page.getByRole('tab', { name: /kid/i }).click()
     await page.getByPlaceholder(/dad@gmail\.com/i).fill('parent@example.com')
     await page.getByPlaceholder(/your username/i).fill('milo')
     await page.locator('input[type="password"]').first().fill('secret123')

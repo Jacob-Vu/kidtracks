@@ -314,6 +314,11 @@ body {
   border-radius: var(--radius-sm);
 }
 
+.btn--full {
+  width: 100%;
+  justify-content: center;
+}
+
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -324,6 +329,7 @@ body {
 .nav-link:focus-visible,
 .chip:focus-visible,
 .lang-switch:focus-visible,
+.login-lang-btn:focus-visible,
 .mobile-header-btn:focus-visible,
 .bottom-nav-link:focus-visible,
 .modal-close:focus-visible,
@@ -348,6 +354,8 @@ label {
 }
 
 input[type="text"],
+input[type="email"],
+input[type="password"],
 input[type="number"],
 textarea,
 select {
@@ -365,6 +373,8 @@ select {
 }
 
 input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
 input[type="number"]:focus,
 textarea:focus,
 select:focus {
@@ -1011,10 +1021,15 @@ textarea {
 }
 
 .login-logo {
-  font-size: 52px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
   margin-bottom: 8px;
-  filter: drop-shadow(0 4px 12px rgba(124, 58, 237, 0.4));
+  filter: drop-shadow(0 4px 16px rgba(124, 58, 237, 0.45));
+}
+
+.login-logo-svg {
+  width: 64px;
+  height: 64px;
 }
 
 .login-title {
@@ -1065,38 +1080,127 @@ textarea {
   box-shadow: 0 2px 10px rgba(124, 58, 237, 0.35);
 }
 
+/* Stable-height wrapper — prevents card jump when switching tabs */
+.login-content-area {
+  min-height: 320px;
+  animation: fadeIn 0.18s ease;
+}
+
 .login-panel {
   animation: fadeIn 0.2s ease;
 }
 
-.btn-google {
+.social-login-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.social-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 13px 20px;
-  background: white;
-  color: #1a1a2e;
-  border: none;
+  padding: 10px 14px;
   border-radius: var(--radius-md);
   font-family: 'Nunito', sans-serif;
-  font-weight: 800;
-  font-size: 15px;
+  font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
 }
 
-.btn-google:hover {
+.social-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-.btn-google:disabled {
+.social-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+.social-btn__icon-wrap {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.social-btn__icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.social-btn__label {
+  flex: 1;
+  text-align: center;
+  transform: translateX(-13px);
+}
+
+.social-btn--google {
+  background: #ffffff;
+  color: #1f2937;
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+}
+
+.social-btn--google .social-btn__icon-wrap {
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.social-btn--google:hover {
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.18);
+}
+
+.social-btn--apple {
+  background: linear-gradient(135deg, #1f2937, #111827);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.35);
+}
+
+.social-btn--apple .social-btn__icon-wrap {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.social-btn--apple:hover {
+  box-shadow: 0 16px 34px rgba(17, 24, 39, 0.42);
+}
+
+.social-btn--facebook {
+  background: linear-gradient(135deg, #1877f2, #0f5fd6);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(24, 119, 242, 0.35);
+}
+
+.social-btn--facebook .social-btn__icon-wrap {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.social-btn--facebook:hover {
+  box-shadow: 0 16px 34px rgba(24, 119, 242, 0.42);
+}
+
+@media (max-width: 480px) {
+  .social-btn {
+    padding: 9px 12px;
+  }
+
+  .social-btn__label {
+    transform: none;
+    text-align: left;
+  }
 }
 
 .login-error {
@@ -1121,6 +1225,113 @@ textarea {
   font-weight: 600;
   color: var(--accent-purple-light);
   margin-bottom: 4px;
+}
+
+/* ─── Login page extras ───────────────────────── */
+
+/* Spinning loader icon */
+@keyframes login-spin {
+  to { transform: rotate(360deg); }
+}
+
+.login-spin {
+  animation: login-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Success message */
+.login-success {
+  color: var(--accent-green);
+  font-size: 13px;
+  text-align: center;
+  padding: 8px 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  margin-bottom: 16px;
+}
+
+.login-error {
+  margin-bottom: 16px;
+}
+
+/* Language toggle button (login card) */
+.login-lang-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.login-lang-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+/* Secondary description text inside each mode panel */
+.login-mode-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.55;
+}
+
+/* Setup mode family illustrations row */
+.login-setup-hero {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 36px;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* Quick-start info box */
+.login-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(124, 58, 237, 0.07);
+  border: 1px solid rgba(124, 58, 237, 0.18);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* Forgot password link */
+.login-forgot {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* Sign-in / sign-up switch text */
+.login-switch-text {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Back button row */
+.login-back-btn {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* ─── Kid Sidebar Profile ─────────────────────── */

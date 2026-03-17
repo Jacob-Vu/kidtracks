@@ -50,6 +50,12 @@ const vi = {
     'login.hasAccount': 'Đã có tài khoản?',
     'login.loginLink': 'Đăng nhập',
     'login.backToChoose': 'Quay lại',
+    'login.parentPassword': 'Mật khẩu',
+    'login.forgotPassword': 'Quên mật khẩu?',
+    'login.resetSent': 'Đã gửi link đặt lại! Kiểm tra hộp thư đến.',
+    'login.simpleDesc': 'Không cần email — chỉ cần username là dùng ngay. Bạn có thể liên kết email sau để bảo vệ dữ liệu.',
+    'login.setupDesc': 'Đặt tên cho gia đình để bắt đầu. Bạn có thể đổi tên sau.',
+    'login.kidLoginDesc': 'Hỏi bố/mẹ lấy email gia đình, sau đó dùng tên đăng nhập và mật khẩu của con.',
 
     // ─── Dashboard ─────────────────────────────────
     'dash.title': '👨‍👩‍👧‍👦 Tổng quan',

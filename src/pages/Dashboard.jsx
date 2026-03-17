@@ -7,11 +7,11 @@ import { useAuth } from '../contexts/AuthContext'
 import KidAccountModal from '../components/KidAccountModal'
 import Modal from '../components/Modal'
 import { formatMoney } from '../utils/format'
-import { linkParentApple, linkParentEmailPassword, linkParentFacebook, linkParentGoogle } from '../firebase/auth'
+import { linkParentApple, linkParentEmailPassword, linkParentFacebook, linkParentGoogle, upgradeSimpleParentEmail } from '../firebase/auth'
 
 export default function Dashboard() {
     const t = useT()
-    const { user, familyId, refreshProfile } = useAuth()
+    const { user, profile, familyId, refreshProfile } = useAuth()
     const { kids } = useStore()
     const { deleteKid } = useFireActions()
     const navigate = useNavigate()
@@ -25,7 +25,11 @@ export default function Dashboard() {
     const [linkPassword, setLinkPassword] = useState('')
 
     const providerIds = (user?.providerData || []).map((p) => p.providerId)
-    const hasLinkedAccount = !!user?.email || providerIds.some((id) => ['password', 'google.com', 'apple.com', 'facebook.com'].includes(id))
+    // Simple-login users have a synthetic email (@parent.kidstrack) and are
+    // not truly "linked" until they upgrade to a real email or social account.
+    const hasLinkedAccount = !profile?.simpleLogin && (
+        !!user?.email || providerIds.some((id) => ['google.com', 'apple.com', 'facebook.com'].includes(id))
+    )
     const shouldShowLinkPrompt = kids.length > 0 && !hasLinkedAccount
 
     const handleLink = async (fn) => {
@@ -159,7 +163,11 @@ export default function Dashboard() {
                         <button
                             className="btn btn-primary"
                             disabled={linkBusy || !linkEmail.trim() || linkPassword.length < 6}
-                            onClick={() => handleLink(() => linkParentEmailPassword(linkEmail.trim(), linkPassword, familyId))}
+                            onClick={() => handleLink(() =>
+                                profile?.simpleLogin && profile?.simpleUsername
+                                    ? upgradeSimpleParentEmail(profile.simpleUsername, linkEmail.trim(), linkPassword, familyId)
+                                    : linkParentEmailPassword(linkEmail.trim(), linkPassword, familyId)
+                            )}
                         >
                             {t('dash.linkEmailBtn', 'Link email')}
                         </button>

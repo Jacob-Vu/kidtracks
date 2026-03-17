@@ -50,6 +50,12 @@ const en = {
     'login.hasAccount': 'Already have an account?',
     'login.loginLink': 'Sign in',
     'login.backToChoose': 'Back',
+    'login.parentPassword': 'Password',
+    'login.forgotPassword': 'Forgot password?',
+    'login.resetSent': 'Reset link sent! Check your inbox.',
+    'login.simpleDesc': 'No email needed — just pick a username and start. You can link an email later to protect your data.',
+    'login.setupDesc': 'Give your family a name to get started. You can change it anytime.',
+    'login.kidLoginDesc': "Ask your parent for the family email and use your own username and password.",
 
     // ─── Dashboard ─────────────────────────────────
     'dash.title': '👨‍👩‍👧‍👦 Dashboard',

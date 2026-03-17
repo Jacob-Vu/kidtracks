@@ -13,7 +13,7 @@
         }
     ],
     "hosting": {
-        "site": "kidtracks-e50ac",
+        "target": "production",
         "public": "dist",
         "ignore": [
             "firebase.json",

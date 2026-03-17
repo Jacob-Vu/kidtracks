@@ -8,6 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "deploy:prod": "npm run build && firebase deploy --project kidtracks-e50ac --only hosting:production,functions",
+    "deploy:prod:hosting": "npm run build && firebase deploy --project kidtracks-e50ac --only hosting:production",
+    "deploy:prod:functions": "firebase deploy --project kidtracks-e50ac --only functions",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
