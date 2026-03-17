@@ -10,13 +10,16 @@ import Modal from '../components/Modal'
 import CelebrationOverlay from '../components/CelebrationOverlay'
 import DayJournal from '../components/DayJournal'
 import VoiceMicButton from '../components/VoiceMicButton'
+import GoalCard from '../components/GoalCard'
+import GoalModal from '../components/GoalModal'
+import useGoalMilestones from '../hooks/useGoalMilestones'
 import { trackTaskCompleted, trackAllTasksDone, trackCelebrationShown } from '../hooks/useAnalytics'
 
 export default function KidDashboard() {
     const t = useT()
     const { profile } = useAuth()
-    const { kids, dailyTasks, dayConfigs, ledger } = useStore()
-    const { toggleTaskStatus, addDailyTask, updateDailyTask, syncAssignedTemplatesForDay, saveRoutine, clearDayTasks, autoLoadRoutine } = useFireActions()
+    const { kids, goals, dailyTasks, dayConfigs, ledger } = useStore()
+    const { toggleTaskStatus, addDailyTask, updateDailyTask, syncAssignedTemplatesForDay, saveRoutine, clearDayTasks, autoLoadRoutine, addGoal, updateGoal, deleteGoal } = useFireActions()
 
     const kid = kids.find((k) => k.id === profile?.kidId)
     const today = format(new Date(), 'yyyy-MM-dd')
@@ -24,6 +27,8 @@ export default function KidDashboard() {
     const todayTasks = kid ? dailyTasks.filter((t) => t.kidId === kid.id && t.date === today) : []
     const completedToday = todayTasks.filter((t) => t.status === 'completed').length
     const totalToday = todayTasks.length
+    const kidGoals = kid ? goals.filter((g) => g.kidId === kid.id) : []
+    const activeGoal = kidGoals.find((g) => g.status === 'active') || kidGoals[0] || null
 
     const celebrationKey = `kidstrack-celebrated-${kid?.id}-${today}`
 
@@ -35,6 +40,8 @@ export default function KidDashboard() {
     const [showCelebration, setShowCelebration] = useState(false)
     const [routineBanner, setRoutineBanner] = useState(0)
     const [routineSaved, setRoutineSaved] = useState(false)
+    const [showGoalModal, setShowGoalModal] = useState(false)
+    const [editGoal, setEditGoal] = useState(null)
     const autoLoadKeyRef = useRef(null)
     const { currentStreak, bestStreak } = useStreak(kid?.id, dailyTasks, dayConfigs)
 
@@ -54,6 +61,10 @@ export default function KidDashboard() {
             }
         }
     }, [completedToday, totalToday, celebrationKey])
+
+    useGoalMilestones(activeGoal, kid?.balance || 0, async (goalId, updates) => {
+        await updateGoal(goalId, updates)
+    })
 
     // Auto-load routine when today is empty
     useEffect(() => {
@@ -109,6 +120,24 @@ export default function KidDashboard() {
         }
     }
 
+    const handleSaveGoal = async (payload) => {
+        if (!kid) return
+        if (editGoal) {
+            await updateGoal(editGoal.id, payload)
+        } else {
+            await addGoal(kid.id, payload.title, payload.targetAmount, payload.icon, payload.dueDate)
+        }
+        setShowGoalModal(false)
+        setEditGoal(null)
+    }
+
+    const handleDeleteGoal = async () => {
+        if (!editGoal) return
+        await deleteGoal(editGoal.id)
+        setShowGoalModal(false)
+        setEditGoal(null)
+    }
+
     return (
         <div>
             {/* Hero */}
@@ -135,6 +164,21 @@ export default function KidDashboard() {
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('streak.best', { count: bestStreak })}</span>
                     )}
                 </div>
+            </div>
+
+            {/* Savings goal */}
+            <h2 className="section-title">🎯 {t('goal.sectionTitle')}</h2>
+            <div style={{ marginBottom: 24 }}>
+                <GoalCard
+                    goal={activeGoal}
+                    currentAmount={kid.balance}
+                    onCreate={() => { setEditGoal(null); setShowGoalModal(true) }}
+                    onEdit={() => { setEditGoal(activeGoal); setShowGoalModal(true) }}
+                    onDelete={async () => {
+                        if (!activeGoal) return
+                        await deleteGoal(activeGoal.id)
+                    }}
+                />
             </div>
 
             {/* 10-day strip */}
@@ -263,6 +307,15 @@ export default function KidDashboard() {
                     </div>
                 </Modal>
             )}
+
+            <GoalModal
+                key={editGoal?.id || (showGoalModal ? 'new-goal' : 'closed')}
+                isOpen={showGoalModal}
+                goal={editGoal}
+                onClose={() => { setShowGoalModal(false); setEditGoal(null) }}
+                onSave={handleSaveGoal}
+                onDelete={handleDeleteGoal}
+            />
 
             {showCelebration && <CelebrationOverlay kid={kid} onClose={() => setShowCelebration(false)} />}
         </div>

@@ -16,7 +16,7 @@ const defaultTaskViByTitle = new Map(
 
 export function useFireSync() {
     const { familyId, user } = useAuth()
-    const { setIsLoading, setKids, setTemplates, setDailyTasks, setDayConfigs, setLedger, setError } = useStore()
+    const { setIsLoading, setKids, setTemplates, setDailyTasks, setDayConfigs, setLedger, setGoals, setError } = useStore()
 
     useEffect(() => {
         if (isE2EMode()) {
@@ -26,6 +26,7 @@ export function useFireSync() {
                 setDailyTasks(state.collections.dailyTasks)
                 setDayConfigs(state.collections.dayConfigs)
                 setLedger(state.collections.ledger)
+                setGoals(state.collections.goals)
                 setError(null)
                 setIsLoading(false)
             }
@@ -41,7 +42,7 @@ export function useFireSync() {
         }
         setIsLoading(true)
 
-        let loaded = { kids: false, templates: false, dailyTasks: false, dayConfigs: false, ledger: false }
+        let loaded = { kids: false, templates: false, dailyTasks: false, dayConfigs: false, ledger: false, goals: false }
         const checkAllLoaded = () => {
             if (Object.values(loaded).every(Boolean)) setIsLoading(false)
         }
@@ -56,8 +57,9 @@ export function useFireSync() {
         const unsubTasks = subscribeToCol(familyId, 'dailyTasks', (docs) => { setDailyTasks(docs); loaded.dailyTasks = true; checkAllLoaded() }, handleError)
         const unsubConfigs = subscribeToCol(familyId, 'dayConfigs', (docs) => { setDayConfigs(docs); loaded.dayConfigs = true; checkAllLoaded() }, handleError)
         const unsubLedger = subscribeToCol(familyId, 'ledger', (docs) => { setLedger(docs); loaded.ledger = true; checkAllLoaded() }, handleError)
+        const unsubGoals = subscribeToCol(familyId, 'goals', (docs) => { setGoals(docs); loaded.goals = true; checkAllLoaded() }, handleError)
 
-        return () => { unsubKids(); unsubTemplates(); unsubTasks(); unsubConfigs(); unsubLedger() }
+        return () => { unsubKids(); unsubTemplates(); unsubTasks(); unsubConfigs(); unsubLedger(); unsubGoals() }
     }, [user, familyId])
 }
 
@@ -115,6 +117,7 @@ export function useFireActions() {
                         dailyTasks: state.collections.dailyTasks.filter((task) => task.kidId !== id),
                         dayConfigs: state.collections.dayConfigs.filter((config) => config.kidId !== id),
                         ledger: state.collections.ledger.filter((entry) => entry.kidId !== id),
+                        goals: state.collections.goals.filter((goal) => goal.kidId !== id),
                     },
                 }))
             },
@@ -329,6 +332,36 @@ export function useFireActions() {
                     },
                 }))
             },
+            addGoal: async (kidId, title, targetAmount, icon, dueDate) => {
+                const goal = store.buildGoal(kidId, title, targetAmount, icon, dueDate)
+                updateE2EState((state) => ({
+                    ...state,
+                    collections: {
+                        ...state.collections,
+                        goals: [...state.collections.goals, goal],
+                    },
+                }))
+            },
+            updateGoal: async (goalId, updates) => {
+                const updated = store.buildGoalUpdate(goalId, updates)
+                if (!updated) return
+                updateE2EState((state) => ({
+                    ...state,
+                    collections: {
+                        ...state.collections,
+                        goals: state.collections.goals.map((goal) => goal.id === goalId ? updated : goal),
+                    },
+                }))
+            },
+            deleteGoal: async (goalId) => {
+                updateE2EState((state) => ({
+                    ...state,
+                    collections: {
+                        ...state.collections,
+                        goals: state.collections.goals.filter((goal) => goal.id !== goalId),
+                    },
+                }))
+            },
             saveRoutine: async (kidId, tasks, fromDate) => {
                 const routine = {
                     tasks: tasks.map(({ title, description }) => ({ title, description: description || '' })),
@@ -490,6 +523,21 @@ export function useFireActions() {
                 updatedKid: result.updatedKid,
                 entry: result.entry
             });
+        },
+        addGoal: async (kidId, title, targetAmount, icon, dueDate) => {
+            const goal = store.buildGoal(kidId, title, targetAmount, icon, dueDate)
+            const call = httpsCallable(functions, 'addGoal')
+            await call({ familyId, goal })
+        },
+        updateGoal: async (goalId, updates) => {
+            const updated = store.buildGoalUpdate(goalId, updates)
+            if (!updated) return
+            const call = httpsCallable(functions, 'updateGoal')
+            await call({ familyId, goalId, updates: updated })
+        },
+        deleteGoal: async (goalId) => {
+            const call = httpsCallable(functions, 'deleteGoal')
+            await call({ familyId, goalId })
         },
         saveRoutine: async (kidId, tasks, fromDate) => {
             const routine = {

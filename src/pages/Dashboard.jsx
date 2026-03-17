@@ -11,11 +11,14 @@ import OnboardingWizard from '../components/OnboardingWizard'
 import NotificationBanner from '../components/NotificationBanner'
 import NotificationSettings from '../components/NotificationSettings'
 import WeeklyReportModal from '../components/WeeklyReportModal'
+import GoalCard from '../components/GoalCard'
+import GoalModal from '../components/GoalModal'
 import { formatMoney } from '../utils/format'
 import { linkParentApple, linkParentEmailPassword, linkParentFacebook, linkParentGoogle, upgradeSimpleParentEmail } from '../firebase/auth'
 import useStreak from '../hooks/useStreak'
 import useNotifications from '../hooks/useNotifications'
 import useWeeklyReport from '../hooks/useWeeklyReport'
+import useGoalMilestones from '../hooks/useGoalMilestones'
 
 const LS_WEEKLY_MODAL_SEEN = 'kidstrack-weekly-modal-seen'
 const toWeekParam = (date) => `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`
@@ -122,12 +125,24 @@ function KidReport({ kid, dailyTasks, period, lang }) {
     )
 }
 
+const getPrimaryGoal = (goals, kidId) => {
+    const kidGoals = goals
+        .filter((goal) => goal.kidId === kidId)
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+    return kidGoals.find((goal) => goal.status === 'active') || kidGoals[0] || null
+}
+
+function GoalMilestoneSync({ goal, balance, onPersist }) {
+    useGoalMilestones(goal, balance, onPersist)
+    return null
+}
+
 export default function Dashboard() {
     const t = useT()
     const { lang } = useLang()
     const { user, profile, familyId, refreshProfile } = useAuth()
-    const { kids, dailyTasks, dayConfigs, isLoading } = useStore()
-    const { deleteKid } = useFireActions()
+    const { kids, goals, dailyTasks, dayConfigs, isLoading } = useStore()
+    const { deleteKid, addGoal, updateGoal, deleteGoal } = useFireActions()
     const navigate = useNavigate()
     const [showCreate, setShowCreate] = useState(false)
     const [editKid, setEditKid] = useState(null)
@@ -139,6 +154,8 @@ export default function Dashboard() {
     const [linkPassword, setLinkPassword] = useState('')
     const [reportPeriod, setReportPeriod] = useState(7)
     const [showWeeklyModal, setShowWeeklyModal] = useState(false)
+    const [goalKidId, setGoalKidId] = useState(null)
+    const [editGoal, setEditGoal] = useState(null)
     const { enabled, permission, scheduleReminders } = useNotifications()
     const weeklyReport = useWeeklyReport(0)
     const weeklyReportDate = useMemo(() => parseISO(weeklyReport.weekStart), [weeklyReport.weekStart])
@@ -214,6 +231,27 @@ export default function Dashboard() {
         }
     }
 
+    const handlePersistGoalMilestones = useCallback(async (goalId, updates) => {
+        await updateGoal(goalId, updates)
+    }, [updateGoal])
+
+    const handleSaveGoal = useCallback(async (payload) => {
+        if (editGoal) {
+            await updateGoal(editGoal.id, payload)
+        } else if (goalKidId) {
+            await addGoal(goalKidId, payload.title, payload.targetAmount, payload.icon, payload.dueDate)
+        }
+        setGoalKidId(null)
+        setEditGoal(null)
+    }, [editGoal, goalKidId, updateGoal, addGoal])
+
+    const handleDeleteGoal = useCallback(async () => {
+        if (!editGoal) return
+        await deleteGoal(editGoal.id)
+        setGoalKidId(null)
+        setEditGoal(null)
+    }, [editGoal, deleteGoal])
+
     return (
         <div>
             <NotificationBanner />
@@ -283,6 +321,34 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+
+                    <div className="card" style={{ marginTop: 24 }}>
+                        <div className="row between center" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                            <div style={{ fontWeight: 800, fontSize: 16 }}>🎯 {t('goal.parentSummaryTitle')}</div>
+                            <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('goal.parentSummaryDesc')}</span>
+                        </div>
+                        <div className="goal-grid">
+                            {kids.map((kid) => {
+                                const goal = getPrimaryGoal(goals, kid.id)
+                                return (
+                                    <div key={`goal-${kid.id}`}>
+                                        <GoalMilestoneSync goal={goal} balance={kid.balance} onPersist={handlePersistGoalMilestones} />
+                                        <GoalCard
+                                            goal={goal}
+                                            currentAmount={kid.balance}
+                                            kidName={kid.displayName || kid.name}
+                                            onCreate={() => { setGoalKidId(kid.id); setEditGoal(null) }}
+                                            onEdit={() => { setGoalKidId(kid.id); setEditGoal(goal) }}
+                                            onDelete={async () => {
+                                                if (!goal) return
+                                                await deleteGoal(goal.id)
+                                            }}
+                                        />
+                                    </div>
+                                )
+                            })}
+                        </div>
                     </div>
 
                     {/* ── Performance Report ── */}
@@ -388,6 +454,15 @@ export default function Dashboard() {
                     </div>
                 </Modal>
             )}
+            <GoalModal
+                key={editGoal?.id || goalKidId || 'no-goal-modal'}
+                isOpen={!!goalKidId}
+                goal={editGoal}
+                kidName={kids.find((kid) => kid.id === goalKidId)?.displayName || kids.find((kid) => kid.id === goalKidId)?.name || ''}
+                onClose={() => { setGoalKidId(null); setEditGoal(null) }}
+                onSave={handleSaveGoal}
+                onDelete={handleDeleteGoal}
+            />
             <WeeklyReportModal
                 isOpen={showWeeklyModal}
                 onClose={handleCloseWeeklyModal}

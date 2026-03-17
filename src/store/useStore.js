@@ -16,6 +16,7 @@ const useStore = create((set, get) => ({
     setDailyTasks: (dailyTasks) => set({ dailyTasks }),
     setDayConfigs: (dayConfigs) => set({ dayConfigs }),
     setLedger: (ledger) => set({ ledger }),
+    setGoals: (goals) => set({ goals }),
 
     // ─── Data ──────────────────────────────────────────────────────────────────
     kids: [],
@@ -23,6 +24,7 @@ const useStore = create((set, get) => ({
     dailyTasks: [],
     dayConfigs: [],
     ledger: [],
+    goals: [],
 
     // ─── Kids ──────────────────────────────────────────────────────────────────
     addKid: (name, avatar) => ({ id: generateId(), name, avatar: avatar || '🧒', balance: 0 }),
@@ -124,6 +126,33 @@ const useStore = create((set, get) => ({
             },
             updatedKid: { ...kid, balance: Math.max(0, kid.balance + amount) },
         }
+    },
+
+    // ─── Savings Goals ─────────────────────────────────────────────────────────
+    buildGoal: (kidId, title, targetAmount, icon, dueDate) => ({
+        id: generateId(),
+        kidId,
+        title,
+        targetAmount: Number(targetAmount) || 0,
+        status: 'active',
+        icon: icon || '🎯',
+        dueDate: dueDate || null,
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+        milestonesUnlocked: [],
+    }),
+
+    buildGoalUpdate: (goalId, updates = {}) => {
+        const goal = get().goals.find((g) => g.id === goalId)
+        if (!goal) return null
+        const next = { ...goal, ...updates }
+        if (updates.status === 'completed' && !next.completedAt) {
+            next.completedAt = new Date().toISOString()
+        }
+        if (updates.status && updates.status !== 'completed' && goal.completedAt && !('completedAt' in updates)) {
+            next.completedAt = null
+        }
+        return next
     },
 }))
 

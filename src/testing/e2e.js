@@ -17,6 +17,7 @@ const defaultState = () => ({
         dailyTasks: [],
         dayConfigs: [],
         ledger: [],
+        goals: [],
     },
 })
 

@@ -130,7 +130,7 @@ exports.deleteKid = onCall(async (request) => {
   batch.delete(kidRef);
 
   // 2. Batch delete related docs
-  const cols = ["dailyTasks", "dayConfigs", "ledger"];
+  const cols = ["dailyTasks", "dayConfigs", "ledger", "goals"];
   for (const colName of cols) {
     const querySnapshot = await db.collection("families").doc(familyId).collection(colName)
       .where("kidId", "==", kidId)
@@ -406,5 +406,45 @@ exports.addManualTransaction = onCall(async (request) => {
   batch.set(entryRef, entry);
 
   await batch.commit();
+  return { success: true };
+});
+
+/**
+ * ─── Savings Goals ────────────────────────────────────────────────────────────
+ */
+
+exports.addGoal = onCall(async (request) => {
+  ensureAuth(request);
+  const { familyId, goal } = request.data;
+
+  if (!familyId || !goal || !goal.id) {
+    throw new HttpsError("invalid-argument", "Missing required fields.");
+  }
+
+  await db.collection("families").doc(familyId).collection("goals").doc(goal.id).set(goal);
+  return { success: true };
+});
+
+exports.updateGoal = onCall(async (request) => {
+  ensureAuth(request);
+  const { familyId, goalId, updates } = request.data;
+
+  if (!familyId || !goalId || !updates) {
+    throw new HttpsError("invalid-argument", "Missing required fields.");
+  }
+
+  await db.collection("families").doc(familyId).collection("goals").doc(goalId).set(updates, { merge: true });
+  return { success: true };
+});
+
+exports.deleteGoal = onCall(async (request) => {
+  ensureAuth(request);
+  const { familyId, goalId } = request.data;
+
+  if (!familyId || !goalId) {
+    throw new HttpsError("invalid-argument", "Missing required fields.");
+  }
+
+  await db.collection("families").doc(familyId).collection("goals").doc(goalId).delete();
   return { success: true };
 });

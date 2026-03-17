@@ -888,6 +888,138 @@ textarea {
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Savings goals */
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.goal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goal-card--empty {
+  justify-content: space-between;
+  min-height: 120px;
+}
+
+.goal-card--completed {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.goal-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.goal-icon {
+  font-size: 26px;
+}
+
+.goal-title {
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.goal-subtitle {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.goal-status-chip {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-amber);
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.goal-status-chip.done {
+  color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.goal-progress-line {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.goal-progress-bar {
+  margin-top: 0;
+}
+
+.goal-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.goal-milestones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.goal-milestone {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.goal-milestone.unlocked {
+  color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.goal-due-date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.goal-modal-kid {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.goal-icon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.goal-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.goal-icon-btn.selected {
+  border-color: var(--accent-purple);
+  background: rgba(124, 58, 237, 0.15);
+}
+
 .section-title {
   font-family: 'Outfit', sans-serif;
   font-size: var(--text-xl);
