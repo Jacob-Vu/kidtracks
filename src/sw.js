@@ -1,4 +1,12 @@
-import { precacheAndRoute } from 'workbox-precaching'
+import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
+import { clientsClaim } from 'workbox-core'
+
+// Force new SW to activate immediately (no waiting)
+self.skipWaiting()
+clientsClaim()
+
+// Clean up old precache entries
+cleanupOutdatedCaches()
 
 // Precache all assets injected by vite-plugin-pwa
 precacheAndRoute(self.__WB_MANIFEST)
