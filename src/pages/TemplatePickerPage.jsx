@@ -6,20 +6,28 @@ import { useFireActions } from '../hooks/useFirebaseSync'
 import { useT, useLang } from '../i18n/I18nContext'
 import DEFAULT_PACKS from '../data/defaultTemplates'
 
-const defaultViByTitle = new Map(
-    DEFAULT_PACKS.flatMap((p) => p.tasks.map((t) => [t.title, t.descriptionVi || '']))
+// Flat list of all default template tasks with pack metadata
+const ALL_TASKS = DEFAULT_PACKS.flatMap((pack) =>
+    pack.tasks.map((task, i) => ({
+        id: `${pack.id}__${i}`,
+        title: task.title,
+        description: task.description || '',
+        descriptionVi: task.descriptionVi || '',
+        packId: pack.id,
+        packName: pack.name,
+        packIcon: pack.icon,
+        packAgeRange: pack.ageRange,
+        packColor: pack.color,
+    }))
 )
 
 function normalize(str) {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
-function getDesc(tmpl, lang) {
-    if (lang === 'vi') {
-        const d = tmpl?.descriptions?.vi || defaultViByTitle.get(tmpl?.title) || ''
-        if (d) return d
-    }
-    return tmpl?.descriptions?.en || tmpl?.descriptions?.vi || tmpl?.description || ''
+function getDesc(task, lang) {
+    if (lang === 'vi' && task.descriptionVi) return task.descriptionVi
+    return task.description || task.descriptionVi || ''
 }
 
 function TemplateRow({ tmpl, selected, alreadyAdded, onToggle, lang }) {
@@ -55,34 +63,27 @@ export default function TemplatePickerPage() {
     const navigate = useNavigate()
     const date = searchParams.get('date') || format(new Date(), 'yyyy-MM-dd')
 
-    const { templates, kids, dailyTasks } = useStore()
+    const { dailyTasks } = useStore()
     const { addDailyTask } = useFireActions()
 
     const existingTaskTitles = dailyTasks
-        .filter((t) => t.kidId === kidId && t.date === date)
-        .map((t) => t.title)
+        .filter((task) => task.kidId === kidId && task.date === date)
+        .map((task) => task.title)
 
     const [search, setSearch] = useState('')
-    const [filterKid, setFilterKid] = useState('assigned')
+    const [filterPack, setFilterPack] = useState('all')
     const [selected, setSelected] = useState(new Set())
     const [adding, setAdding] = useState(false)
     const [previewId, setPreviewId] = useState(null)
 
     const filtered = useMemo(() => {
         const q = normalize(search.trim())
-        return templates.filter((tmpl) => {
-            if (filterKid === 'assigned') {
-                const a = tmpl.assignedKidIds || []
-                if (a.length > 0 && !a.includes(kidId)) return false
-            } else if (filterKid !== 'all') {
-                const a = tmpl.assignedKidIds || []
-                if (a.length > 0 && !a.includes(filterKid)) return false
-            }
+        return ALL_TASKS.filter((tmpl) => {
+            if (filterPack !== 'all' && tmpl.packId !== filterPack) return false
             if (!q) return true
-            const desc = normalize(getDesc(tmpl, lang))
-            return normalize(tmpl.title).includes(q) || desc.includes(q)
+            return normalize(tmpl.title).includes(q) || normalize(getDesc(tmpl, lang)).includes(q)
         })
-    }, [templates, filterKid, kidId, search, lang])
+    }, [filterPack, search, lang])
 
     const selectableFiltered = filtered.filter((tmpl) => !existingTaskTitles.includes(tmpl.title))
 
@@ -96,17 +97,18 @@ export default function TemplatePickerPage() {
     }
 
     const toggleAll = () => {
-        const allIds = selectableFiltered.map((t) => t.id)
+        const allIds = selectableFiltered.map((tmpl) => tmpl.id)
         const allSelected = allIds.every((id) => selected.has(id))
         setSelected(allSelected ? new Set() : new Set(allIds))
     }
 
-    const selectedCount = [...selected].filter(
-        (id) => !existingTaskTitles.includes(templates.find((t) => t.id === id)?.title || '')
-    ).length
+    const selectedCount = [...selected].filter((id) => {
+        const task = ALL_TASKS.find((tmpl) => tmpl.id === id)
+        return task && !existingTaskTitles.includes(task.title)
+    }).length
 
     const handleAdd = async () => {
-        const toAdd = templates.filter((tmpl) => selected.has(tmpl.id) && !existingTaskTitles.includes(tmpl.title))
+        const toAdd = ALL_TASKS.filter((tmpl) => selected.has(tmpl.id) && !existingTaskTitles.includes(tmpl.title))
         if (toAdd.length === 0) return
         setAdding(true)
         for (const tmpl of toAdd) {
@@ -116,8 +118,8 @@ export default function TemplatePickerPage() {
         navigate(`/daily/${kidId}`)
     }
 
-    const previewTmpl = previewId ? templates.find((t) => t.id === previewId) : null
-
+    const previewTmpl = previewId ? ALL_TASKS.find((tmpl) => tmpl.id === previewId) : null
+    const previewPack = previewTmpl ? DEFAULT_PACKS.find((p) => p.id === previewTmpl.packId) : null
     const otherLang = lang === 'vi' ? 'en' : 'vi'
 
     return (
@@ -141,15 +143,19 @@ export default function TemplatePickerPage() {
                     autoFocus
                 />
                 <div className="chip-group" style={{ flexWrap: 'nowrap', overflowX: 'auto' }}>
-                    <button className={`chip chip--sm${filterKid === 'assigned' ? ' selected' : ''}`} onClick={() => setFilterKid('assigned')}>
-                        {t('picker.filterAssigned')}
+                    <button
+                        className={`chip chip--sm${filterPack === 'all' ? ' selected' : ''}`}
+                        onClick={() => setFilterPack('all')}
+                    >
+                        {lang === 'vi' ? 'Tất cả' : 'All'}
                     </button>
-                    <button className={`chip chip--sm${filterKid === 'all' ? ' selected' : ''}`} onClick={() => setFilterKid('all')}>
-                        {t('picker.filterAll')}
-                    </button>
-                    {kids.map((k) => (
-                        <button key={k.id} className={`chip chip--sm${filterKid === k.id ? ' selected' : ''}`} onClick={() => setFilterKid(k.id)}>
-                            {k.avatar} {k.displayName || k.name}
+                    {DEFAULT_PACKS.map((pack) => (
+                        <button
+                            key={pack.id}
+                            className={`chip chip--sm${filterPack === pack.id ? ' selected' : ''}`}
+                            onClick={() => setFilterPack(pack.id)}
+                        >
+                            {pack.icon} {pack.name}
                         </button>
                     ))}
                 </div>
@@ -159,7 +165,7 @@ export default function TemplatePickerPage() {
             {selectableFiltered.length > 0 && (
                 <div className="tpicker-selectbar">
                     <button className="btn btn-ghost btn-sm" onClick={toggleAll}>
-                        {selectableFiltered.every((t) => selected.has(t.id)) ? t('tmpl.deselectAll') : t('tmpl.selectAll')}
+                        {selectableFiltered.every((tmpl) => selected.has(tmpl.id)) ? t('tmpl.deselectAll') : t('tmpl.selectAll')}
                     </button>
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                         {filtered.length} {lang === 'vi' ? 'mẫu' : 'templates'}
@@ -213,24 +219,19 @@ export default function TemplatePickerPage() {
                                 }
                                 return null
                             })()}
-                            {(() => {
-                                const assigned = previewTmpl.assignedKidIds || []
-                                const assignedKids = assigned.length > 0 ? kids.filter((k) => assigned.includes(k.id)) : []
-                                return (
-                                    <div style={{ marginTop: 12 }}>
-                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                            {lang === 'vi' ? 'Giao cho' : 'Assigned to'}
-                                        </div>
-                                        {assignedKids.length > 0 ? assignedKids.map((k) => (
-                                            <span key={k.id} className="badge badge-purple" style={{ marginRight: 4, fontSize: 11 }}>
-                                                {k.avatar} {k.displayName || k.name}
-                                            </span>
-                                        )) : (
-                                            <span className="badge badge-gray" style={{ fontSize: 11 }}>{t('tmpl.allKids')}</span>
-                                        )}
+                            {previewPack && (
+                                <div style={{ marginTop: 12 }}>
+                                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {lang === 'vi' ? 'Bộ mẫu' : 'Pack'}
                                     </div>
-                                )
-                            })()}
+                                    <span className="badge badge-purple" style={{ marginRight: 4, fontSize: 11 }}>
+                                        {previewPack.icon} {previewPack.name}
+                                    </span>
+                                    <span className="badge badge-gray" style={{ fontSize: 11 }}>
+                                        {previewPack.ageRange}
+                                    </span>
+                                </div>
+                            )}
                             <button
                                 className={`btn btn-sm btn--full${selected.has(previewTmpl.id) ? ' btn-ghost' : ' btn-primary'}`}
                                 style={{ marginTop: 20 }}

@@ -16,29 +16,7 @@ const baseState = {
     },
     collections: {
         kids: [{ id: 'kid-1', displayName: 'Milo', name: 'Milo', avatar: '🧒', balance: 0 }],
-        templates: [
-            {
-                id: 'tmpl-1',
-                title: 'Wash Hands',
-                descriptions: { en: 'Wash hands before meals', vi: 'Rửa tay trước bữa ăn' },
-                description: 'Wash hands before meals',
-                assignedKidIds: [],
-            },
-            {
-                id: 'tmpl-2',
-                title: 'Dọn giường',
-                descriptions: { en: 'Make your bed neatly', vi: 'Dọn giường gọn gàng buổi sáng' },
-                description: 'Make your bed neatly',
-                assignedKidIds: ['kid-1'],
-            },
-            {
-                id: 'tmpl-3',
-                title: 'Read a book',
-                descriptions: { en: 'Read for 15 minutes', vi: 'Đọc sách 15 phút' },
-                description: 'Read for 15 minutes',
-                assignedKidIds: [],
-            },
-        ],
+        templates: [],
         dailyTasks: [],
         dayConfigs: [],
         ledger: [],
@@ -61,19 +39,19 @@ test('template picker page opens from daily view', async ({ page }) => {
 
 test('search filters templates by title (exact match)', async ({ page }) => {
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
-    await expect(page.getByText('Wash Hands')).toBeVisible()
-    await expect(page.getByText('Read a book')).toBeVisible()
+    await expect(page.getByText('Brush teeth (morning)')).toBeVisible()
+    await expect(page.getByText('Make your bed')).toBeVisible()
 
     await page.locator('.tpicker-search').fill('Wash')
-    await expect(page.getByText('Wash Hands')).toBeVisible()
-    await expect(page.getByText('Read a book')).not.toBeVisible()
+    await expect(page.getByText('Wash hands before meals')).toBeVisible()
+    await expect(page.getByText('Make your bed')).not.toBeVisible()
 })
 
 test('search filters templates by description', async ({ page }) => {
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
-    await page.locator('.tpicker-search').fill('15 minutes')
-    await expect(page.getByText('Read a book')).toBeVisible()
-    await expect(page.getByText('Wash Hands')).not.toBeVisible()
+    await page.locator('.tpicker-search').fill('soap and water')
+    await expect(page.getByText('Wash hands before meals')).toBeVisible()
+    await expect(page.getByText('Make your bed')).not.toBeVisible()
 })
 
 test('search is diacritic-insensitive (Vietnamese)', async ({ page }) => {
@@ -81,10 +59,10 @@ test('search is diacritic-insensitive (Vietnamese)', async ({ page }) => {
         window.localStorage.setItem('kidstrack-lang', 'vi')
     })
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
-    // "don giuong" (no diacritics) should match "Dọn giường"
-    await page.locator('.tpicker-search').fill('don giuong')
-    await expect(page.getByText('Dọn giường')).toBeVisible()
-    await expect(page.getByText('Wash Hands')).not.toBeVisible()
+    // "rua tay" (no diacritics) should match "Rửa tay bằng xà phòng" in VI description
+    await page.locator('.tpicker-search').fill('rua tay')
+    await expect(page.getByText('Wash hands before meals')).toBeVisible()
+    await expect(page.getByText('Make your bed')).not.toBeVisible()
 })
 
 test('search shows no-results message for garbage input', async ({ page }) => {
@@ -93,21 +71,25 @@ test('search shows no-results message for garbage input', async ({ page }) => {
     await expect(page.locator('.tpicker-list')).toContainText(/no templates found/i)
 })
 
-test('filter chip "Assigned" shows only templates assigned to current kid', async ({ page }) => {
+test('filter chip by pack shows only tasks from that pack', async ({ page }) => {
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
-    // Assigned chip is default — only tmpl-2 is assigned to kid-1
-    // tmpl-1 and tmpl-3 have empty assignedKidIds so they show for all kids
-    await expect(page.getByText('Wash Hands')).toBeVisible()
-    await expect(page.getByText('Dọn giường')).toBeVisible()
-    await expect(page.getByText('Read a book')).toBeVisible()
+    // Click the 🐣 Little Star pack chip to filter by that pack
+    await page.getByRole('button', { name: /little star/i }).click()
+    // Tasks from Little Star pack should be visible
+    await expect(page.getByText('Brush teeth (morning)')).toBeVisible()
+    await expect(page.getByText('Wash hands before meals')).toBeVisible()
+    // Tasks from other packs should not be visible
+    await expect(page.getByText('Make your bed')).not.toBeVisible()
+    await expect(page.getByText('Morning exercise')).not.toBeVisible()
 })
 
-test('filter chip "All" shows all templates', async ({ page }) => {
+test('filter chip "All" shows tasks from multiple packs', async ({ page }) => {
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
     await page.getByRole('button', { name: /^all$/i }).click()
-    await expect(page.getByText('Wash Hands')).toBeVisible()
-    await expect(page.getByText('Dọn giường')).toBeVisible()
-    await expect(page.getByText('Read a book')).toBeVisible()
+    // Tasks from different packs should all be visible
+    await expect(page.getByText('Brush teeth (morning)')).toBeVisible()
+    await expect(page.getByText('Make your bed')).toBeVisible()
+    await expect(page.getByText('Morning exercise')).toBeVisible()
 })
 
 test('select all and add tasks then navigate back', async ({ page }) => {
@@ -133,7 +115,7 @@ test('already-added tasks show badge and cannot be selected', async ({ page }) =
             ...baseState.collections,
             dailyTasks: [{
                 id: 'dt-1', kidId: 'kid-1', date: '2026-03-17',
-                title: 'Wash Hands', description: '', status: 'pending',
+                title: 'Brush teeth (morning)', description: '', status: 'pending',
             }],
         },
     }
@@ -142,17 +124,17 @@ test('already-added tasks show badge and cannot be selected', async ({ page }) =
     }, stateWithTask)
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
     await page.getByRole('button', { name: /^all$/i }).click()
-    // "Đã có" badge should appear on Wash Hands row
-    const washRow = page.locator('.tpicker-row', { hasText: 'Wash Hands' })
-    await expect(washRow).toHaveClass(/tpicker-row--done/)
+    // "Đã có" badge should appear on Brush teeth (morning) row
+    const brushRow = page.locator('.tpicker-row', { hasText: 'Brush teeth (morning)' })
+    await expect(brushRow).toHaveClass(/tpicker-row--done/)
 })
 
 test('preview panel shows secondary language', async ({ page }) => {
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
     await page.getByRole('button', { name: /^all$/i }).click()
-    // Hover/click Wash Hands to trigger preview
-    await page.locator('.tpicker-row-wrap', { hasText: 'Wash Hands' }).click()
-    // In EN mode: primary = EN, secondary = VI (italic)
-    await expect(page.locator('.tpicker-preview-desc')).toContainText('Wash hands before meals')
-    await expect(page.locator('.tpicker-preview-secondary')).toContainText('Rửa tay trước bữa ăn')
+    // Click 'Wash hands before meals' to trigger preview
+    await page.locator('.tpicker-row-wrap', { hasText: 'Wash hands before meals' }).click()
+    // In EN mode: primary = EN desc, secondary = VI desc
+    await expect(page.locator('.tpicker-preview-desc')).toContainText('Use soap and water')
+    await expect(page.locator('.tpicker-preview-secondary')).toContainText('Rửa tay bằng xà phòng')
 })
