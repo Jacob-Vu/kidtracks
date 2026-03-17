@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 
-export default function Modal({ title, onClose, children }) {
+export default function Modal({ title, onClose, children, className }) {
     const titleId = useId()
     const dialogRef = useRef(null)
 
@@ -55,7 +55,7 @@ export default function Modal({ title, onClose, children }) {
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div
                 ref={dialogRef}
-                className="modal"
+                className={`modal${className ? ' ' + className : ''}`}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}

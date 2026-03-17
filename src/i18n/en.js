@@ -124,7 +124,7 @@ const en = {
     'daily.noKids': 'No kids yet',
     'daily.noKidsDesc': 'Go to the Dashboard and add your first kid to start tracking daily tasks.',
     'daily.goToDash': 'Go to Dashboard',
-    'daily.loadTemplates': '📋 Load Templates',
+    'daily.loadTemplates': '📋 Choose from Templates',
     'daily.addTask': '+ Add Task',
     'daily.setRewards': '💰 Set Rewards ({amount})',
     'daily.finalized': '✅ Finalized',
@@ -159,6 +159,14 @@ const en = {
     'daily.allTasksCompleted': 'All {count} tasks completed!',
     'daily.clearAll': '🗑️ Clear All',
     'daily.clearConfirm': 'Delete all {count} tasks for today? This cannot be undone.',
+
+    // ─── Template Picker ───────────────────────────
+    'picker.title': '📋 Choose Templates',
+    'picker.search': 'Search templates…',
+    'picker.filterAssigned': 'Assigned',
+    'picker.filterAll': 'All',
+    'picker.addBtn': 'Add {count} task(s)',
+    'picker.noResults': 'No templates found.',
 
     // ─── Default Routine ───────────────────────────
     'routine.saveBtn': 'Save as Routine',

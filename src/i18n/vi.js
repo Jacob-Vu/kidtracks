@@ -124,7 +124,7 @@ const vi = {
     'daily.noKids': 'Chưa có con nào',
     'daily.noKidsDesc': 'Vào Tổng quan thêm con đầu tiên để bắt đầu.',
     'daily.goToDash': 'Về Tổng quan',
-    'daily.loadTemplates': '📋 Tải mẫu',
+    'daily.loadTemplates': '📋 Chọn từ Mẫu',
     'daily.addTask': '+ Thêm việc',
     'daily.setRewards': '💰 Đặt thưởng ({amount})',
     'daily.finalized': '✅ Đã chốt',
@@ -159,6 +159,14 @@ const vi = {
     'daily.allTasksCompleted': 'Hoàn thành tất cả {count} việc!',
     'daily.clearAll': '🗑️ Xóa tất cả',
     'daily.clearConfirm': 'Xóa tất cả {count} việc hôm nay? Không thể hoàn tác.',
+
+    // ─── Template Picker ───────────────────────────
+    'picker.title': '📋 Chọn từ Mẫu',
+    'picker.search': 'Tìm kiếm mẫu…',
+    'picker.filterAssigned': 'Được giao',
+    'picker.filterAll': 'Tất cả',
+    'picker.addBtn': 'Thêm {count} việc',
+    'picker.noResults': 'Không tìm thấy mẫu nào.',
 
     // ─── Lịch cố định ──────────────────────────────
     'routine.saveBtn': 'Lưu lịch cố định',
