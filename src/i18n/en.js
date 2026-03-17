@@ -77,6 +77,11 @@ const en = {
     'dash.linkEmailLabel': 'Email',
     'dash.linkPasswordLabel': 'Password',
     'dash.linkEmailBtn': 'Link email',
+    'dash.reportTitle': 'Performance Overview',
+    'dash.reportDesc': 'Daily task completion per kid',
+    'dash.report7d': '7 days',
+    'dash.report30d': '30 days',
+    'dash.reportEmpty': 'No task data yet for this period. Start assigning daily tasks!',
 
     // ─── Templates ─────────────────────────────────
     'tmpl.title': '📋 Task Templates',
@@ -255,6 +260,10 @@ const en = {
     'journal.historyEmpty': 'No past journal entries.',
     'journal.deleteTitle': 'Delete journal entry',
     'journal.deleteConfirm': 'This will permanently delete this journal entry and its audio.',
+
+    // ─── Theme ─────────────────────────────────────
+    'theme.title': 'Theme',
+    'theme.desc': 'Pick a colour theme for your dashboard',
 
     // ─── Common ────────────────────────────────────
     'common.save': 'Save',

@@ -4,6 +4,7 @@ import { useT } from '../i18n/I18nContext'
 import useStore from '../store/useStore'
 import { changeKidPassword, linkKidEmail } from '../firebase/auth'
 import { useFireActions } from '../hooks/useFirebaseSync'
+import { useTheme, THEMES } from '../contexts/ThemeContext'
 
 const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏿', '👦🏿', '👧🏿', '🦸', '🦸‍♂️', '🦸‍♀️', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐯', '🐰', '🐻']
 
@@ -12,6 +13,7 @@ export default function KidProfile() {
     const { profile } = useAuth()
     const { kids } = useStore()
     const { updateKid } = useFireActions()
+    const { theme, setTheme } = useTheme()
     const kid = kids.find((k) => k.id === profile?.kidId)
 
     const [displayName, setDisplayName] = useState('')
@@ -89,6 +91,25 @@ export default function KidProfile() {
     return (
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
             <h1 className="page-title" style={{ marginBottom: 24 }}>{t('kidProf.title')}</h1>
+
+            <div className="card" style={{ marginBottom: 24 }}>
+                <h3 style={{ fontWeight: 800, fontSize: 16, marginBottom: 6 }}>🎨 {t('theme.title')}</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 12 }}>{t('theme.desc')}</p>
+                <div className="theme-picker">
+                    {THEMES.map((th) => (
+                        <button
+                            key={th.id}
+                            className={`theme-swatch${theme === th.id ? ' theme-swatch--active' : ''}`}
+                            style={{ background: `linear-gradient(135deg, ${th.colors[0]}, ${th.colors[1]})` }}
+                            onClick={() => setTheme(th.id)}
+                            title={th.name}
+                            aria-label={th.name}
+                        >
+                            {th.emoji}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             <div className="card" style={{ marginBottom: 24 }}>
                 <div className="col">

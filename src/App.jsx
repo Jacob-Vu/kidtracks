@@ -1,7 +1,8 @@
-import { Routes, Route, NavLink } from 'react-router-dom'
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { useFireSync } from './hooks/useFirebaseSync'
 import { useAuth } from './contexts/AuthContext'
 import { useT, useLang } from './i18n/I18nContext'
+import { useTheme, THEMES } from './contexts/ThemeContext'
 import { signOut } from './firebase/auth'
 import useStore from './store/useStore'
 import Dashboard from './pages/Dashboard'
@@ -11,6 +12,7 @@ import Ledger from './pages/Ledger'
 import Login from './pages/Login'
 import KidDashboard from './pages/KidDashboard'
 import KidProfile from './pages/KidProfile'
+import LandingPage from './pages/LandingPage'
 import TemplatePickerPage from './pages/TemplatePickerPage'
 import KidLayout from './layouts/KidLayout'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -65,6 +67,7 @@ function AppContent() {
   return (
     <>
       <Routes>
+        <Route path="/" element={<HomeRoute />} />
         <Route path="/login" element={<Login />} />
         <Route path="/kid" element={<ProtectedRoute role="kid"><KidLayout><KidDashboard /></KidLayout></ProtectedRoute>} />
         <Route path="/kid/profile" element={<ProtectedRoute role="kid"><KidLayout><KidProfile /></KidLayout></ProtectedRoute>} />
@@ -75,9 +78,18 @@ function AppContent() {
   )
 }
 
+function HomeRoute() {
+  const { user, loading, role } = useAuth()
+  if (loading) return null
+  if (!user) return <LandingPage />
+  if (role === 'kid') return <Navigate to="/kid" replace />
+  return <ProtectedRoute role="parent"><ParentLayout /></ProtectedRoute>
+}
+
 function ParentLayout() {
   const t = useT()
   const { user } = useAuth()
+  const { theme, setTheme } = useTheme()
   const NAV = [
     { path: '/', icon: '🏠', label: t('nav.dashboard') },
     { path: '/templates', icon: '📋', label: t('nav.templates') },
@@ -104,6 +116,18 @@ function ParentLayout() {
               </span>
             </div>
           )}
+          <div className="theme-sidebar-picker">
+            {THEMES.map((th) => (
+              <button
+                key={th.id}
+                className={`theme-sidebar-dot${theme === th.id ? ' theme-sidebar-dot--active' : ''}`}
+                style={{ background: `linear-gradient(135deg, ${th.colors[0]}, ${th.colors[1]})` }}
+                onClick={() => setTheme(th.id)}
+                title={th.name}
+                aria-label={th.name}
+              />
+            ))}
+          </div>
           <LangSwitcher />
           <button className="nav-link" onClick={signOut}
             style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)' }}>

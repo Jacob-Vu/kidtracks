@@ -77,6 +77,11 @@ const vi = {
     'dash.linkEmailLabel': 'Email',
     'dash.linkPasswordLabel': 'Mật khẩu',
     'dash.linkEmailBtn': 'Liên kết email',
+    'dash.reportTitle': 'Tổng quan thành tích',
+    'dash.reportDesc': 'Hoàn thành việc hàng ngày theo từng bé',
+    'dash.report7d': '7 ngày',
+    'dash.report30d': '30 ngày',
+    'dash.reportEmpty': 'Chưa có dữ liệu cho giai đoạn này. Hãy bắt đầu giao việc hàng ngày!',
 
     // ─── Templates ─────────────────────────────────
     'tmpl.title': '📋 Mẫu công việc',
@@ -255,6 +260,10 @@ const vi = {
     'journal.historyEmpty': 'Chưa có ghi chú nào.',
     'journal.deleteTitle': 'Xoá ghi chú',
     'journal.deleteConfirm': 'Ghi chú và âm thanh sẽ bị xoá vĩnh viễn.',
+
+    // ─── Theme ─────────────────────────────────────
+    'theme.title': 'Giao diện',
+    'theme.desc': 'Chọn màu sắc yêu thích cho trang của con',
 
     // ─── Common ────────────────────────────────────
     'common.save': 'Lưu',

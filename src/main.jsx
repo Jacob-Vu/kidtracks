@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { I18nProvider } from './i18n/I18nContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import App from './App.jsx'
 import './index.css'
 
@@ -10,11 +11,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <I18nProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ThemeProvider>
       </I18nProvider>
     </BrowserRouter>
   </React.StrictMode>
 )
-
