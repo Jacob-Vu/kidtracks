@@ -42,6 +42,12 @@ export function AuthProvider({ children }) {
     }, [])
 
     const refreshProfile = async () => {
+        if (isE2EMode()) {
+            const state = getE2EState()
+            setProfile(state.profile || null)
+            setUser(state.user || null)
+            return
+        }
         if (!user) return
         const snap = await getDoc(doc(db, 'userProfiles', user.uid))
         if (snap.exists()) setProfile({ ...snap.data() })

@@ -34,19 +34,60 @@ const getProfileState = async (user) => {
     return { isNew: !profileSnap.exists(), user }
 }
 
+const setParentE2EAuth = (providerId, emailHint = null) => {
+    updateE2EState((state) => {
+        const currentUser = state.user || {}
+        const currentProfile = state.profile || {}
+        const providerData = Array.isArray(currentUser.providerData) ? currentUser.providerData : []
+        const hasProvider = providerData.some((p) => p.providerId === providerId)
+        const nextProviderData = hasProvider ? providerData : [...providerData, { providerId }]
+        const nextEmail = emailHint || currentUser.email || currentProfile.email || null
+
+        return {
+            ...state,
+            user: {
+                uid: currentUser.uid || 'parent-e2e',
+                displayName: currentUser.displayName || currentProfile.displayName || 'Parent Tester',
+                email: nextEmail,
+                photoURL: currentUser.photoURL || null,
+                providerData: nextProviderData,
+            },
+            profile: {
+                role: 'parent',
+                familyId: currentProfile.familyId || null,
+                displayName: currentProfile.displayName || currentUser.displayName || 'Parent Tester',
+                email: nextEmail,
+                simpleLogin: false,
+            },
+        }
+    })
+}
+
 export const signInWithGoogle = async () => {
+    if (isE2EMode()) {
+        setParentE2EAuth('google.com', 'parent@example.com')
+        return { isNew: !getE2EState().profile?.familyId, user: getE2EState().user }
+    }
     const provider = new GoogleAuthProvider()
     const result = await signInWithPopup(auth, provider)
     return getProfileState(result.user)
 }
 
 export const signInWithFacebook = async () => {
+    if (isE2EMode()) {
+        setParentE2EAuth('facebook.com', 'parent@example.com')
+        return { isNew: !getE2EState().profile?.familyId, user: getE2EState().user }
+    }
     const provider = new FacebookAuthProvider()
     const result = await signInWithPopup(auth, provider)
     return getProfileState(result.user)
 }
 
 export const signInWithApple = async () => {
+    if (isE2EMode()) {
+        setParentE2EAuth('apple.com', 'parent@example.com')
+        return { isNew: !getE2EState().profile?.familyId, user: getE2EState().user }
+    }
     const provider = new OAuthProvider('apple.com')
     const result = await signInWithPopup(auth, provider)
     return getProfileState(result.user)
@@ -88,6 +129,28 @@ export const signInParentSimple = async (username, displayName) => {
 }
 
 export const createFamily = async (user, familyName) => {
+    if (isE2EMode()) {
+        const familyId = generateId()
+        updateE2EState((state) => ({
+            ...state,
+            user: state.user || {
+                uid: user?.uid || 'parent-e2e',
+                displayName: user?.displayName || familyName || 'Parent Tester',
+                email: user?.email || null,
+                photoURL: null,
+                providerData: user?.providerData || [],
+            },
+            profile: {
+                role: 'parent',
+                familyId,
+                displayName: state.user?.displayName || user?.displayName || 'Parent Tester',
+                email: state.user?.email || user?.email || null,
+                simpleLogin: !state.user?.email,
+            },
+        }))
+        return familyId
+    }
+
     const familyId = generateId()
     await setDoc(doc(db, 'families', familyId), {
         name: familyName,
@@ -221,6 +284,10 @@ const mergeParentProfile = async (user, familyId) => {
 }
 
 export const linkParentGoogle = async (familyId) => {
+    if (isE2EMode()) {
+        setParentE2EAuth('google.com', getE2EState().user?.email || 'parent@example.com')
+        return getE2EState().user
+    }
     const user = auth.currentUser
     if (!user) throw new Error('Not signed in')
     const provider = new GoogleAuthProvider()
@@ -230,6 +297,10 @@ export const linkParentGoogle = async (familyId) => {
 }
 
 export const linkParentApple = async (familyId) => {
+    if (isE2EMode()) {
+        setParentE2EAuth('apple.com', getE2EState().user?.email || 'parent@example.com')
+        return getE2EState().user
+    }
     const user = auth.currentUser
     if (!user) throw new Error('Not signed in')
     const provider = new OAuthProvider('apple.com')
@@ -239,6 +310,10 @@ export const linkParentApple = async (familyId) => {
 }
 
 export const linkParentFacebook = async (familyId) => {
+    if (isE2EMode()) {
+        setParentE2EAuth('facebook.com', getE2EState().user?.email || 'parent@example.com')
+        return getE2EState().user
+    }
     const user = auth.currentUser
     if (!user) throw new Error('Not signed in')
     const provider = new FacebookAuthProvider()
@@ -248,6 +323,10 @@ export const linkParentFacebook = async (familyId) => {
 }
 
 export const linkParentEmailPassword = async (email, password, familyId) => {
+    if (isE2EMode()) {
+        setParentE2EAuth('password', email)
+        return getE2EState().user
+    }
     const user = auth.currentUser
     if (!user) throw new Error('Not signed in')
     const credential = EmailAuthProvider.credential(email, password)

@@ -51,8 +51,19 @@ const kidState = {
 
 test('kid can complete tasks, add a task, browse profile, and sign out', async ({ page }) => {
     await page.addInitScript((state) => {
+        const now = new Date()
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+        const withToday = {
+            ...state,
+            collections: {
+                ...state.collections,
+                dailyTasks: state.collections.dailyTasks.map((task) => ({ ...task, date: today })),
+                ledger: state.collections.ledger.map((entry) => ({ ...entry, date: today })),
+            },
+        }
+
         window.localStorage.setItem('kidstrack-lang', 'en')
-        window.localStorage.setItem('kidstrack-e2e-state', JSON.stringify(state))
+        window.localStorage.setItem('kidstrack-e2e-state', JSON.stringify(withToday))
     }, kidState)
 
     await page.goto('/kid?e2e=1')
