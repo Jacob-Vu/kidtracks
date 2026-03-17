@@ -6,12 +6,13 @@ import {
 import useStore from '../store/useStore'
 import { generateTips } from '../utils/weeklyTips'
 import { useLang, useT } from '../i18n/I18nContext'
+import { getBadgeDefinition } from '../utils/badges'
 
 const EMPTY_SET = new Set()
 
 // weekOffset=0 → last completed week, -1 → week before that, +1 → current week
 export default function useWeeklyReport(weekOffset = 0) {
-    const { kids, dailyTasks, dayConfigs, ledger } = useStore()
+    const { kids, dailyTasks, dayConfigs, ledger, badges } = useStore()
     const { lang } = useLang()
     const t = useT()
 
@@ -224,6 +225,27 @@ export default function useWeeklyReport(weekOffset = 0) {
         }))
         const familyTotal = perKid.reduce((sum, p) => sum + p.amount, 0)
 
+        const badgeHighlightsPerKid = kids
+            .map((kid) => {
+                const unlocked = badges
+                    .filter((badge) => {
+                        if (badge.kidId !== kid.id) return false
+                        const unlockedAt = String(badge.unlockedAt || '').slice(0, 10)
+                        return unlockedAt >= weekStart && unlockedAt <= weekEnd
+                    })
+                    .map((badge) => ({
+                        ...badge,
+                        definition: getBadgeDefinition(badge.code),
+                    }))
+                    .sort((a, b) => {
+                        if (a.unlockedAt !== b.unlockedAt) return String(a.unlockedAt).localeCompare(String(b.unlockedAt))
+                        return String(a.code).localeCompare(String(b.code))
+                    })
+
+                return { kid, badges: unlocked }
+            })
+            .filter((entry) => entry.badges.length > 0)
+
         // Smart tips
         const tips = generateTips({ kidStats, familyStats }, { lang, t })
 
@@ -231,7 +253,11 @@ export default function useWeeklyReport(weekOffset = 0) {
             weekStart, weekEnd, weekDates,
             familyStats, kidStats, insights,
             earnings: { perKid, familyTotal },
+            badgeHighlights: {
+                perKid: badgeHighlightsPerKid,
+                totalUnlocked: badgeHighlightsPerKid.reduce((sum, entry) => sum + entry.badges.length, 0),
+            },
             tips,
         }
-    }, [kids, dailyTasks, dayConfigs, ledger, weekOffset, lang, t])
+    }, [kids, dailyTasks, dayConfigs, ledger, badges, weekOffset, lang, t])
 }

@@ -37,7 +37,7 @@ export const subscribeToCol = (familyId, colName, callback, onError) => {
 
 // ─── Batch delete all docs from a kid ─────────────────────────────────────────
 export const batchDeleteByKidId = async (familyId, kidId) => {
-    const cols = ['dailyTasks', 'dayConfigs', 'ledger', 'goals']
+    const cols = ['dailyTasks', 'dayConfigs', 'ledger', 'goals', 'badges']
     for (const colName of cols) {
         const q = query(colRef(familyId, colName))
         await new Promise((resolve) => {

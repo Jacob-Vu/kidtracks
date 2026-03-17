@@ -14,6 +14,8 @@ import GoalCard from '../components/GoalCard'
 import GoalModal from '../components/GoalModal'
 import useGoalMilestones from '../hooks/useGoalMilestones'
 import { trackTaskCompleted, trackAllTasksDone, trackCelebrationShown } from '../hooks/useAnalytics'
+import BadgeStrip from '../components/BadgeStrip'
+import useBadges from '../hooks/useBadges'
 
 export default function KidDashboard() {
     const t = useT()
@@ -44,6 +46,7 @@ export default function KidDashboard() {
     const [editGoal, setEditGoal] = useState(null)
     const autoLoadKeyRef = useRef(null)
     const { currentStreak, bestStreak } = useStreak(kid?.id, dailyTasks, dayConfigs)
+    const { recentBadges, totalUnlocked, totalBadges } = useBadges(kid?.id)
 
     useEffect(() => {
         if (kid?.id && today) {
@@ -165,6 +168,8 @@ export default function KidDashboard() {
                     )}
                 </div>
             </div>
+
+            <BadgeStrip recentBadges={recentBadges} totalUnlocked={totalUnlocked} totalBadges={totalBadges} />
 
             {/* Savings goal */}
             <h2 className="section-title">🎯 {t('goal.sectionTitle')}</h2>

@@ -130,7 +130,7 @@ exports.deleteKid = onCall(async (request) => {
   batch.delete(kidRef);
 
   // 2. Batch delete related docs
-  const cols = ["dailyTasks", "dayConfigs", "ledger", "goals"];
+  const cols = ["dailyTasks", "dayConfigs", "ledger", "goals", "badges"];
   for (const colName of cols) {
     const querySnapshot = await db.collection("families").doc(familyId).collection(colName)
       .where("kidId", "==", kidId)
@@ -446,5 +446,17 @@ exports.deleteGoal = onCall(async (request) => {
   }
 
   await db.collection("families").doc(familyId).collection("goals").doc(goalId).delete();
+  return { success: true };
+});
+
+exports.upsertBadge = onCall(async (request) => {
+  ensureAuth(request);
+  const { familyId, badge } = request.data;
+
+  if (!familyId || !badge || !badge.id || !badge.kidId || !badge.code || !badge.unlockedAt) {
+    throw new HttpsError("invalid-argument", "Missing required fields.");
+  }
+
+  await db.collection("families").doc(familyId).collection("badges").doc(badge.id).set(badge, { merge: true });
   return { success: true };
 });

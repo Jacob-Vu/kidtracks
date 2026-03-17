@@ -17,6 +17,7 @@ const useStore = create((set, get) => ({
     setDayConfigs: (dayConfigs) => set({ dayConfigs }),
     setLedger: (ledger) => set({ ledger }),
     setGoals: (goals) => set({ goals }),
+    setBadges: (badges) => set({ badges }),
 
     // ─── Data ──────────────────────────────────────────────────────────────────
     kids: [],
@@ -25,6 +26,7 @@ const useStore = create((set, get) => ({
     dayConfigs: [],
     ledger: [],
     goals: [],
+    badges: [],
 
     // ─── Kids ──────────────────────────────────────────────────────────────────
     addKid: (name, avatar) => ({ id: generateId(), name, avatar: avatar || '🧒', balance: 0 }),
@@ -154,6 +156,14 @@ const useStore = create((set, get) => ({
         }
         return next
     },
+
+    // ─── Achievement Badges ────────────────────────────────────────────────
+    buildBadge: (kidId, code, unlockedAt) => ({
+        id: `${kidId}_${code}`,
+        kidId,
+        code,
+        unlockedAt,
+    }),
 }))
 
 export default useStore

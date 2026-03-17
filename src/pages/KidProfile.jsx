@@ -5,6 +5,8 @@ import useStore from '../store/useStore'
 import { changeKidPassword, linkKidEmail } from '../firebase/auth'
 import { useFireActions } from '../hooks/useFirebaseSync'
 import { useTheme, THEMES } from '../contexts/ThemeContext'
+import useBadges from '../hooks/useBadges'
+import BadgeGallery from '../components/BadgeGallery'
 
 const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏿', '👦🏿', '👧🏿', '🦸', '🦸‍♂️', '🦸‍♀️', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐯', '🐰', '🐻']
 
@@ -15,6 +17,7 @@ export default function KidProfile() {
     const { updateKid } = useFireActions()
     const { theme, setTheme } = useTheme()
     const kid = kids.find((k) => k.id === profile?.kidId)
+    const { unlockedBadges, totalUnlocked, totalBadges } = useBadges(kid?.id)
 
     const [displayName, setDisplayName] = useState('')
     const [avatar, setAvatar] = useState('🧒')
@@ -109,6 +112,14 @@ export default function KidProfile() {
                         </button>
                     ))}
                 </div>
+            </div>
+
+            <div className="card" style={{ marginBottom: 24 }}>
+                <h3 style={{ fontWeight: 800, fontSize: 16, marginBottom: 6 }}>🏆 {t('badge.galleryTitle')}</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 12 }}>
+                    {t('badge.progress', { unlocked: totalUnlocked, total: totalBadges })}
+                </p>
+                <BadgeGallery unlockedBadges={unlockedBadges} />
             </div>
 
             <div className="card" style={{ marginBottom: 24 }}>

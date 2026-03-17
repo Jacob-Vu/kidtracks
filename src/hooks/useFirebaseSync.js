@@ -16,7 +16,7 @@ const defaultTaskViByTitle = new Map(
 
 export function useFireSync() {
     const { familyId, user } = useAuth()
-    const { setIsLoading, setKids, setTemplates, setDailyTasks, setDayConfigs, setLedger, setGoals, setError } = useStore()
+    const { setIsLoading, setKids, setTemplates, setDailyTasks, setDayConfigs, setLedger, setGoals, setBadges, setError } = useStore()
 
     useEffect(() => {
         if (isE2EMode()) {
@@ -27,6 +27,7 @@ export function useFireSync() {
                 setDayConfigs(state.collections.dayConfigs)
                 setLedger(state.collections.ledger)
                 setGoals(state.collections.goals)
+                setBadges(state.collections.badges)
                 setError(null)
                 setIsLoading(false)
             }
@@ -42,7 +43,7 @@ export function useFireSync() {
         }
         setIsLoading(true)
 
-        let loaded = { kids: false, templates: false, dailyTasks: false, dayConfigs: false, ledger: false, goals: false }
+        let loaded = { kids: false, templates: false, dailyTasks: false, dayConfigs: false, ledger: false, goals: false, badges: false }
         const checkAllLoaded = () => {
             if (Object.values(loaded).every(Boolean)) setIsLoading(false)
         }
@@ -58,8 +59,9 @@ export function useFireSync() {
         const unsubConfigs = subscribeToCol(familyId, 'dayConfigs', (docs) => { setDayConfigs(docs); loaded.dayConfigs = true; checkAllLoaded() }, handleError)
         const unsubLedger = subscribeToCol(familyId, 'ledger', (docs) => { setLedger(docs); loaded.ledger = true; checkAllLoaded() }, handleError)
         const unsubGoals = subscribeToCol(familyId, 'goals', (docs) => { setGoals(docs); loaded.goals = true; checkAllLoaded() }, handleError)
+        const unsubBadges = subscribeToCol(familyId, 'badges', (docs) => { setBadges(docs); loaded.badges = true; checkAllLoaded() }, handleError)
 
-        return () => { unsubKids(); unsubTemplates(); unsubTasks(); unsubConfigs(); unsubLedger(); unsubGoals() }
+        return () => { unsubKids(); unsubTemplates(); unsubTasks(); unsubConfigs(); unsubLedger(); unsubGoals(); unsubBadges() }
     }, [user, familyId])
 }
 
@@ -118,6 +120,7 @@ export function useFireActions() {
                         dayConfigs: state.collections.dayConfigs.filter((config) => config.kidId !== id),
                         ledger: state.collections.ledger.filter((entry) => entry.kidId !== id),
                         goals: state.collections.goals.filter((goal) => goal.kidId !== id),
+                        badges: state.collections.badges.filter((badge) => badge.kidId !== id),
                     },
                 }))
             },
@@ -362,6 +365,21 @@ export function useFireActions() {
                     },
                 }))
             },
+            upsertBadge: async (kidId, code, unlockedAt) => {
+                const badge = store.buildBadge(kidId, code, unlockedAt)
+                updateE2EState((state) => {
+                    const exists = state.collections.badges.some((b) => b.id === badge.id)
+                    return {
+                        ...state,
+                        collections: {
+                            ...state.collections,
+                            badges: exists
+                                ? state.collections.badges.map((b) => b.id === badge.id ? badge : b)
+                                : [...state.collections.badges, badge],
+                        },
+                    }
+                })
+            },
             saveRoutine: async (kidId, tasks, fromDate) => {
                 const routine = {
                     tasks: tasks.map(({ title, description }) => ({ title, description: description || '' })),
@@ -538,6 +556,11 @@ export function useFireActions() {
         deleteGoal: async (goalId) => {
             const call = httpsCallable(functions, 'deleteGoal')
             await call({ familyId, goalId })
+        },
+        upsertBadge: async (kidId, code, unlockedAt) => {
+            const badge = store.buildBadge(kidId, code, unlockedAt)
+            const call = httpsCallable(functions, 'upsertBadge')
+            await call({ familyId, badge })
         },
         saveRoutine: async (kidId, tasks, fromDate) => {
             const routine = {

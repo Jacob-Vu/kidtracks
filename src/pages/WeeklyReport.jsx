@@ -153,7 +153,7 @@ export default function WeeklyReport() {
     )
 
     const report = useWeeklyReport(weekOffset)
-    const { weekStart, weekEnd, familyStats, kidStats, insights, earnings, tips } = report
+    const { weekStart, weekEnd, familyStats, kidStats, insights, earnings, badgeHighlights, tips } = report
 
     const weekNum = getISOWeek(parseISO(weekStart))
     const weekYear = getISOWeekYear(parseISO(weekStart))
@@ -211,9 +211,12 @@ export default function WeeklyReport() {
         if (topInsightText) {
             lines.push(`${t('weekly.shareTopInsight')}: ${topInsightText}`)
         }
+        if (badgeHighlights.totalUnlocked > 0) {
+            lines.push(`${t('weekly.shareNewBadges')}: ${badgeHighlights.totalUnlocked}`)
+        }
 
         return lines.join('\n')
-    }, [dateRange, familyStats.completedTasks, familyStats.completionRate, familyStats.totalTasks, kidStats, t, topInsightText])
+    }, [dateRange, familyStats.completedTasks, familyStats.completionRate, familyStats.totalTasks, kidStats, t, topInsightText, badgeHighlights.totalUnlocked])
 
     useEffect(() => {
         if (!actionStatus) return
@@ -485,6 +488,37 @@ export default function WeeklyReport() {
                             <div key={i} className="weekly-tip-card">
                                 <span className="weekly-tip-icon">{tip.icon}</span>
                                 <div className="weekly-tip-text">{tip.text}</div>
+                            </div>
+                        ))
+                    )}
+
+                    <div className="weekly-section-title">{t('weekly.newBadgesSection')}</div>
+                    {badgeHighlights.totalUnlocked === 0 ? (
+                        <div className="weekly-tip-card">
+                            <span className="weekly-tip-icon">🏅</span>
+                            <div className="weekly-tip-text">{t('weekly.newBadgesEmpty')}</div>
+                        </div>
+                    ) : (
+                        badgeHighlights.perKid.map(({ kid, badges }) => (
+                            <div key={`badges-${kid.id}`} className="weekly-kid-card">
+                                <div className="weekly-kid-header">
+                                    <span className="weekly-kid-avatar">{kid.avatar}</span>
+                                    <div className="weekly-kid-content">
+                                        <div className="weekly-kid-name">{kid.displayName || kid.name}</div>
+                                        <div className="weekly-kid-meta">
+                                            <span className="weekly-trend-badge weekly-trend-badge--up">
+                                                {t('weekly.badgesUnlockedCount', { count: badges.length })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="weekly-kid-badges">
+                                    {badges.map((badge) => (
+                                        <span key={badge.id} className="weekly-task-badge weekly-task-badge--best">
+                                            {(badge.definition?.icon || '🏅')} {t(badge.definition?.nameKey || badge.code)}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         ))
                     )}

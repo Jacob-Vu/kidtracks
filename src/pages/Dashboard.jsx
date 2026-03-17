@@ -19,6 +19,7 @@ import useStreak from '../hooks/useStreak'
 import useNotifications from '../hooks/useNotifications'
 import useWeeklyReport from '../hooks/useWeeklyReport'
 import useGoalMilestones from '../hooks/useGoalMilestones'
+import useBadges from '../hooks/useBadges'
 
 const LS_WEEKLY_MODAL_SEEN = 'kidstrack-weekly-modal-seen'
 const toWeekParam = (date) => `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`
@@ -134,6 +135,11 @@ const getPrimaryGoal = (goals, kidId) => {
 
 function GoalMilestoneSync({ goal, balance, onPersist }) {
     useGoalMilestones(goal, balance, onPersist)
+    return null
+}
+
+function BadgeSync({ kidId }) {
+    useBadges(kidId)
     return null
 }
 
@@ -302,6 +308,7 @@ export default function Dashboard() {
                                 }}
                                 aria-label={`Open ${kid.displayName || kid.name} daily tasks`}
                             >
+                                <BadgeSync kidId={kid.id} />
                                 <span className="kid-avatar">{kid.avatar}</span>
                                 <div className="kid-name">{kid.displayName || kid.name}</div>
                                 {kid.username && (
