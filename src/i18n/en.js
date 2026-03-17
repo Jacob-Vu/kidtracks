@@ -199,6 +199,11 @@ const en = {
     'ledger.deduct': 'Deduct',
     'ledger.add': 'Add',
 
+    // ─── Streak ────────────────────────────────────
+    'streak.days': '🔥 {count} day streak',
+    'streak.startNew': 'Start your streak today!',
+    'streak.best': 'Best: {count}',
+
     // ─── Kid Dashboard ─────────────────────────────
     'kidDash.myDashboard': '🌟 My Dashboard',
     'kidDash.balance': 'Balance',
@@ -282,6 +287,35 @@ const en = {
     'celebrate.allDone': '🎉 All Done!',
     'celebrate.congrats': 'Amazing work, {name}!',
     'celebrate.close': 'Awesome! 🌟',
+
+    // ─── Onboarding Wizard ─────────────────────────
+    'onboard.step1Title': 'Add your first child',
+    'onboard.step1Desc': 'Tell us about your child to get started.',
+    'onboard.nameLabel': "Child's name",
+    'onboard.namePlaceholder': 'e.g. Emma',
+    'onboard.avatarLabel': 'Pick an avatar',
+    'onboard.ageLabel': 'Age range',
+    'onboard.step2Title': 'Pick a task pack',
+    'onboard.step2Desc': 'Choose one or more packs to import as daily tasks.',
+    'onboard.recommended': '★ Recommended',
+    'onboard.tasks': 'tasks',
+    'onboard.step3Title': 'All set!',
+    'onboard.step3Summary': 'You added {name} with {count} tasks from {packs}.',
+    'onboard.startBtn': '🚀 Start first day!',
+    'onboard.starting': 'Setting up…',
+    'onboard.next': 'Next',
+
+    // ─── Notifications ─────────────────────────────
+    'notif.bannerText': 'Enable reminders to never miss a day! 🔔',
+    'notif.bannerEnable': 'Enable',
+    'notif.bannerDismiss': 'Dismiss',
+    'notif.enabledToast': 'Reminders enabled!',
+    'notif.settingsTitle': 'Reminders',
+    'notif.timeMorning': 'Morning reminder',
+    'notif.timeAfternoon': 'Afternoon check',
+    'notif.timeEvening': 'Evening review',
+    'notif.permDenied': 'Notifications blocked by browser. Enable them in site settings.',
+    'notif.saved': 'Saved!',
 
     // ─── Default Pack Names ────────────────────────
     'pack.littleStar': 'Little Star',

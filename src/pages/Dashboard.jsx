@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format, subDays } from 'date-fns'
 import useStore from '../store/useStore'
@@ -7,8 +7,23 @@ import { useT, useLang } from '../i18n/I18nContext'
 import { useAuth } from '../contexts/AuthContext'
 import KidAccountModal from '../components/KidAccountModal'
 import Modal from '../components/Modal'
+import OnboardingWizard from '../components/OnboardingWizard'
+import NotificationBanner from '../components/NotificationBanner'
+import NotificationSettings from '../components/NotificationSettings'
 import { formatMoney } from '../utils/format'
 import { linkParentApple, linkParentEmailPassword, linkParentFacebook, linkParentGoogle, upgradeSimpleParentEmail } from '../firebase/auth'
+import useStreak from '../hooks/useStreak'
+import useNotifications from '../hooks/useNotifications'
+
+function KidStreakBadge({ kid, dailyTasks, dayConfigs }) {
+    const { currentStreak } = useStreak(kid.id, dailyTasks, dayConfigs)
+    if (currentStreak === 0) return null
+    return (
+        <span className={`streak-badge${currentStreak >= 3 ? ' streak-badge--hot' : ''}`} style={{ fontSize: 12, marginTop: 4 }}>
+            🔥 {currentStreak}
+        </span>
+    )
+}
 
 function KidReport({ kid, dailyTasks, period, lang }) {
     const dates = useMemo(() => (
@@ -106,7 +121,7 @@ export default function Dashboard() {
     const t = useT()
     const { lang } = useLang()
     const { user, profile, familyId, refreshProfile } = useAuth()
-    const { kids, dailyTasks } = useStore()
+    const { kids, dailyTasks, dayConfigs, isLoading } = useStore()
     const { deleteKid } = useFireActions()
     const navigate = useNavigate()
     const [showCreate, setShowCreate] = useState(false)
@@ -118,6 +133,13 @@ export default function Dashboard() {
     const [linkEmail, setLinkEmail] = useState('')
     const [linkPassword, setLinkPassword] = useState('')
     const [reportPeriod, setReportPeriod] = useState(7)
+    const { enabled, permission, scheduleReminders } = useNotifications()
+
+    useEffect(() => {
+        if (enabled && permission === 'granted' && kids.length > 0) {
+            scheduleReminders(kids, dailyTasks, dayConfigs)
+        }
+    }, [enabled, permission, kids, dailyTasks, dayConfigs, scheduleReminders])
 
     const providerIds = (user?.providerData || []).map((p) => p.providerId)
     const hasLinkedAccount = !profile?.simpleLogin && (
@@ -146,6 +168,7 @@ export default function Dashboard() {
 
     return (
         <div>
+            <NotificationBanner />
             <div className="page-header row between center">
                 <div>
                     <h1 className="page-title">{t('dash.title')}</h1>
@@ -168,14 +191,9 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {kids.length === 0 ? (
-                <div className="empty-state">
-                    <span className="empty-state-icon">🧒</span>
-                    <p className="empty-state-title">{t('dash.noKids')}</p>
-                    <p className="empty-state-desc">{t('dash.noKidsDesc')}</p>
-                    <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('dash.addFirst')}</button>
-                </div>
-            ) : (
+            {kids.length === 0 && !isLoading ? (
+                <OnboardingWizard />
+            ) : kids.length === 0 ? null : (
                 <>
                     <div className="card-grid">
                         {kids.map((kid) => (
@@ -200,6 +218,7 @@ export default function Dashboard() {
                                 )}
                                 <div className="kid-balance">{formatMoney(kid.balance)}</div>
                                 <div className="kid-balance-label">{t('dash.pocketMoney')}</div>
+                                <KidStreakBadge kid={kid} dailyTasks={dailyTasks} dayConfigs={dayConfigs} />
                                 <div className="row" style={{ marginTop: 16, justifyContent: 'center', gap: 8 }}>
                                     <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/daily/${kid.id}`) }}>{t('dash.tasks')}</button>
                                     <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/ledger/${kid.id}`) }}>{t('dash.ledger')}</button>

@@ -199,6 +199,11 @@ const vi = {
     'ledger.deduct': 'Trừ',
     'ledger.add': 'Thêm',
 
+    // ─── Streak ────────────────────────────────────
+    'streak.days': '🔥 {count} ngày liên tiếp',
+    'streak.startNew': 'Bắt đầu chuỗi mới hôm nay!',
+    'streak.best': 'Kỷ lục: {count}',
+
     // ─── Kid Dashboard ─────────────────────────────
     'kidDash.myDashboard': '🌟 Trang của con',
     'kidDash.balance': 'Số dư',
@@ -282,6 +287,35 @@ const vi = {
     'celebrate.allDone': '🎉 Xong hết rồi!',
     'celebrate.congrats': 'Tuyệt vời lắm, {name}!',
     'celebrate.close': 'Tuyệt! 🌟',
+
+    // ─── Onboarding Wizard ─────────────────────────
+    'onboard.step1Title': 'Thêm con đầu tiên',
+    'onboard.step1Desc': 'Cho chúng tôi biết thêm về con để bắt đầu.',
+    'onboard.nameLabel': 'Tên của con',
+    'onboard.namePlaceholder': 'VD: Bé Minh',
+    'onboard.avatarLabel': 'Chọn biểu tượng',
+    'onboard.ageLabel': 'Độ tuổi',
+    'onboard.step2Title': 'Chọn bộ nhiệm vụ',
+    'onboard.step2Desc': 'Chọn một hoặc nhiều bộ để nhập làm nhiệm vụ hàng ngày.',
+    'onboard.recommended': '★ Gợi ý',
+    'onboard.tasks': 'việc',
+    'onboard.step3Title': 'Sẵn sàng rồi!',
+    'onboard.step3Summary': 'Bạn đã thêm {name} với {count} việc từ {packs}.',
+    'onboard.startBtn': '🚀 Bắt đầu ngày đầu tiên!',
+    'onboard.starting': 'Đang thiết lập…',
+    'onboard.next': 'Tiếp theo',
+
+    // ─── Notifications ─────────────────────────────
+    'notif.bannerText': 'Bật nhắc nhở để không bỏ lỡ ngày nào! 🔔',
+    'notif.bannerEnable': 'Bật',
+    'notif.bannerDismiss': 'Bỏ qua',
+    'notif.enabledToast': 'Đã bật nhắc nhở!',
+    'notif.settingsTitle': 'Nhắc nhở',
+    'notif.timeMorning': 'Nhắc buổi sáng',
+    'notif.timeAfternoon': 'Kiểm tra buổi chiều',
+    'notif.timeEvening': 'Ôn lại buổi tối',
+    'notif.permDenied': 'Thông báo bị chặn bởi trình duyệt. Hãy bật lại trong cài đặt trang.',
+    'notif.saved': 'Đã lưu!',
 
     // ─── Default Pack Names ────────────────────────
     'pack.littleStar': 'Ngôi sao nhỏ',

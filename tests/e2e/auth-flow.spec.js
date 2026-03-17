@@ -35,10 +35,17 @@ test('redirects unauthenticated users to login', async ({ page }) => {
 })
 
 test('parent can sign out back to login', async ({ page }) => {
+    const stateWithKid = {
+        ...parentState,
+        collections: {
+            ...parentState.collections,
+            kids: [{ id: 'kid-1', displayName: 'Milo', name: 'Milo', avatar: '🧒', balance: 0 }],
+        },
+    }
     await page.addInitScript((state) => {
         window.localStorage.setItem('kidstrack-lang', 'en')
         window.localStorage.setItem('kidstrack-e2e-state', JSON.stringify(state))
-    }, parentState)
+    }, stateWithKid)
 
     await page.goto('/?e2e=1')
 

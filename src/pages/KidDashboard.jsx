@@ -2,6 +2,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useT } from '../i18n/I18nContext'
 import useStore from '../store/useStore'
 import { useFireActions } from '../hooks/useFirebaseSync'
+import useStreak from '../hooks/useStreak'
 import { format, subDays } from 'date-fns'
 import { formatMoney } from '../utils/format'
 import { useState, useEffect, useRef } from 'react'
@@ -14,7 +15,7 @@ import { trackTaskCompleted, trackAllTasksDone, trackCelebrationShown } from '..
 export default function KidDashboard() {
     const t = useT()
     const { profile } = useAuth()
-    const { kids, dailyTasks, ledger } = useStore()
+    const { kids, dailyTasks, dayConfigs, ledger } = useStore()
     const { toggleTaskStatus, addDailyTask, updateDailyTask, syncAssignedTemplatesForDay, saveRoutine, clearDayTasks, autoLoadRoutine } = useFireActions()
 
     const kid = kids.find((k) => k.id === profile?.kidId)
@@ -35,6 +36,7 @@ export default function KidDashboard() {
     const [routineBanner, setRoutineBanner] = useState(0)
     const [routineSaved, setRoutineSaved] = useState(false)
     const autoLoadKeyRef = useRef(null)
+    const { currentStreak, bestStreak } = useStreak(kid?.id, dailyTasks, dayConfigs)
 
     useEffect(() => {
         if (kid?.id && today) {
@@ -112,7 +114,7 @@ export default function KidDashboard() {
             {/* Hero */}
             <div className="kid-hero-card">
                 <span className="kid-hero-avatar">{kid.avatar}</span>
-                <div>
+                <div style={{ flex: 1 }}>
                     <div className="kid-hero-name">{kid.displayName || kid.name}</div>
                     <div className="kid-hero-balance">
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('kidDash.balance')}:</span>
@@ -120,6 +122,18 @@ export default function KidDashboard() {
                             {formatMoney(kid.balance)}
                         </span>
                     </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                    {currentStreak > 0 ? (
+                        <span className={`streak-badge${currentStreak >= 3 ? ' streak-badge--hot' : ''}`}>
+                            {t('streak.days', { count: currentStreak })}
+                        </span>
+                    ) : (
+                        <span className="streak-badge streak-badge--zero">{t('streak.startNew')}</span>
+                    )}
+                    {bestStreak > currentStreak && bestStreak > 0 && (
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('streak.best', { count: bestStreak })}</span>
+                    )}
                 </div>
             </div>
 

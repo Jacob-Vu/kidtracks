@@ -11,6 +11,7 @@ import { formatMoney } from '../utils/format'
 import DayJournal from '../components/DayJournal'
 import VoiceMicButton from '../components/VoiceMicButton'
 import { trackTemplateImported } from '../hooks/useAnalytics'
+import useStreak from '../hooks/useStreak'
 
 const REWARD_PRESETS = [10000, 20000, 50000]
 const PENALTY_PRESETS = [5000, 10000, 20000]
@@ -60,6 +61,7 @@ export default function DailyView() {
     const kid = kids.find((k) => k.id === selectedKidId)
     const tasks = dailyTasks.filter((t) => t.kidId === selectedKidId && t.date === currentDate)
     const config = dayConfigs.find((c) => c.kidId === selectedKidId && c.date === currentDate)
+    const { currentStreak } = useStreak(selectedKidId, dailyTasks, dayConfigs)
 
     useEffect(() => {
         if (selectedKidId && currentDate && !config?.isFinalized) {
@@ -235,13 +237,18 @@ export default function DailyView() {
             )}
 
             <div className="row wrap center between" style={{ marginBottom: 24, gap: 12 }}>
-                <div className="chip-group">
+                <div className="chip-group" style={{ alignItems: 'center' }}>
                     {kids.map((k) => (
                         <button key={k.id} className={`chip ${k.id === selectedKidId ? 'selected' : ''}`}
                             onClick={() => { setSelectedKidId(k.id); navigate(`/daily/${k.id}`) }}>
                             {k.avatar} {k.displayName || k.name}
                         </button>
                     ))}
+                    {currentStreak > 0 && (
+                        <span className={`streak-badge${currentStreak >= 3 ? ' streak-badge--hot' : ''}`} style={{ fontSize: 12 }}>
+                            🔥 {currentStreak}
+                        </span>
+                    )}
                 </div>
                 <div className="date-nav">
                     <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))} aria-label="Previous day">◀</button>
