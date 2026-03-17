@@ -1,116 +1,201 @@
 # Repo Memory (Non-Mobile Scope)
 
 Last updated: 2026-03-17
+Ignores `/mobile` (Flutter) per standing request.
 
-This note intentionally ignores `/mobile` per request.
+---
 
 ## Top-Level Structure
-- `src/`: main web app source
-- `public/`: static/PWA assets
-- `functions/`: Firebase Cloud Functions backend
-- `tests/e2e/`: Playwright end-to-end tests
-- `dist/`: frontend build output
-- `imp_plan/`: planning and internal notes
-- Root config: `package.json`, `vite.config.js`, `playwright.config.js`, `firebase.json`, `eslint.config.js`
+
+```
+src/              main web app source
+public/           static/PWA assets
+functions/        Firebase Cloud Functions
+tests/e2e/        Playwright E2E tests
+dist/             build output (gitignored)
+imp_plan/         planning docs & decisions
+```
+
+Root config: `package.json`, `vite.config.js`, `playwright.config.js`, `firebase.json`, `.firebaserc`, `eslint.config.js`
+
+---
 
 ## Tech Stack
+
 - React 19 + Vite + React Router 7
-- Zustand for client state
-- Firebase Auth + Firestore + Cloud Functions
+- Zustand (client state)
+- Firebase Auth + Firestore + Cloud Functions (asia-southeast1)
+- Firebase Analytics GA4 (`measurementId` in `.env.local`)
 - PWA via `vite-plugin-pwa`
-- Playwright for E2E
+- Playwright E2E (13 tests, all passing)
 
-## Useful Commands
-- Frontend:
-  - `npm run dev`
-  - `npm run build`
-  - `npm run lint`
-  - `npm run preview`
-  - `npm run test:e2e`
-  - `npm run test:e2e:ui`
-- Functions (`functions/package.json`):
-  - `npm run serve`
-  - `npm run deploy`
-  - `npm run logs`
+---
 
-## Key Entry Points
-- `src/main.jsx`: app bootstrap
-- `src/App.jsx`: route shell (parent/kid split)
-- `src/contexts/AuthContext.jsx`: auth/session/profile loading
-- `src/components/ProtectedRoute.jsx`: route guard
-- `src/store/useStore.js`: core app state/business logic
-- `src/hooks/useFirebaseSync.js`: Firestore sync + callable actions
-- `src/firebase/config.js`: Firebase initialization/env usage
-- `src/firebase/auth.js`: auth helpers (including family/kid flows)
-- `src/firebase/db.js`: Firestore helpers
-- `functions/index.js`: backend callable functions
-- `src/testing/e2e.js`: E2E mode and local mock state behavior
+## Key Source Files
 
-## Current Gaps / Risks
-- `README.md` appears to be default template and does not document real setup/architecture.
-- Required `.env` keys are implicit in Firebase config and not documented clearly.
-- Firebase rules/indexes are not obvious in root-level project docs.
-- Playwright’s mocked E2E mode workflow is not documented.
-- Some text appears to have encoding/mojibake issues.
+| File | Purpose |
+|---|---|
+| `src/main.jsx` | App bootstrap |
+| `src/App.jsx` | Route shell, ParentLayout, KidLayout wiring |
+| `src/contexts/AuthContext.jsx` | Auth session + profile loading |
+| `src/store/useStore.js` | Zustand state + business logic builders |
+| `src/hooks/useFirebaseSync.js` | Firestore realtime sync + all callable actions |
+| `src/hooks/useVoiceRecorder.js` | MediaRecorder + SpeechRecognition (audio+transcript) |
+| `src/hooks/useVoiceInput.js` | SpeechRecognition only (transcript for form fields) |
+| `src/hooks/useAnalytics.js` | Firebase Analytics event helpers + usePageTracking |
+| `src/firebase/config.js` | Firebase init (app, db, auth, analytics) |
+| `src/firebase/auth.js` | Auth helpers (social, email, kid, synthetic quick-start) |
+| `src/firebase/db.js` | Firestore helpers |
+| `src/data/defaultTemplates.js` | 6 default task packs (EN+VI descriptions) |
+| `src/i18n/en.js` + `vi.js` | All UI strings |
+| `src/index.css` | Global design system CSS |
+| `functions/index.js` | All backend callable functions |
+| `src/testing/e2e.js` | E2E mock state |
 
-## Reuse Plan
-For future tasks, treat this file as the first-pass map before re-exploring the repo.
+---
 
-## UX Hardening Progress (2026-03-17)
-- Completed first-pass UX quality fixes:
-  - i18n fallback support in translator (`t(key, fallback)` and params handling).
-  - Added missing i18n keys for `common.back`, ledger labels, and `daily.addToPocket`.
-  - Replaced native browser `alert/confirm` usage in major parent flows with in-app modal/toast patterns.
-  - Upgraded modal accessibility (`role="dialog"`, `aria-modal`, keyboard escape, focus trap, focus restore).
-  - Added visible keyboard focus ring styles for key controls.
-  - Improved keyboard accessibility for dashboard kid cards (`role`, `tabIndex`, Enter/Space activate).
-  - Fixed mojibake avatar/message issues in `KidProfile`.
-- Build status after changes: `npm run build` passes.
-- Remaining UI quality opportunities:
-  - Expand icon-button `aria-label` coverage in all pages.
-  - Add reduced-motion handling and motion preference support.
-  - Add Playwright UX checks for keyboard navigation and modal focus behavior.
+## Key Components
 
-## UI Polish Progress (2026-03-17)
-- Saved execution plan: `imp_plan/UI_POLISH_EXECUTION_PLAN.md`.
-- Implemented Phase 1 baseline polish:
-  - Added typography/spacing tokens in `src/index.css`.
-  - Reduced excessive glow intensity and button shadow harshness.
-  - Improved typography consistency for key UI primitives.
-  - Added reusable section header classes: `.section-title`, `.section-note`.
-  - Improved mobile bottom-nav readability and active-state treatment.
-  - Added `prefers-reduced-motion` support.
-  - Applied new section classes in `Templates` and `KidDashboard`.
-- Verification: `npm run build` passes after changes.
+| Component | Purpose |
+|---|---|
+| `src/components/MobileHeader.jsx` | Sticky mobile header (lang toggle, avatar, logout) |
+| `src/components/CelebrationOverlay.jsx` | Full-screen confetti when all tasks done |
+| `src/components/DayJournal.jsx` | Daily voice journal (record, transcribe, play, history) |
+| `src/components/VoiceMicButton.jsx` | Reusable mic button for form field voice input |
+| `src/components/Modal.jsx` | Accessible modal dialog |
+| `src/components/InstallPrompt.jsx` | PWA install prompt |
+| `src/layouts/KidLayout.jsx` | Kid route wrapper with bottom nav |
 
-## Auth + Template Upgrade Progress (2026-03-17)
-- Implemented parent social auth expansion:
-  - Added parent sign-in via Apple and Facebook in login flow.
-- Implemented parent simple first-time login:
-  - Added username-only "quick start" flow backed by a new callable Cloud Function `signInParentSimple` (custom token).
-  - Added login guard updates so parent without `familyId` stays in setup flow.
-- Implemented parent account linking prompt after creating kids:
-  - Dashboard shows a nudge banner when parent account is not linked.
-  - Added linking actions for Google, Apple, Facebook, and Email+Password.
-  - Linking updates `userProfiles` and `parentEmailLookup` (once email is available).
-- Implemented bilingual template descriptions:
-  - Template model now supports `descriptions.en` and `descriptions.vi`.
-  - Templates page supports editing both EN/VI descriptions.
-  - Daily task generation now resolves description based on current app language.
-  - Default pack imports now persist both language description fields (initially mirrored from source text).
-- Validation:
-  - `npm run build` passes.
-  - `node -c functions/index.js` passes.
+---
 
-## Production Deploy Memory (2026-03-17)
-- Added Firebase hosting target mapping:
-  - `.firebaserc`: target `production` -> site `kidtracks-e50ac`.
-  - `firebase.json`: Hosting now uses `"target": "production"`.
-- Added root deploy scripts:
-  - `npm run deploy:prod`
-  - `npm run deploy:prod:hosting`
-  - `npm run deploy:prod:functions`
-- Added deploy playbook:
-  - `imp_plan/FIREBASE_PROD_DEPLOY.md`
-- Known environment caveat:
-  - If CLI times out, clear proxy vars (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`) for the deploy session.
+## Key Pages
+
+| Page | Route | Notes |
+|---|---|---|
+| `Login.jsx` | `/login` | Social + email + quick-start + kid login |
+| `Dashboard.jsx` | `/` | Parent: kids overview, balances, account linking |
+| `DailyView.jsx` | `/daily/:kidId` | Task list, finalize day, reward/penalty config, journal |
+| `Templates.jsx` | `/templates` | Template management + default pack import |
+| `Ledger.jsx` | `/ledger/:kidId` | Transaction history |
+| `KidDashboard.jsx` | `/kid` | Kid view: tasks, 10-day strip, ledger, journal |
+| `KidProfile.jsx` | `/kid/profile` | Kid profile + password change |
+
+---
+
+## Firestore Schema (under `families/{familyId}/`)
+
+| Collection | Key fields |
+|---|---|
+| `kids/{kidId}` | `name`, `displayName`, `avatar`, `balance`, `routine: {tasks, savedAt, savedFromDate}` |
+| `templates/{id}` | `title`, `descriptions.en`, `descriptions.vi`, `assignedKidIds` |
+| `dailyTasks/{id}` | `kidId`, `date`, `title`, `description`, `status` (pending/completed/failed) |
+| `dayConfigs/{kidId_date}` | `rewardAmount`, `penaltyAmount`, `isFinalized` |
+| `ledger/{id}` | `kidId`, `date`, `amount`, `label` |
+| `dayJournal/{kidId_date_role}` | `text`, `audioBase64`, `audioDuration`, `createdAt`, `updatedAt` |
+
+Global: `userProfiles/{uid}`, `simpleParentAccounts/{username}`, `parentEmailLookup/{email}`
+
+---
+
+## Cloud Functions (`functions/index.js`)
+
+| Function | Purpose |
+|---|---|
+| `signInParentSimple` | Username-only quick-start (custom token) |
+| `addKid / updateKid / deleteKid` | Kid CRUD |
+| `addTemplate / updateTemplate / deleteTemplate` | Template CRUD |
+| `importDefaultPack / assignTemplateToKids` | Pack import, kid assignment |
+| `addDailyTask / updateDailyTask / deleteDailyTask` | Task CRUD |
+| `loadTemplatesForDay / syncAssignedTemplatesForDay` | Bulk task creation from templates |
+| `clearDayTasks` | Batch delete all tasks for kidId+date |
+| `setDayConfig / finalizeDay` | Day config + finalize with reward/penalty |
+| `addManualTransaction` | Manual ledger entry |
+
+---
+
+## Auth Architecture
+
+- Parent: Google / Apple / Facebook social login
+- Parent: email+password + forgot password
+- Parent: Quick-start (username only → synthetic email `{username}@parent.kidstrack`)
+- `profile.simpleLogin: true` flags quick-start accounts
+- Kid: `{username}@{familyId}.kidstrack` via `signInKid()`
+- `upgradeSimpleParentEmail()`: swap synthetic → real email+password
+
+---
+
+## Analytics Events (Firebase GA4)
+
+| Event | When |
+|---|---|
+| `page_view` | Every route change (auto via `usePageTracking`) |
+| `login` / `sign_up` | Login success, method: google/apple/facebook/email/quick_start/kid |
+| `family_created` | Family name set on first login |
+| `task_completed` | Kid checks off a task |
+| `all_tasks_done` + `celebration_shown` | All tasks completed in a day |
+| `journal_saved` / `voice_recording_used` | Journal saved with/without audio |
+| `template_imported` | Template pack imported |
+| `voice_task_input` | Voice used to fill task title/description |
+
+---
+
+## Default Routine Feature
+
+- Routine stored in `kids/{kidId}.routine` — no new collection
+- ⭐ "Lưu lịch cố định" button saves current task list as routine
+- Auto-loads on empty today (once per kid+date, `useRef` guard)
+- Banner: "✨ Đã tải lịch cố định (N việc)" + [Hoàn tác]
+- Undo = `clearDayTasks` (batch delete today's tasks)
+- Available in both DailyView (parent) and KidDashboard (kid)
+
+---
+
+## Deploy Commands
+
+```bash
+npm run deploy:prod            # full build + hosting + functions
+npm run deploy:prod:hosting    # hosting only
+npm run deploy:prod:functions  # functions only
+```
+
+Proxy issue: clear `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY` if CLI times out.
+
+---
+
+## Git — Current State (master)
+
+```
+25f9514  feat(routine): add default daily routine with auto-load
+ea6c794  feat(task): add voice input to task creation modal
+26e0cb2  feat(analytics): integrate Firebase Analytics GA4 tracking
+af4e90b  fix(templates): propagate Vietnamese descriptions through import pipeline
+cc5d64b  feat(journal): add daily voice journal with audio recording + transcription
+220c7b0  fix(mobile): add language switcher and user profile to mobile header
+37141a2  feat(kid): add celebration overlay when all daily tasks are completed
+```
+
+All committed and deployed to production. `git status` should be clean.
+E2E: 13 tests passing.
+
+---
+
+## CEO Product Priorities (remaining)
+
+1. **Goal Jar** — savings goal + parent approval (monetization anchor)
+2. **Family Insights** — completion trends card on parent dashboard
+3. **Push/email reminders** — daily active use nudge
+4. **Co-parent invite** — word-of-mouth growth
+5. **Monetization** — freemium 49k VND/month
+
+Detailed review: `imp_plan/CEO_PRODUCT_REVIEW.md`
+
+---
+
+## Planned / In-Progress
+
+| Plan file | Feature | Status |
+|---|---|---|
+| `DAILY_TASK_UX_IMPROVEMENT_PLAN.md` | Template picker popup, copy-from-yesterday, history view | Planned |
+| `VOICE_TASK_CREATION_PLAN.md` | Voice input for task creation | ✅ Done |
+| `CEO_PRODUCT_REVIEW.md` | Full product review + roadmap | Reference |
+| `FIREBASE_PROD_DEPLOY.md` | Deploy playbook | Reference |
