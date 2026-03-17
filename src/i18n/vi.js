@@ -313,6 +313,23 @@
     'streak.startNew': 'Báº¯t Ä‘áº§u chuá»—i má»›i hÃ´m nay!',
     'streak.best': 'Ká»· lá»¥c: {count}',
 
+    // Bang xep hang anh chi em
+    'leaderboard.title': 'Báº£ng xáº¿p háº¡ng anh chá»‹ em',
+    'leaderboard.kidTitle': 'Xáº¿p háº¡ng gia Ä‘Ã¬nh',
+    'leaderboard.subtitle': 'So sÃ¡nh tiáº¿n bá»™ hÃ ng tuáº§n theo hÆ°á»›ng tÃ­ch cá»±c',
+    'leaderboard.window': '{days} ngÃ y gáº§n Ä‘Ã¢y',
+    'leaderboard.hiddenTitle': 'Táº¡m áº©n báº£ng xáº¿p háº¡ng Ä‘á»ƒ cÃ´ng báº±ng',
+    'leaderboard.hiddenDesc': 'Cáº§n Ã­t nháº¥t {minKids} bÃ© cÃ³ Ä‘á»§ dá»¯ liá»‡u tuáº§n nÃ y.',
+    'leaderboard.mostImproved': 'Tiáº¿n bá»™ nháº¥t',
+    'leaderboard.streakStar': 'NgÃ´i sao Ä‘á»u Ä‘áº·n',
+    'leaderboard.rank': 'Háº¡ng',
+    'leaderboard.kid': 'BÃ©',
+    'leaderboard.completion': 'HoÃ n thÃ nh',
+    'leaderboard.earnings': 'Thu nháº­p',
+    'leaderboard.streak': 'Chuá»—i',
+    'leaderboard.you': 'Báº¡n',
+    'leaderboard.improvedBy': '+{value}%',
+
     // â”€â”€â”€ Kid Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'kidDash.myDashboard': 'ðŸŒŸ Trang cá»§a con',
     'kidDash.balance': 'Sá»‘ dÆ°',

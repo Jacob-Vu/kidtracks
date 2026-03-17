@@ -20,6 +20,8 @@ import useNotifications from '../hooks/useNotifications'
 import useWeeklyReport from '../hooks/useWeeklyReport'
 import useGoalMilestones from '../hooks/useGoalMilestones'
 import useBadges from '../hooks/useBadges'
+import useLeaderboard from '../hooks/useLeaderboard'
+import LeaderboardCard from '../components/LeaderboardCard'
 
 const LS_WEEKLY_MODAL_SEEN = 'kidstrack-weekly-modal-seen'
 const toWeekParam = (date) => `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`
@@ -147,7 +149,7 @@ export default function Dashboard() {
     const t = useT()
     const { lang } = useLang()
     const { user, profile, familyId, refreshProfile } = useAuth()
-    const { kids, goals, dailyTasks, dayConfigs, isLoading } = useStore()
+    const { kids, goals, dailyTasks, dayConfigs, ledger, isLoading } = useStore()
     const { deleteKid, addGoal, updateGoal, deleteGoal } = useFireActions()
     const navigate = useNavigate()
     const [showCreate, setShowCreate] = useState(false)
@@ -164,6 +166,7 @@ export default function Dashboard() {
     const [editGoal, setEditGoal] = useState(null)
     const { enabled, permission, scheduleReminders } = useNotifications()
     const weeklyReport = useWeeklyReport(0)
+    const leaderboardData = useLeaderboard(kids, dailyTasks, ledger, dayConfigs)
     const weeklyReportDate = useMemo(() => parseISO(weeklyReport.weekStart), [weeklyReport.weekStart])
     const weeklyReportWeek = useMemo(() => toWeekParam(weeklyReportDate), [weeklyReportDate])
     const weeklyHasData = weeklyReport.familyStats.totalTasks > 0
@@ -358,6 +361,10 @@ export default function Dashboard() {
                         </div>
                     </div>
 
+                    <div className="card" style={{ marginTop: 24 }}>
+                        <LeaderboardCard data={leaderboardData} />
+                    </div>
+
                     {/* ── Performance Report ── */}
                     <div className="card" style={{ marginTop: 32 }}>
                         <div className="row between center" style={{ marginBottom: 16 }}>
@@ -482,3 +489,5 @@ export default function Dashboard() {
         </div>
     )
 }
+
+

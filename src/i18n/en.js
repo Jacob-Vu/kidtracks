@@ -314,6 +314,23 @@
     'streak.startNew': 'Start your streak today!',
     'streak.best': 'Best: {count}',
 
+    // Sibling Leaderboard
+    'leaderboard.title': 'Sibling Leaderboard',
+    'leaderboard.kidTitle': 'Family Ranking',
+    'leaderboard.subtitle': 'Weekly healthy progress comparison',
+    'leaderboard.window': 'Last {days} days',
+    'leaderboard.hiddenTitle': 'Leaderboard hidden for fairness',
+    'leaderboard.hiddenDesc': 'Need at least {minKids} kids with enough weekly activity.',
+    'leaderboard.mostImproved': 'Most Improved',
+    'leaderboard.streakStar': 'Consistency Star',
+    'leaderboard.rank': 'Rank',
+    'leaderboard.kid': 'Kid',
+    'leaderboard.completion': 'Completion',
+    'leaderboard.earnings': 'Earnings',
+    'leaderboard.streak': 'Streak',
+    'leaderboard.you': 'You',
+    'leaderboard.improvedBy': '+{value}%',
+
     // â”€â”€â”€ Kid Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'kidDash.myDashboard': 'ðŸŒŸ My Dashboard',
     'kidDash.balance': 'Balance',

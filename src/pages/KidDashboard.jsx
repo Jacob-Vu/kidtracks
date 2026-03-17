@@ -17,6 +17,8 @@ import { trackTaskCompleted, trackAllTasksDone, trackCelebrationShown } from '..
 import BadgeStrip from '../components/BadgeStrip'
 import useBadges from '../hooks/useBadges'
 import useKidFeedback from '../hooks/useKidFeedback'
+import useLeaderboard from '../hooks/useLeaderboard'
+import LeaderboardCard from '../components/LeaderboardCard'
 
 export default function KidDashboard() {
     const t = useT()
@@ -48,6 +50,7 @@ export default function KidDashboard() {
     const autoLoadKeyRef = useRef(null)
     const { currentStreak, bestStreak } = useStreak(kid?.id, dailyTasks, dayConfigs)
     const { recentBadges, totalUnlocked, totalBadges, newlyUnlocked } = useBadges(kid?.id)
+    const leaderboardData = useLeaderboard(kids, dailyTasks, ledger, dayConfigs)
     const {
         reducedMotion,
         taskPopId,
@@ -185,6 +188,7 @@ export default function KidDashboard() {
             </div>
 
             <BadgeStrip recentBadges={recentBadges} totalUnlocked={totalUnlocked} totalBadges={totalBadges} />
+            <LeaderboardCard data={leaderboardData} variant="kid" currentKidId={kid.id} />
             {badgeUnlock && (
                 <div
                     className={`badge-unlock-toast${reducedMotion ? ' badge-unlock-toast--reduced' : ''}`}
