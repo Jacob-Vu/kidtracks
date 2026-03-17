@@ -86,6 +86,11 @@
     // Weekly Report
     'weekly.title': 'Weekly Report',
     'weekly.openReportCta': '📊 Open Weekly Report',
+    'weekly.modalTitle': 'Weekly summary is ready',
+    'weekly.modalWeek': 'Report week: {week}',
+    'weekly.modalCompletion': 'Family completion: {pct}%',
+    'weekly.modalLater': 'Later',
+    'weekly.modalOpen': 'Open Report',
     'weekly.weekNum': 'Week {num}, {year}',
     'weekly.noData': 'No data for this week yet.',
     'weekly.totalTasks': '{done}/{total} tasks completed',
@@ -127,6 +132,16 @@
     'weekly.tips.familyDown': 'A slower week - chat with the kids to understand what felt difficult.',
     'weekly.tips.perfectDays': '{name} had {days} perfect days! Try adding 1-2 challenge tasks.',
     'weekly.tips.highBalance': '{name} has {amountK}k saved - set a savings goal together.',
+    'weekly.shareBtn': 'Share',
+    'weekly.copyBtn': 'Copy Summary',
+    'weekly.shareFamily': 'Family completion',
+    'weekly.shareEarnings': 'Earnings',
+    'weekly.shareTopInsight': 'Top insight',
+    'weekly.shareSuccess': 'Shared successfully.',
+    'weekly.shareCopiedFallback': 'Shared not available. Summary copied.',
+    'weekly.shareError': 'Unable to share right now.',
+    'weekly.copySuccess': 'Summary copied.',
+    'weekly.copyError': 'Unable to copy summary.',
 
     // â”€â”€â”€ Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'tmpl.title': 'ðŸ“‹ Task Templates',
@@ -361,6 +376,8 @@
     'notif.timeEvening': 'Evening review',
     'notif.permDenied': 'Notifications blocked by browser. Enable them in site settings.',
     'notif.saved': 'Saved!',
+    'notif.weeklyTitle': 'Weekly report is ready',
+    'notif.weeklyBody': 'Tap to review your family weekly summary.',
 
     // â”€â”€â”€ Default Pack Names â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'pack.littleStar': 'Little Star',

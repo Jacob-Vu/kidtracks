@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { format, subDays } from 'date-fns'
+import { format, getISOWeek, getISOWeekYear, parseISO, subDays } from 'date-fns'
 import useStore from '../store/useStore'
 import { useFireActions } from '../hooks/useFirebaseSync'
 import { useT, useLang } from '../i18n/I18nContext'
@@ -10,10 +10,15 @@ import Modal from '../components/Modal'
 import OnboardingWizard from '../components/OnboardingWizard'
 import NotificationBanner from '../components/NotificationBanner'
 import NotificationSettings from '../components/NotificationSettings'
+import WeeklyReportModal from '../components/WeeklyReportModal'
 import { formatMoney } from '../utils/format'
 import { linkParentApple, linkParentEmailPassword, linkParentFacebook, linkParentGoogle, upgradeSimpleParentEmail } from '../firebase/auth'
 import useStreak from '../hooks/useStreak'
 import useNotifications from '../hooks/useNotifications'
+import useWeeklyReport from '../hooks/useWeeklyReport'
+
+const LS_WEEKLY_MODAL_SEEN = 'kidstrack-weekly-modal-seen'
+const toWeekParam = (date) => `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`
 
 function KidStreakBadge({ kid, dailyTasks, dayConfigs }) {
     const { currentStreak } = useStreak(kid.id, dailyTasks, dayConfigs)
@@ -133,13 +138,56 @@ export default function Dashboard() {
     const [linkEmail, setLinkEmail] = useState('')
     const [linkPassword, setLinkPassword] = useState('')
     const [reportPeriod, setReportPeriod] = useState(7)
+    const [showWeeklyModal, setShowWeeklyModal] = useState(false)
     const { enabled, permission, scheduleReminders } = useNotifications()
+    const weeklyReport = useWeeklyReport(0)
+    const weeklyReportDate = useMemo(() => parseISO(weeklyReport.weekStart), [weeklyReport.weekStart])
+    const weeklyReportWeek = useMemo(() => toWeekParam(weeklyReportDate), [weeklyReportDate])
+    const weeklyHasData = weeklyReport.familyStats.totalTasks > 0
 
     useEffect(() => {
         if (enabled && permission === 'granted' && kids.length > 0) {
             scheduleReminders(kids, dailyTasks, dayConfigs)
         }
     }, [enabled, permission, kids, dailyTasks, dayConfigs, scheduleReminders])
+
+    useEffect(() => {
+        if (profile?.role !== 'parent' || !weeklyHasData) {
+            setShowWeeklyModal(false)
+            return
+        }
+
+        const isMonday = new Date().getDay() === 1
+        let seenWeek = ''
+        try {
+            seenWeek = localStorage.getItem(LS_WEEKLY_MODAL_SEEN) || ''
+        } catch {
+            seenWeek = ''
+        }
+
+        const hasSeen = seenWeek === weeklyReportWeek
+        const shouldOpen = (isMonday || !hasSeen) && !hasSeen
+        setShowWeeklyModal(shouldOpen)
+    }, [profile?.role, weeklyHasData, weeklyReportWeek])
+
+    const markWeeklyModalSeen = useCallback(() => {
+        try {
+            localStorage.setItem(LS_WEEKLY_MODAL_SEEN, weeklyReportWeek)
+        } catch {
+            // ignore storage failures
+        }
+    }, [weeklyReportWeek])
+
+    const handleCloseWeeklyModal = useCallback(() => {
+        markWeeklyModalSeen()
+        setShowWeeklyModal(false)
+    }, [markWeeklyModalSeen])
+
+    const handleOpenWeeklyReport = useCallback(() => {
+        markWeeklyModalSeen()
+        setShowWeeklyModal(false)
+        navigate(`/report/weekly?week=${weeklyReportWeek}`)
+    }, [markWeeklyModalSeen, navigate, weeklyReportWeek])
 
     const providerIds = (user?.providerData || []).map((p) => p.providerId)
     const hasLinkedAccount = !profile?.simpleLogin && (
@@ -340,6 +388,15 @@ export default function Dashboard() {
                     </div>
                 </Modal>
             )}
+            <WeeklyReportModal
+                isOpen={showWeeklyModal}
+                onClose={handleCloseWeeklyModal}
+                onOpenReport={handleOpenWeeklyReport}
+                weekKey={weeklyReportWeek}
+                weekStart={weeklyReport.weekStart}
+                weekEnd={weeklyReport.weekEnd}
+                familyStats={weeklyReport.familyStats}
+            />
         </div>
     )
 }

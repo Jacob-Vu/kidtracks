@@ -3323,6 +3323,63 @@ textarea {
   overflow-x: clip;
 }
 
+.weekly-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.weekly-actions-status {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.weekly-actions-status--success {
+  color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.weekly-actions-status--error {
+  color: var(--accent-red);
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.weekly-modal-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.weekly-modal-week {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+  font-weight: 800;
+}
+
+.weekly-modal-range {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.weekly-modal-completion {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.weekly-modal-count {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
 .weekly-no-data {
   text-align: center;
   padding: 40px 24px;

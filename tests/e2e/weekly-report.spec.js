@@ -188,3 +188,47 @@ test('language toggle changes weekly report text', async ({ page }) => {
     await expect(page.getByRole('heading', { name: /báo cáo tuần/i })).toBeVisible()
     await expect(page.getByText(/gợi ý thông minh/i)).toBeVisible()
 })
+
+test('weekly report actions are visible and copy summary works', async ({ page }) => {
+    await page.addInitScript((state) => {
+        window.localStorage.setItem('kidstrack-lang', 'en')
+        window.localStorage.setItem('kidstrack-e2e-state', JSON.stringify(state))
+        window.__copiedSummary = ''
+        Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: {
+                writeText: async (text) => {
+                    window.__copiedSummary = text
+                },
+            },
+        })
+    }, buildParentState({ withData: true }))
+
+    await page.goto('/report/weekly?e2e=1')
+
+    await expect(page.getByRole('button', { name: /share/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /copy summary/i })).toBeVisible()
+    await page.getByRole('button', { name: /copy summary/i }).click()
+    await expect(page.getByText(/summary copied/i)).toBeVisible()
+
+    const copied = await page.evaluate(() => window.__copiedSummary || '')
+    expect(copied).toContain('Weekly Report')
+    expect(copied).toContain('Family completion')
+})
+
+test('dashboard weekly modal appears and open report routes correctly', async ({ page }) => {
+    await page.addInitScript((state) => {
+        window.localStorage.setItem('kidstrack-lang', 'en')
+        window.localStorage.removeItem('kidstrack-weekly-modal-seen')
+        window.localStorage.setItem('kidstrack-e2e-state', JSON.stringify(state))
+    }, buildParentState({ withData: true }))
+
+    await page.goto('/?e2e=1')
+
+    await expect(page.getByRole('heading', { name: /weekly summary is ready/i })).toBeVisible()
+    await page.getByRole('button', { name: /open report/i }).click()
+
+    await expect(page).toHaveURL(/\/report\/weekly\?week=\d{4}-W\d{2}/)
+    const seenWeek = await page.evaluate(() => window.localStorage.getItem('kidstrack-weekly-modal-seen'))
+    expect(seenWeek).toMatch(/^\d{4}-W\d{2}$/)
+})

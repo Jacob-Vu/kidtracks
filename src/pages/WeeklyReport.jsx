@@ -160,6 +160,7 @@ export default function WeeklyReport() {
     const dateRange = `${format(parseISO(weekStart), 'MMM d')} – ${format(parseISO(weekEnd), 'MMM d, yyyy')}`
     const hasData = familyStats.totalTasks > 0
     const canGoNext = selectedWeekStart < currentWeekStart
+    const [actionStatus, setActionStatus] = useState(null)
 
     const dayLabels = [
         t('weekly.dayShortMon'),
@@ -187,6 +188,86 @@ export default function WeeklyReport() {
         setSearchParams({ week: toWeekParam(next) })
     }
 
+    const topInsightText = useMemo(() => {
+        if (insights.mostPopularTask) return `${t('weekly.mostPopular')}: ${insights.mostPopularTask}`
+        if (insights.hardestTask) return `${t('weekly.hardest')}: ${insights.hardestTask}`
+        if (insights.bestDayIndex !== null) return `${t('weekly.bestDay')}: ${t(dayNameKeys[insights.bestDayIndex])}`
+        if (insights.worstDayIndex !== null) return `${t('weekly.worstDay')}: ${t(dayNameKeys[insights.worstDayIndex])}`
+        return ''
+    }, [dayNameKeys, insights.bestDayIndex, insights.hardestTask, insights.mostPopularTask, insights.worstDayIndex, t])
+
+    const shareSummaryText = useMemo(() => {
+        const lines = [
+            `${t('weekly.title')} (${dateRange})`,
+            `${t('weekly.shareFamily')}: ${Math.round(familyStats.completionRate * 100)}% (${familyStats.completedTasks}/${familyStats.totalTasks})`,
+        ]
+
+        kidStats.forEach((ks) => {
+            lines.push(
+                `${ks.kid.displayName || ks.kid.name}: ${Math.round(ks.completionRate * 100)}% | ${t('weekly.shareEarnings')}: ${formatMoney(ks.weekEarnings)}`
+            )
+        })
+
+        if (topInsightText) {
+            lines.push(`${t('weekly.shareTopInsight')}: ${topInsightText}`)
+        }
+
+        return lines.join('\n')
+    }, [dateRange, familyStats.completedTasks, familyStats.completionRate, familyStats.totalTasks, kidStats, t, topInsightText])
+
+    useEffect(() => {
+        if (!actionStatus) return
+        const timer = window.setTimeout(() => setActionStatus(null), 2200)
+        return () => window.clearTimeout(timer)
+    }, [actionStatus])
+
+    const copySummaryToClipboard = async () => {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(shareSummaryText)
+            return
+        }
+
+        const textArea = document.createElement('textarea')
+        textArea.value = shareSummaryText
+        textArea.setAttribute('readonly', '')
+        textArea.style.position = 'absolute'
+        textArea.style.left = '-9999px'
+        document.body.appendChild(textArea)
+        textArea.select()
+        const ok = document.execCommand('copy')
+        document.body.removeChild(textArea)
+        if (!ok) throw new Error('copy-failed')
+    }
+
+    const handleShare = async () => {
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: t('weekly.title'),
+                    text: shareSummaryText,
+                    url: window.location.href,
+                })
+                setActionStatus({ type: 'success', message: t('weekly.shareSuccess') })
+                return
+            }
+
+            await copySummaryToClipboard()
+            setActionStatus({ type: 'success', message: t('weekly.shareCopiedFallback') })
+        } catch (err) {
+            if (err?.name === 'AbortError') return
+            setActionStatus({ type: 'error', message: t('weekly.shareError') })
+        }
+    }
+
+    const handleCopySummary = async () => {
+        try {
+            await copySummaryToClipboard()
+            setActionStatus({ type: 'success', message: t('weekly.copySuccess') })
+        } catch {
+            setActionStatus({ type: 'error', message: t('weekly.copyError') })
+        }
+    }
+
     return (
         <div className="weekly-report">
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')} style={{ marginBottom: 16 }}>
@@ -196,6 +277,20 @@ export default function WeeklyReport() {
             <div className="page-header" style={{ marginBottom: 20 }}>
                 <h1 className="page-title">{t('weekly.title')}</h1>
                 <p className="page-subtitle">{dateRange}</p>
+            </div>
+
+            <div className="weekly-actions">
+                <button className="btn btn-ghost btn-sm" onClick={handleShare}>
+                    {t('weekly.shareBtn')}
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={handleCopySummary}>
+                    {t('weekly.copyBtn')}
+                </button>
+                {actionStatus && (
+                    <span className={`weekly-actions-status weekly-actions-status--${actionStatus.type}`}>
+                        {actionStatus.message}
+                    </span>
+                )}
             </div>
 
             <div className="weekly-week-nav">
