@@ -394,6 +394,9 @@ const vi = {
 
     // ─── Savings Goals ─────────────────────────────
     'goal.sectionTitle': 'Mục tiêu tiết kiệm',
+    'goal.parentSummaryTitle': 'Mục tiêu tiết kiệm',
+    'goal.parentSummaryDesc': 'Theo dõi mục tiêu tiết kiệm của từng bé',
+    'goal.emptyTitle': 'Chưa có mục tiêu',
     'goal.empty': 'Chưa có mục tiêu nào',
     'goal.emptyDesc': 'Đặt mục tiêu tiết kiệm để con có động lực!',
     'goal.createBtn': '+ Tạo mục tiêu',
@@ -442,6 +445,8 @@ const vi = {
 
     // ─── Leaderboard ───────────────────────────────
     'leaderboard.title': 'Bảng xếp hạng tuần',
+    'leaderboard.subtitle': 'Xem từng bé đang làm tốt thế nào trong tuần',
+    'leaderboard.window': 'Tuần này',
     'leaderboard.completionRate': 'Hoàn thành',
     'leaderboard.earnings': 'Thu nhập',
     'leaderboard.streak': 'Chuỗi ngày',

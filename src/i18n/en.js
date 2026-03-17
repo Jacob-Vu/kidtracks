@@ -394,6 +394,9 @@ const en = {
 
     // ─── Savings Goals ─────────────────────────────
     'goal.sectionTitle': 'Savings Goals',
+    'goal.parentSummaryTitle': 'Savings Goals',
+    'goal.parentSummaryDesc': 'Track savings goals for each kid',
+    'goal.emptyTitle': 'No goals yet',
     'goal.empty': 'No goals yet',
     'goal.emptyDesc': 'Set a savings goal to motivate your kid!',
     'goal.createBtn': '+ Create Goal',
@@ -442,6 +445,8 @@ const en = {
 
     // ─── Leaderboard ───────────────────────────────
     'leaderboard.title': 'Weekly Leaderboard',
+    'leaderboard.subtitle': 'See how each kid is doing this week',
+    'leaderboard.window': 'This week',
     'leaderboard.completionRate': 'Completion',
     'leaderboard.earnings': 'Earnings',
     'leaderboard.streak': 'Streak',
