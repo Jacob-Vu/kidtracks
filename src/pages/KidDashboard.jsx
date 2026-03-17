@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import Modal from '../components/Modal'
 import CelebrationOverlay from '../components/CelebrationOverlay'
 import DayJournal from '../components/DayJournal'
+import { trackTaskCompleted, trackAllTasksDone, trackCelebrationShown } from '../hooks/useAnalytics'
 
 export default function KidDashboard() {
     const t = useT()
@@ -42,6 +43,8 @@ export default function KidDashboard() {
             if (!localStorage.getItem(celebrationKey)) {
                 localStorage.setItem(celebrationKey, '1')
                 setShowCelebration(true)
+                trackAllTasksDone({ kid_id: kid?.id, date: today, total_tasks: totalToday })
+                trackCelebrationShown({ kid_id: kid?.id, date: today })
             }
         }
     }, [completedToday, totalToday, celebrationKey])
@@ -130,7 +133,10 @@ export default function KidDashboard() {
                     {todayTasks.map((task) => (
                         <div key={task.id} className={`task-item ${task.status}`}>
                             <div className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
-                                onClick={() => toggleTaskStatus(task.id)}>
+                                onClick={() => {
+                                    if (task.status !== 'completed') trackTaskCompleted({ kid_id: kid.id, task_id: task.id, date: today })
+                                    toggleTaskStatus(task.id)
+                                }}>
                                 {task.status === 'completed' ? '✓' : ''}
                             </div>
                             <div style={{ flex: 1 }}>

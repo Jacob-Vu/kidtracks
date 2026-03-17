@@ -15,6 +15,7 @@ import {
     signInWithGoogle,
     signUpParentEmail,
 } from '../firebase/auth'
+import { trackLogin, trackSignUp, trackFamilyCreated } from '../hooks/useAnalytics'
 
 const GoogleIcon = () => (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="social-btn__icon social-btn__icon--google">
@@ -90,16 +91,18 @@ export default function Login() {
     const goToMode = (mode) => { setParentMode(mode); setError(''); setResetSent(false) }
     const goToTab = (newTab) => { setTab(newTab); setError(''); setResetSent(false) }
 
-    const handleSocialSignIn = async (signInFn) => {
+    const handleSocialSignIn = async (signInFn, method) => {
         setError('')
         setBusy(true)
         try {
             const result = await signInFn()
             if (result.isNew) {
+                trackSignUp(method)
                 setParentMode('setup')
                 setBusy(false)
                 return
             }
+            trackLogin(method)
             navigate('/')
         } catch (err) {
             setError(err.message)
@@ -115,10 +118,12 @@ export default function Login() {
         try {
             const result = await signInParentEmail(parentEmail.trim(), parentPassword.trim())
             if (result.isNew) {
+                trackSignUp('email')
                 setParentMode('setup')
                 setBusy(false)
                 return
             }
+            trackLogin('email')
             navigate('/')
         } catch (err) {
             const code = err.code
@@ -137,6 +142,7 @@ export default function Login() {
         setBusy(true)
         try {
             await signUpParentEmail(parentEmail.trim(), parentPassword.trim())
+            trackSignUp('email')
             setParentMode('setup')
             setBusy(false)
         } catch (err) {
@@ -180,10 +186,12 @@ export default function Login() {
         try {
             const result = await signInParentSimple(username, username)
             if (result.isNew) {
+                trackSignUp('quick_start')
                 setParentMode('setup')
                 setBusy(false)
                 return
             }
+            trackLogin('quick_start')
             navigate('/')
         } catch (err) {
             setError(err.message)
@@ -197,6 +205,7 @@ export default function Login() {
         setBusy(true)
         try {
             await createFamily(user, familyName.trim())
+            trackFamilyCreated({ family_name: familyName.trim() })
             navigate('/')
         } catch (err) {
             setError(err.message)
@@ -217,6 +226,7 @@ export default function Login() {
             }
             localStorage.setItem('kidstrack-parent-email', kidParentEmail.trim())
             await signInKid(kidUsername.trim(), kidPassword.trim(), lookup.familyId)
+            trackLogin('kid')
             navigate('/kid')
         } catch (err) {
             setError(
@@ -326,7 +336,7 @@ export default function Login() {
                                 <div className="social-login-list">
                                     <button
                                         className="social-btn social-btn--google"
-                                        onClick={() => handleSocialSignIn(signInWithGoogle)}
+                                        onClick={() => handleSocialSignIn(signInWithGoogle, 'google')}
                                         disabled={busy}
                                     >
                                         <span className="social-btn__icon-wrap"><GoogleIcon /></span>
@@ -337,7 +347,7 @@ export default function Login() {
 
                                     <button
                                         className="social-btn social-btn--apple"
-                                        onClick={() => handleSocialSignIn(signInWithApple)}
+                                        onClick={() => handleSocialSignIn(signInWithApple, 'apple')}
                                         disabled={busy}
                                     >
                                         <span className="social-btn__icon-wrap"><Apple size={18} strokeWidth={2.2} /></span>
@@ -348,7 +358,7 @@ export default function Login() {
 
                                     <button
                                         className="social-btn social-btn--facebook"
-                                        onClick={() => handleSocialSignIn(signInWithFacebook)}
+                                        onClick={() => handleSocialSignIn(signInWithFacebook, 'facebook')}
                                         disabled={busy}
                                     >
                                         <span className="social-btn__icon-wrap"><Facebook size={18} strokeWidth={2.2} /></span>

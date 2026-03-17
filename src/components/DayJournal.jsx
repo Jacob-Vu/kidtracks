@@ -4,6 +4,7 @@ import { db } from '../firebase/config'
 import { useAuth } from '../contexts/AuthContext'
 import { useT, useLang } from '../i18n/I18nContext'
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder'
+import { trackJournalSaved, trackVoiceRecordingUsed } from '../hooks/useAnalytics'
 import { format, parseISO } from 'date-fns'
 import Modal from './Modal'
 
@@ -142,6 +143,8 @@ export default function DayJournal({ kidId, date, role, kidName }) {
       await setDoc(docPath(), data)
       setNote(data)
       setViewState('saved')
+      trackJournalSaved({ kid_id: kidId, date, role, has_audio: !!audioBase64, has_text: !!editText.trim() })
+      if (audioBlob) trackVoiceRecordingUsed({ kid_id: kidId, date, role, duration_seconds: duration })
       clear()
     } catch (err) {
       console.error('Journal save error:', err)

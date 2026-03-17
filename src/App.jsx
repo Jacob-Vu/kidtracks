@@ -15,6 +15,7 @@ import KidLayout from './layouts/KidLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import MobileHeader from './components/MobileHeader'
 import InstallPrompt from './components/InstallPrompt'
+import { usePageTracking } from './hooks/useAnalytics'
 
 function LangSwitcher() {
   const { lang, setLang } = useLang()
@@ -34,6 +35,7 @@ function AppContent() {
   const { user, profile, loading } = useAuth()
   const { isLoading, firestoreError } = useStore()
   useFireSync()
+  usePageTracking()
 
   if (loading || (user && profile && isLoading)) {
     return (

@@ -4,6 +4,7 @@ import { useFireActions } from '../hooks/useFirebaseSync'
 import { useT, useLang } from '../i18n/I18nContext'
 import Modal from '../components/Modal'
 import DEFAULT_PACKS from '../data/defaultTemplates'
+import { trackTemplateImported } from '../hooks/useAnalytics'
 
 const defaultTaskViByTitle = new Map(
     DEFAULT_PACKS.flatMap((pack) => pack.tasks.map((task) => [task.title, task.descriptionVi || '']))
@@ -112,6 +113,7 @@ export default function Templates() {
         setImporting(importPack.id); setImportMsg(''); setImportPack(null)
         try {
             const count = await importDefaultPack(importPack, tasksToImport)
+            trackTemplateImported({ pack_name: importPack.id, task_count: tasksToImport.length })
             setImportMsg(count > 0
                 ? t('tmpl.importedCount', { count, name: getPackName(importPack) })
                 : t('tmpl.importedAll', { name: getPackName(importPack) }))
