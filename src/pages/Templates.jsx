@@ -5,6 +5,10 @@ import { useT, useLang } from '../i18n/I18nContext'
 import Modal from '../components/Modal'
 import DEFAULT_PACKS from '../data/defaultTemplates'
 
+const defaultTaskViByTitle = new Map(
+    DEFAULT_PACKS.flatMap((pack) => pack.tasks.map((task) => [task.title, task.descriptionVi || '']))
+)
+
 export default function Templates() {
     const t = useT()
     const { lang } = useLang()
@@ -30,8 +34,18 @@ export default function Templates() {
 
     const getPackName = (pack) => lang === 'vi' ? (t(`pack.${toCamel(pack.id)}`) || pack.name) : pack.name
     const getPackDesc = (pack) => lang === 'vi' ? (t(`pack.${toCamel(pack.id)}Desc`) || pack.description) : pack.description
+    const getPackTaskDesc = (task) => lang === 'vi'
+        ? (task.descriptionVi || task.description || '')
+        : (task.description || task.descriptionVi || '')
+    const descClassName = lang === 'vi' ? 'task-desc template-desc-highlight' : 'task-desc'
     const toCamel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
-    const getTemplateDesc = (tmpl) => tmpl?.descriptions?.[lang] || tmpl?.descriptions?.en || tmpl?.descriptions?.vi || tmpl?.description || ''
+    const getTemplateDesc = (tmpl) => {
+        if (lang === 'vi' && !tmpl?.descriptions?.vi) {
+            const defaultVi = defaultTaskViByTitle.get(tmpl?.title)
+            if (defaultVi) return defaultVi
+        }
+        return tmpl?.descriptions?.[lang] || tmpl?.descriptions?.en || tmpl?.descriptions?.vi || tmpl?.description || ''
+    }
 
     const openAdd = () => {
         setTitle('')
@@ -197,7 +211,7 @@ export default function Templates() {
                                     <span style={{ fontSize: 22 }}>📌</span>
                                     <div style={{ flex: 1 }}>
                                         <div className="task-title">{tmpl.title}</div>
-                                        {getTemplateDesc(tmpl) && <div className="task-desc">{getTemplateDesc(tmpl)}</div>}
+                                        {getTemplateDesc(tmpl) && <div className={descClassName}>{getTemplateDesc(tmpl)}</div>}
                                         <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                                             {assignedKidsList.length > 0 ? assignedKidsList.map((k) => (
                                                 <span key={k.id} className="badge badge-purple" style={{ fontSize: 11 }}>{k.avatar} {k.displayName || k.name}</span>
@@ -223,15 +237,19 @@ export default function Templates() {
                         {getPackDesc(showPackDetail)} • {showPackDetail.ageRange}
                     </p>
                     <div className="col">
-                        {showPackDetail.tasks.map((task, i) => (
-                            <div key={i} className="task-item" style={{ padding: '10px 14px' }}>
-                                <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>{i + 1}.</span>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 700, fontSize: 14 }}>{task.title}</div>
-                                    {task.description && <div className="task-desc">{task.description}</div>}
+                        {showPackDetail.tasks.map((task, i) => {
+                            const viDesc = task.descriptionVi
+                            const useVi = lang === 'vi' && viDesc
+                            return (
+                                <div key={i} className="task-item" style={{ padding: '10px 14px' }}>
+                                    <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>{i + 1}.</span>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{useVi ? viDesc : task.title}</div>
+                                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{useVi ? task.title : task.description}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                     <div className="modal-footer">
                         <button className="btn btn-ghost" onClick={() => setShowPackDetail(null)}>{t('common.close')}</button>
@@ -258,6 +276,8 @@ export default function Templates() {
                         {importPack.tasks.map((task, i) => {
                             const alreadyImported = templates.some((ft) => ft.title === task.title)
                             const isSelected = selectedTasks.includes(task.title)
+                            const viDesc = task.descriptionVi
+                            const useVi = lang === 'vi' && viDesc
                             return (
                                 <div key={i} className={`task-item ${alreadyImported ? 'imported' : ''}`}
                                     style={{ cursor: alreadyImported ? 'default' : 'pointer', padding: '10px 14px', opacity: alreadyImported ? 0.5 : 1 }}
@@ -267,8 +287,8 @@ export default function Templates() {
                                         {alreadyImported ? '✓' : isSelected ? '✓' : ''}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{task.title}</div>
-                                        {task.description && <div className="task-desc">{task.description}</div>}
+                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{useVi ? viDesc : task.title}</div>
+                                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{useVi ? task.title : task.description}</div>
                                     </div>
                                     {alreadyImported && <span className="badge badge-gray" style={{ fontSize: 10 }}>{t('tmpl.alreadyExists')}</span>}
                                 </div>
