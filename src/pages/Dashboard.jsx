@@ -174,7 +174,12 @@ export default function Dashboard() {
                     <h1 className="page-title">{t('dash.title')}</h1>
                     <p className="page-subtitle">{t('dash.subtitle')}</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('dash.addKid')}</button>
+                <div className="row center" style={{ gap: 8, flexWrap: 'wrap' }}>
+                    <button className="btn btn-ghost" onClick={() => navigate('/report/weekly')}>
+                        {t('weekly.openReportCta')}
+                    </button>
+                    <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('dash.addKid')}</button>
+                </div>
             </div>
 
             {shouldShowLinkPrompt && (

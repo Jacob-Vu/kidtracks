@@ -3312,3 +3312,478 @@ textarea {
     padding: 16px;
   }
 }
+/* Weekly Report */
+.weekly-report {
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-x: clip;
+}
+
+.weekly-no-data {
+  text-align: center;
+  padding: 40px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.weekly-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.weekly-week-nav-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.weekly-week-nav-btn:hover:not(:disabled) {
+  background: var(--bg-card-hover);
+}
+
+.weekly-week-nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.weekly-week-nav-label {
+  min-width: 150px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.weekly-hero {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.weekly-hero-date {
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+.weekly-hero-circle {
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+}
+
+.weekly-hero-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.weekly-hero-summary-text {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.weekly-trend-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.weekly-trend-badge--flat {
+  color: var(--text-secondary);
+  background: rgba(148, 163, 184, 0.12);
+  border-color: var(--border);
+}
+
+.weekly-trend-badge--up {
+  color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.weekly-trend-badge--down {
+  color: var(--accent-red);
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.weekly-section-title {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.weekly-section-title--spaced {
+  margin-top: 20px;
+}
+
+.weekly-kid-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.weekly-kid-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.weekly-kid-avatar {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.weekly-kid-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.weekly-kid-name {
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.weekly-kid-meta {
+  margin-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.weekly-kid-rate {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.weekly-kid-rate--good {
+  color: var(--accent-green);
+}
+
+.weekly-kid-rate--mid {
+  color: var(--accent-amber);
+}
+
+.weekly-kid-rate--low {
+  color: var(--accent-red);
+}
+
+.weekly-kid-earnings {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.weekly-kid-earnings--up {
+  color: var(--accent-green);
+}
+
+.weekly-kid-earnings--down {
+  color: var(--accent-red);
+}
+
+.weekly-heatmap {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.weekly-heatmap-dot {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 7px;
+}
+
+.weekly-heatmap-labels {
+  margin-top: 5px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.weekly-heatmap-label {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.weekly-kid-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.weekly-task-badge {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.weekly-task-badge--best {
+  background: rgba(16, 185, 129, 0.13);
+  color: var(--accent-green);
+}
+
+.weekly-task-badge--worst {
+  background: rgba(239, 68, 68, 0.13);
+  color: var(--accent-red);
+}
+
+.weekly-task-bars-wrap {
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weekly-task-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, 2fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.weekly-task-bar-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.weekly-task-bar-track {
+  width: 100%;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.weekly-task-bar-fill {
+  height: 100%;
+  background: var(--gradient-purple);
+}
+
+.weekly-task-bar-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.weekly-kid-actions {
+  margin-top: 2px;
+}
+
+.weekly-insight-card {
+  margin-top: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.weekly-insight-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.weekly-insight-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.weekly-insight-value {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.weekly-earnings {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+}
+
+.weekly-earnings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.weekly-earnings-row:last-child {
+  border-bottom: none;
+}
+
+.weekly-earnings-row--total {
+  font-weight: 800;
+}
+
+.weekly-earnings-kid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.weekly-earnings-kid-avatar {
+  font-size: 20px;
+}
+
+.weekly-earnings-kid-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.weekly-earnings-values {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.weekly-earnings-amount {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.weekly-earnings-amount--up {
+  color: var(--accent-green);
+}
+
+.weekly-earnings-amount--down {
+  color: var(--accent-red);
+}
+
+.weekly-earnings-amount--flat {
+  color: var(--text-muted);
+}
+
+.weekly-earnings-balance {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.weekly-earnings-family--up {
+  color: var(--accent-green);
+}
+
+.weekly-earnings-family--down {
+  color: var(--accent-red);
+}
+
+.weekly-earnings-family--flat {
+  color: var(--text-secondary);
+}
+
+.weekly-tip-card {
+  margin-top: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.weekly-tip-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.weekly-tip-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+  .weekly-report {
+    max-width: 100%;
+  }
+
+  .weekly-kid-card,
+  .weekly-hero,
+  .weekly-earnings {
+    padding: 14px;
+  }
+
+  .weekly-task-bar {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .weekly-task-bar-count {
+    text-align: right;
+  }
+
+  .weekly-earnings-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .weekly-earnings-values {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 520px) {
+  .weekly-week-nav-label {
+    min-width: 0;
+    max-width: 180px;
+  }
+
+  .weekly-hero-circle {
+    width: 112px;
+    height: 112px;
+  }
+
+  .weekly-tip-text,
+  .weekly-insight-value {
+    font-size: 13px;
+  }
+}

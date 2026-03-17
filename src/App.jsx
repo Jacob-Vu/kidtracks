@@ -14,6 +14,7 @@ import KidDashboard from './pages/KidDashboard'
 import KidProfile from './pages/KidProfile'
 import LandingPage from './pages/LandingPage'
 import TemplatePickerPage from './pages/TemplatePickerPage'
+import WeeklyReport from './pages/WeeklyReport'
 import KidLayout from './layouts/KidLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import MobileHeader from './components/MobileHeader'
@@ -146,6 +147,7 @@ function ParentLayout() {
             <Route path="/daily/:kidId/pick-templates" element={<TemplatePickerPage />} />
             <Route path="/ledger" element={<Ledger />} />
             <Route path="/ledger/:kidId" element={<Ledger />} />
+            <Route path="/report/weekly" element={<WeeklyReport />} />
           </Routes>
         </main>
         <nav className="bottom-nav">
