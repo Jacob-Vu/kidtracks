@@ -6,9 +6,13 @@ import useStore from '../store/useStore'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../i18n/I18nContext'
 import { getE2EState, isE2EMode, subscribeToE2EState, updateE2EState } from '../testing/e2e'
+import DEFAULT_PACKS from '../data/defaultTemplates'
 
 const generateId = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
 const functions = getFunctions(app, 'asia-southeast1')
+const defaultTaskViByTitle = new Map(
+    DEFAULT_PACKS.flatMap((pack) => pack.tasks.map((task) => [task.title, task.descriptionVi || '']))
+)
 
 export function useFireSync() {
     const { familyId, user } = useAuth()
@@ -63,6 +67,10 @@ export function useFireActions() {
     const store = useStore()
 
     const getTemplateDescription = (template) => {
+        if (lang === 'vi' && !template?.descriptions?.vi) {
+            const defaultVi = defaultTaskViByTitle.get(template?.title)
+            if (defaultVi) return defaultVi
+        }
         if (template?.descriptions?.[lang]) return template.descriptions[lang]
         if (template?.descriptions?.en) return template.descriptions.en
         if (template?.descriptions?.vi) return template.descriptions.vi
@@ -148,8 +156,11 @@ export function useFireActions() {
                         .map((task) => ({
                             id: generateId(),
                             title: task.title,
-                            descriptions: { en: task.description || '', vi: task.description || '' },
-                            description: task.description || '',
+                            descriptions: {
+                                en: task.description || '',
+                                vi: task.descriptionVi || task.description || '',
+                            },
+                            description: task.description || task.descriptionVi || '',
                             assignedKidIds: [],
                             importedFrom: pack.id,
                         }))

@@ -212,9 +212,9 @@ exports.importDefaultPack = onCall(async (request) => {
       title: task.title,
       descriptions: {
         en: task.description || "",
-        vi: task.description || "",
+        vi: task.descriptionVi || task.description || "",
       },
-      description: task.description,
+      description: task.description || task.descriptionVi || "",
       assignedKidIds: [],
       importedFrom: pack.id
     });
