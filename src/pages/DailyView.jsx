@@ -10,6 +10,7 @@ import Modal from '../components/Modal'
 import { formatMoney } from '../utils/format'
 import DayJournal from '../components/DayJournal'
 import VoiceMicButton from '../components/VoiceMicButton'
+import { trackTemplateImported } from '../hooks/useAnalytics'
 
 const REWARD_PRESETS = [10000, 20000, 50000]
 const PENALTY_PRESETS = [5000, 10000, 20000]
@@ -24,6 +25,7 @@ export default function DailyView() {
         addDailyTask, updateDailyTask, deleteDailyTask,
         toggleTaskStatus, markTaskFailed,
         loadTemplatesForDay, syncAssignedTemplatesForDay, setDayConfig, finalizeDay,
+        saveRoutine, clearDayTasks, autoLoadRoutine,
     } = useFireActions()
 
     const [selectedKidId, setSelectedKidId] = useState(paramKidId || kids[0]?.id || '')
@@ -42,6 +44,10 @@ export default function DailyView() {
     const [inlineMessage, setInlineMessage] = useState('')
     const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false)
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
+    const [routineBanner, setRoutineBanner] = useState(0) // count of auto-loaded tasks
+    const [routineSaved, setRoutineSaved] = useState(false)
+    const [showClearConfirm, setShowClearConfirm] = useState(false)
+    const autoLoadKeyRef = useRef(null)
 
     useEffect(() => {
         if (paramKidId) setSelectedKidId(paramKidId)
@@ -86,8 +92,50 @@ export default function DailyView() {
         prevConfetti.current = allDone
     }, [allDone])
 
+    // Reset banner and auto-load guard when kid/date changes
+    useEffect(() => {
+        setRoutineBanner(0)
+        setRoutineSaved(false)
+    }, [selectedKidId, currentDate])
+
+    // Auto-load routine when today is empty
+    useEffect(() => {
+        const today = format(new Date(), 'yyyy-MM-dd')
+        const key = `${selectedKidId}-${currentDate}`
+        if (
+            autoLoadKeyRef.current !== key &&
+            currentDate === today &&
+            !isFinalized &&
+            tasks.length === 0 &&
+            kid?.routine?.tasks?.length > 0
+        ) {
+            autoLoadKeyRef.current = key
+            autoLoadRoutine(selectedKidId, currentDate, kid.routine.tasks).then((count) => {
+                if (count > 0) setRoutineBanner(count)
+            })
+        }
+    }, [selectedKidId, currentDate, tasks.length, isFinalized, kid?.routine])
+
     const openAddTask = () => { setTaskTitle(''); setTaskDesc(''); setShowAddTask(true) }
     const openEditTask = (t) => { setEditTask(t); setTaskTitle(t.title); setTaskDesc(t.description) }
+
+    const handleSaveRoutine = async () => {
+        await saveRoutine(selectedKidId, tasks, currentDate)
+        setRoutineSaved(true)
+        setTimeout(() => setRoutineSaved(false), 2500)
+    }
+
+    const handleClearAll = async () => {
+        await clearDayTasks(selectedKidId, currentDate)
+        setShowClearConfirm(false)
+        setRoutineBanner(0)
+    }
+
+    const handleUndoRoutine = async () => {
+        await clearDayTasks(selectedKidId, currentDate)
+        setRoutineBanner(0)
+        autoLoadKeyRef.current = null // allow re-trigger if user navigates away and back
+    }
 
     const handleSaveTask = async () => {
         if (!taskTitle.trim()) return
@@ -188,6 +236,13 @@ export default function DailyView() {
             </div>
             {inlineMessage && <div className="toast-inline" style={{ marginBottom: 16 }}>{inlineMessage}</div>}
 
+            {routineBanner > 0 && (
+                <div className="routine-banner">
+                    <span>✨ {t('routine.banner', { count: routineBanner })}</span>
+                    <button className="routine-banner-undo" onClick={handleUndoRoutine}>{t('routine.undo')}</button>
+                </div>
+            )}
+
             <div className="row wrap center between" style={{ marginBottom: 24, gap: 12 }}>
                 <div className="chip-group">
                     {kids.map((k) => (
@@ -250,6 +305,20 @@ export default function DailyView() {
             <div className="row wrap" style={{ marginBottom: 20, gap: 10 }}>
                 {isParent && <button className="btn btn-teal" onClick={handleLoadTemplates} disabled={isFinalized}>{t('daily.loadTemplates')}</button>}
                 <button className="btn btn-primary" onClick={openAddTask} disabled={isFinalized}>{t('daily.addTask')}</button>
+                {tasks.length > 0 && !isFinalized && (
+                    <button
+                        className={`btn btn-ghost btn-sm routine-save-btn${routineSaved ? ' routine-save-btn--saved' : ''}`}
+                        onClick={handleSaveRoutine}
+                        title={kid?.routine ? t('routine.updateBtn') : t('routine.saveBtn')}
+                    >
+                        {routineSaved ? '✅' : '⭐'} {kid?.routine ? t('routine.updateBtn') : t('routine.saveBtn')}
+                    </button>
+                )}
+                {tasks.length > 0 && !isFinalized && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => setShowClearConfirm(true)} style={{ color: 'var(--accent-red)' }}>
+                        🗑️ {t('daily.clearAll')}
+                    </button>
+                )}
                 {isParent && (
                     <button className="btn btn-amber" onClick={handleOpenConfig} disabled={isFinalized}>
                         {t('daily.setRewards', { amount: formatMoney(effectiveReward) })}
@@ -377,6 +446,18 @@ export default function DailyView() {
                     <div className="modal-footer">
                         <button className="btn btn-ghost" onClick={() => setShowFinalizeConfirm(false)}>{t('common.cancel')}</button>
                         <button className="btn btn-danger" onClick={confirmFinalizeWithPending}>{t('daily.finalizeDay')}</button>
+                    </div>
+                </Modal>
+            )}
+
+            {showClearConfirm && (
+                <Modal title={t('daily.clearAll')} onClose={() => setShowClearConfirm(false)}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
+                        {t('daily.clearConfirm', { count: tasks.length })}
+                    </p>
+                    <div className="modal-footer">
+                        <button className="btn btn-ghost" onClick={() => setShowClearConfirm(false)}>{t('common.cancel')}</button>
+                        <button className="btn btn-danger" onClick={handleClearAll}>{t('daily.clearAll')}</button>
                     </div>
                 </Modal>
             )}

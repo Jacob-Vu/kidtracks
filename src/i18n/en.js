@@ -157,6 +157,15 @@ const en = {
     'daily.tasksFailed': '{count} task(s) failed',
     'daily.tasksNotCompleted': '{count} task(s) not completed',
     'daily.allTasksCompleted': 'All {count} tasks completed!',
+    'daily.clearAll': '🗑️ Clear All',
+    'daily.clearConfirm': 'Delete all {count} tasks for today? This cannot be undone.',
+
+    // ─── Default Routine ───────────────────────────
+    'routine.saveBtn': 'Save as Routine',
+    'routine.updateBtn': 'Update Routine',
+    'routine.saved': '✅ Routine saved!',
+    'routine.banner': 'Loaded default routine ({count} tasks)',
+    'routine.undo': 'Undo',
 
     // ─── Ledger ────────────────────────────────────
     'ledger.title': '💰 Pocket Ledger',

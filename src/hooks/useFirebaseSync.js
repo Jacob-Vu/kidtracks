@@ -329,6 +329,44 @@ export function useFireActions() {
                     },
                 }))
             },
+            saveRoutine: async (kidId, tasks, fromDate) => {
+                const routine = {
+                    tasks: tasks.map(({ title, description }) => ({ title, description: description || '' })),
+                    savedAt: new Date().toISOString(),
+                    savedFromDate: fromDate,
+                }
+                updateE2EState((state) => ({
+                    ...state,
+                    collections: {
+                        ...state.collections,
+                        kids: state.collections.kids.map((kid) => kid.id === kidId ? { ...kid, routine } : kid),
+                    },
+                }))
+            },
+            clearDayTasks: async (kidId, date) => {
+                updateE2EState((state) => ({
+                    ...state,
+                    collections: {
+                        ...state.collections,
+                        dailyTasks: state.collections.dailyTasks.filter((t) => !(t.kidId === kidId && t.date === date)),
+                    },
+                }))
+            },
+            autoLoadRoutine: async (kidId, date, routineTasks) => {
+                const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title)
+                const tasksToCreate = routineTasks
+                    .filter((t) => !existing.includes(t.title))
+                    .map((t) => store.buildDailyTask(kidId, date, t.title, t.description))
+                if (tasksToCreate.length === 0) return 0
+                updateE2EState((state) => ({
+                    ...state,
+                    collections: {
+                        ...state.collections,
+                        dailyTasks: [...state.collections.dailyTasks, ...tasksToCreate],
+                    },
+                }))
+                return tasksToCreate.length
+            },
         }
     }
 
@@ -447,11 +485,38 @@ export function useFireActions() {
             if (!result) return;
 
             const call = httpsCallable(functions, 'addManualTransaction');
-            await call({ 
-                familyId, 
-                updatedKid: result.updatedKid, 
-                entry: result.entry 
+            await call({
+                familyId,
+                updatedKid: result.updatedKid,
+                entry: result.entry
             });
+        },
+        saveRoutine: async (kidId, tasks, fromDate) => {
+            const routine = {
+                tasks: tasks.map(({ title, description }) => ({ title, description: description || '' })),
+                savedAt: new Date().toISOString(),
+                savedFromDate: fromDate,
+            }
+            const call = httpsCallable(functions, 'updateKid')
+            await call({ familyId, kidId, updates: { routine } })
+        },
+        clearDayTasks: async (kidId, date) => {
+            const taskIds = store.dailyTasks
+                .filter((t) => t.kidId === kidId && t.date === date)
+                .map((t) => t.id)
+            if (taskIds.length === 0) return
+            const call = httpsCallable(functions, 'clearDayTasks')
+            await call({ familyId, taskIds })
+        },
+        autoLoadRoutine: async (kidId, date, routineTasks) => {
+            const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title)
+            const tasksToCreate = routineTasks
+                .filter((t) => !existing.includes(t.title))
+                .map((t) => store.buildDailyTask(kidId, date, t.title, t.description))
+            if (tasksToCreate.length === 0) return 0
+            const call = httpsCallable(functions, 'loadTemplatesForDay')
+            await call({ familyId, tasksToCreate })
+            return tasksToCreate.length
         },
     }
 }

@@ -4,7 +4,7 @@ import useStore from '../store/useStore'
 import { useFireActions } from '../hooks/useFirebaseSync'
 import { format, subDays } from 'date-fns'
 import { formatMoney } from '../utils/format'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Modal from '../components/Modal'
 import CelebrationOverlay from '../components/CelebrationOverlay'
 import DayJournal from '../components/DayJournal'
@@ -15,7 +15,7 @@ export default function KidDashboard() {
     const t = useT()
     const { profile } = useAuth()
     const { kids, dailyTasks, ledger } = useStore()
-    const { toggleTaskStatus, addDailyTask, updateDailyTask, syncAssignedTemplatesForDay } = useFireActions()
+    const { toggleTaskStatus, addDailyTask, updateDailyTask, syncAssignedTemplatesForDay, saveRoutine, clearDayTasks, autoLoadRoutine } = useFireActions()
 
     const kid = kids.find((k) => k.id === profile?.kidId)
     const today = format(new Date(), 'yyyy-MM-dd')
@@ -32,6 +32,9 @@ export default function KidDashboard() {
     const [taskTitle, setTaskTitle] = useState('')
     const [taskDesc, setTaskDesc] = useState('')
     const [showCelebration, setShowCelebration] = useState(false)
+    const [routineBanner, setRoutineBanner] = useState(0)
+    const [routineSaved, setRoutineSaved] = useState(false)
+    const autoLoadKeyRef = useRef(null)
 
     useEffect(() => {
         if (kid?.id && today) {
@@ -50,6 +53,22 @@ export default function KidDashboard() {
         }
     }, [completedToday, totalToday, celebrationKey])
 
+    // Auto-load routine when today is empty
+    useEffect(() => {
+        const key = kid?.id ? `${kid.id}-${today}` : null
+        if (
+            key &&
+            autoLoadKeyRef.current !== key &&
+            totalToday === 0 &&
+            kid?.routine?.tasks?.length > 0
+        ) {
+            autoLoadKeyRef.current = key
+            autoLoadRoutine(kid.id, today, kid.routine.tasks).then((count) => {
+                if (count > 0) setRoutineBanner(count)
+            })
+        }
+    }, [kid?.id, today, totalToday, kid?.routine])
+
     if (!kid) return <div className="empty-state"><span className="empty-state-icon">⏳</span><p>{t('common.loading')}</p></div>
 
     // 10-day history
@@ -64,6 +83,18 @@ export default function KidDashboard() {
 
     const openAdd = () => { setTaskTitle(''); setTaskDesc(''); setShowAdd(true) }
     const openEdit = (task) => { setEditTask(task); setTaskTitle(task.title); setTaskDesc(task.description) }
+
+    const handleSaveRoutine = async () => {
+        await saveRoutine(kid.id, todayTasks, today)
+        setRoutineSaved(true)
+        setTimeout(() => setRoutineSaved(false), 2500)
+    }
+
+    const handleUndoRoutine = async () => {
+        await clearDayTasks(kid.id, today)
+        setRoutineBanner(0)
+        autoLoadKeyRef.current = null
+    }
 
     const handleSave = async () => {
         if (!taskTitle.trim()) return
@@ -117,12 +148,31 @@ export default function KidDashboard() {
                 })}
             </div>
 
+            {/* Routine banner */}
+            {routineBanner > 0 && (
+                <div className="routine-banner">
+                    <span>✨ {t('routine.banner', { count: routineBanner })}</span>
+                    <button className="routine-banner-undo" onClick={handleUndoRoutine}>{t('routine.undo')}</button>
+                </div>
+            )}
+
             {/* Today's tasks */}
-            <div className="row between center" style={{ marginBottom: 14 }}>
+            <div className="row between center" style={{ marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
                 <h2 className="section-title" style={{ marginBottom: 0 }}>
                     {t('kidDash.todayTasks')} ({completedToday}/{totalToday})
                 </h2>
-                <button className="btn btn-primary btn-sm" onClick={openAdd}>+ {t('daily.addTask')}</button>
+                <div className="row center" style={{ gap: 8 }}>
+                    {todayTasks.length > 0 && (
+                        <button
+                            className={`btn btn-ghost btn-sm routine-save-btn${routineSaved ? ' routine-save-btn--saved' : ''}`}
+                            onClick={handleSaveRoutine}
+                            title={kid?.routine ? t('routine.updateBtn') : t('routine.saveBtn')}
+                        >
+                            {routineSaved ? '✅' : '⭐'}
+                        </button>
+                    )}
+                    <button className="btn btn-primary btn-sm" onClick={openAdd}>+ {t('daily.addTask')}</button>
+                </div>
             </div>
 
             {todayTasks.length === 0 ? (

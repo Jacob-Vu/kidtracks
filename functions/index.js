@@ -318,6 +318,25 @@ exports.deleteDailyTask = onCall(async (request) => {
   return { success: true };
 });
 
+// Batch-delete all tasks for a kid+date (used by Clear All and Undo auto-load)
+exports.clearDayTasks = onCall(async (request) => {
+  ensureAuth(request);
+  const { familyId, taskIds } = request.data;
+
+  if (!familyId || !Array.isArray(taskIds) || taskIds.length === 0) {
+    return { success: true };
+  }
+
+  const batch = db.batch();
+  taskIds.forEach((id) => {
+    const ref = db.collection("families").doc(familyId).collection("dailyTasks").doc(id);
+    batch.delete(ref);
+  });
+
+  await batch.commit();
+  return { success: true };
+});
+
 // For toggleTaskStatus and markTaskFailed, the client can just use updateDailyTask.
 // We'll wrap the logic there rather than creating separate endpoints.
 

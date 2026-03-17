@@ -157,6 +157,15 @@ const vi = {
     'daily.tasksFailed': '{count} việc thất bại',
     'daily.tasksNotCompleted': '{count} việc chưa hoàn thành',
     'daily.allTasksCompleted': 'Hoàn thành tất cả {count} việc!',
+    'daily.clearAll': '🗑️ Xóa tất cả',
+    'daily.clearConfirm': 'Xóa tất cả {count} việc hôm nay? Không thể hoàn tác.',
+
+    // ─── Lịch cố định ──────────────────────────────
+    'routine.saveBtn': 'Lưu lịch cố định',
+    'routine.updateBtn': 'Cập nhật lịch',
+    'routine.saved': '✅ Đã lưu lịch cố định!',
+    'routine.banner': 'Đã tải lịch cố định ({count} việc)',
+    'routine.undo': 'Hoàn tác',
 
     // ─── Ledger ────────────────────────────────────
     'ledger.title': '💰 Sổ tiền tiêu vặt',
