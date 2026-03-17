@@ -16,6 +16,7 @@ import useGoalMilestones from '../hooks/useGoalMilestones'
 import { trackTaskCompleted, trackAllTasksDone, trackCelebrationShown } from '../hooks/useAnalytics'
 import BadgeStrip from '../components/BadgeStrip'
 import useBadges from '../hooks/useBadges'
+import useKidFeedback from '../hooks/useKidFeedback'
 
 export default function KidDashboard() {
     const t = useT()
@@ -46,7 +47,15 @@ export default function KidDashboard() {
     const [editGoal, setEditGoal] = useState(null)
     const autoLoadKeyRef = useRef(null)
     const { currentStreak, bestStreak } = useStreak(kid?.id, dailyTasks, dayConfigs)
-    const { recentBadges, totalUnlocked, totalBadges } = useBadges(kid?.id)
+    const { recentBadges, totalUnlocked, totalBadges, newlyUnlocked } = useBadges(kid?.id)
+    const {
+        reducedMotion,
+        taskPopId,
+        badgeUnlock,
+        notifyTaskComplete,
+        notifyDayComplete,
+        notifyBadgeUnlock,
+    } = useKidFeedback()
 
     useEffect(() => {
         if (kid?.id && today) {
@@ -58,12 +67,18 @@ export default function KidDashboard() {
         if (completedToday > 0 && completedToday === totalToday && totalToday > 0) {
             if (!localStorage.getItem(celebrationKey)) {
                 localStorage.setItem(celebrationKey, '1')
+                notifyDayComplete()
                 setShowCelebration(true)
                 trackAllTasksDone({ kid_id: kid?.id, date: today, total_tasks: totalToday })
                 trackCelebrationShown({ kid_id: kid?.id, date: today })
             }
         }
-    }, [completedToday, totalToday, celebrationKey])
+    }, [completedToday, totalToday, celebrationKey, notifyDayComplete])
+
+    useEffect(() => {
+        if (newlyUnlocked.length === 0) return
+        newlyUnlocked.forEach((badge) => notifyBadgeUnlock(badge))
+    }, [newlyUnlocked, notifyBadgeUnlock])
 
     useGoalMilestones(activeGoal, kid?.balance || 0, async (goalId, updates) => {
         await updateGoal(goalId, updates)
@@ -142,7 +157,7 @@ export default function KidDashboard() {
     }
 
     return (
-        <div>
+        <div data-feedback-reduced-motion={reducedMotion ? 'true' : 'false'}>
             {/* Hero */}
             <div className="kid-hero-card">
                 <span className="kid-hero-avatar">{kid.avatar}</span>
@@ -170,6 +185,17 @@ export default function KidDashboard() {
             </div>
 
             <BadgeStrip recentBadges={recentBadges} totalUnlocked={totalUnlocked} totalBadges={totalBadges} />
+            {badgeUnlock && (
+                <div
+                    className={`badge-unlock-toast${reducedMotion ? ' badge-unlock-toast--reduced' : ''}`}
+                    data-testid="badge-unlock-toast"
+                >
+                    <span className="badge-unlock-toast__icon" aria-hidden>✨</span>
+                    <span className="badge-unlock-toast__text">
+                        {t('feedback.badgeUnlocked', { badge: t(badgeUnlock.definition?.nameKey || badgeUnlock.code) })}
+                    </span>
+                </div>
+            )}
 
             {/* Savings goal */}
             <h2 className="section-title">🎯 {t('goal.sectionTitle')}</h2>
@@ -245,10 +271,13 @@ export default function KidDashboard() {
             ) : (
                 <div className="col" style={{ marginBottom: 28 }}>
                     {todayTasks.map((task) => (
-                        <div key={task.id} className={`task-item ${task.status}`}>
+                        <div key={task.id} className={`task-item ${task.status}${taskPopId === task.id ? ' task-item--feedback-pop' : ''}`}>
                             <div className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
                                 onClick={() => {
-                                    if (task.status !== 'completed') trackTaskCompleted({ kid_id: kid.id, task_id: task.id, date: today })
+                                    if (task.status !== 'completed') {
+                                        trackTaskCompleted({ kid_id: kid.id, task_id: task.id, date: today })
+                                        notifyTaskComplete(task.id)
+                                    }
                                     toggleTaskStatus(task.id)
                                 }}>
                                 {task.status === 'completed' ? '✓' : ''}
@@ -322,7 +351,7 @@ export default function KidDashboard() {
                 onDelete={handleDeleteGoal}
             />
 
-            {showCelebration && <CelebrationOverlay kid={kid} onClose={() => setShowCelebration(false)} />}
+            {showCelebration && <CelebrationOverlay kid={kid} reducedMotion={reducedMotion} onClose={() => setShowCelebration(false)} />}
         </div>
     )
 }

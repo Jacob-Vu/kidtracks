@@ -429,6 +429,13 @@
     'notif.weeklyTitle': 'Weekly report is ready',
     'notif.weeklyBody': 'Tap to review your family weekly summary.',
 
+    // Feedback
+    'feedback.title': 'Fun Feedback',
+    'feedback.desc': 'Control sound effects for celebrations and badge moments.',
+    'feedback.soundLabel': 'Sound effects',
+    'feedback.soundHint': 'Animations still follow your device reduced-motion setting.',
+    'feedback.badgeUnlocked': 'New badge unlocked: {badge}',
+
     // â”€â”€â”€ Default Pack Names â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'pack.littleStar': 'Little Star',
     'pack.littleStarDesc': 'Simple daily habits for little ones',

@@ -7,6 +7,7 @@ import { useFireActions } from '../hooks/useFirebaseSync'
 import { useTheme, THEMES } from '../contexts/ThemeContext'
 import useBadges from '../hooks/useBadges'
 import BadgeGallery from '../components/BadgeGallery'
+import { LS_FEEDBACK_SOUND } from '../hooks/useKidFeedback'
 
 const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏿', '👦🏿', '👧🏿', '🦸', '🦸‍♂️', '🦸‍♀️', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐯', '🐰', '🐻']
 
@@ -34,6 +35,14 @@ export default function KidProfile() {
     const [emailCurrentPw, setEmailCurrentPw] = useState('')
     const [emailBusy, setEmailBusy] = useState(false)
     const [emailMsg, setEmailMsg] = useState(null)
+    const [feedbackSoundEnabled, setFeedbackSoundEnabled] = useState(() => {
+        try {
+            const raw = localStorage.getItem(LS_FEEDBACK_SOUND)
+            return raw === null ? true : raw === 'true'
+        } catch {
+            return true
+        }
+    })
 
     useEffect(() => {
         if (!kid) return
@@ -42,6 +51,18 @@ export default function KidProfile() {
     }, [kid])
 
     if (!kid) return null
+
+    const handleFeedbackSoundToggle = () => {
+        setFeedbackSoundEnabled((prev) => {
+            const next = !prev
+            try {
+                localStorage.setItem(LS_FEEDBACK_SOUND, next ? 'true' : 'false')
+            } catch {
+                // Ignore localStorage failures.
+            }
+            return next
+        })
+    }
 
     const handleSaveProfile = async () => {
         setSaving(true)
@@ -120,6 +141,27 @@ export default function KidProfile() {
                     {t('badge.progress', { unlocked: totalUnlocked, total: totalBadges })}
                 </p>
                 <BadgeGallery unlockedBadges={unlockedBadges} />
+            </div>
+
+            <div className="card" style={{ marginBottom: 24 }}>
+                <div className="row between center" style={{ marginBottom: 8 }}>
+                    <div>
+                        <h3 style={{ fontWeight: 800, fontSize: 16 }}>{t('feedback.title')}</h3>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>{t('feedback.desc')}</p>
+                    </div>
+                    <label className="notif-toggle" data-testid="feedback-sound-toggle">
+                        <input
+                            type="checkbox"
+                            checked={feedbackSoundEnabled}
+                            onChange={handleFeedbackSoundToggle}
+                            aria-label={t('feedback.soundLabel')}
+                        />
+                        <span className="notif-toggle-slider" />
+                    </label>
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                    {t('feedback.soundHint')}
+                </div>
             </div>
 
             <div className="card" style={{ marginBottom: 24 }}>

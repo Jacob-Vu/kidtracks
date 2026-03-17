@@ -428,6 +428,13 @@
     'notif.weeklyTitle': 'Báo cáo tuần đã sẵn sàng',
     'notif.weeklyBody': 'Nhấn để xem tổng kết tuần của gia đình.',
 
+    // Feedback
+    'feedback.title': 'Phản hồi vui',
+    'feedback.desc': 'Bật hoặc tắt hiệu ứng âm thanh khi hoàn thành nhiệm vụ và mở khóa huy hiệu.',
+    'feedback.soundLabel': 'Hiệu ứng âm thanh',
+    'feedback.soundHint': 'Hiệu ứng chuyển động vẫn tuân theo cài đặt giảm chuyển động của thiết bị.',
+    'feedback.badgeUnlocked': 'Đã mở khóa huy hiệu mới: {badge}',
+
     // â”€â”€â”€ Default Pack Names â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'pack.littleStar': 'NgÃ´i sao nhá»',
     'pack.littleStarDesc': 'ThÃ³i quen Ä‘Æ¡n giáº£n cho bÃ©',

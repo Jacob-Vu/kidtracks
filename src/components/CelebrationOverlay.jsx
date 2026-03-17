@@ -21,7 +21,7 @@ const confettiPieces = Array.from({ length: 40 }, (_, i) => {
     }
 })
 
-export default function CelebrationOverlay({ kid, onClose }) {
+export default function CelebrationOverlay({ kid, reducedMotion = false, onClose }) {
     const t = useT()
 
     useEffect(() => {
@@ -31,7 +31,7 @@ export default function CelebrationOverlay({ kid, onClose }) {
 
     return (
         <div className="celebration-overlay">
-            {confettiPieces.map((piece, i) => {
+            {!reducedMotion && confettiPieces.map((piece, i) => {
                 const borderRadius =
                     piece.shape === 1 ? '50%' : '0'
                 const width = piece.size
@@ -41,6 +41,7 @@ export default function CelebrationOverlay({ kid, onClose }) {
                     <div
                         key={i}
                         className="confetti-piece"
+                        data-testid="confetti-piece"
                         style={{
                             left: `${piece.left}%`,
                             animationDelay: `${piece.delay}s`,
