@@ -17,6 +17,7 @@ const toBase64 = (blob) => new Promise((resolve) => {
 const formatDuration = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
 function AudioPlayer({ src }) {
+  const t = useT()
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
   const [total, setTotal] = useState(0)
@@ -49,7 +50,7 @@ function AudioPlayer({ src }) {
   return (
     <div className="journal-audio-player">
       <audio ref={audioRef} src={src} preload="metadata" />
-      <button className="journal-play-btn" onClick={toggle} aria-label={playing ? 'Pause' : 'Play'}>
+      <button className="journal-play-btn" onClick={toggle} aria-label={playing ? t('journal.pause') : t('journal.play')}>
         {playing ? '⏸' : '▶'}
       </button>
       <div className="journal-progress">
@@ -264,12 +265,12 @@ export default function DayJournal({ kidId, date, role, kidName }) {
           )}
           {voiceError === 'stt_failed' && (
             <div className="login-error" style={{ marginBottom: 8 }}>
-              {lang === 'vi' ? 'Khong the chuyen giong noi thanh van ban.' : 'Unable to convert speech to text.'}
+              {t('journal.sttFailed')}
             </div>
           )}
           {voiceError === 'stt_empty' && (
             <div className="login-error" style={{ marginBottom: 8 }}>
-              {lang === 'vi' ? 'Khong nghe ro noi dung ghi am.' : 'No speech detected from the recording.'}
+              {t('journal.sttEmpty')}
             </div>
           )}
           {recState === 'done' && audioBlob && (

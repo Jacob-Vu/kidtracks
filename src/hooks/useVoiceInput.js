@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { transcribeAudioBlob } from '../services/speechToText'
+const SR_LANGUAGE_CODE = { vi: 'vi-VN', en: 'en-US' }
 
 // Voice-to-text hook for form inputs.
 // Primary path: browser SpeechRecognition.
@@ -92,7 +93,7 @@ export function useVoiceInput(lang = 'vi') {
     setTranscribing(false)
 
     const recognition = new SR()
-    recognition.lang = lang === 'vi' ? 'vi-VN' : 'en-US'
+    recognition.lang = SR_LANGUAGE_CODE[lang] || SR_LANGUAGE_CODE.en
     recognition.continuous = false
     recognition.interimResults = true
 

@@ -13,6 +13,7 @@ const defaultTaskViByTitle = new Map(
 export default function Templates() {
     const t = useT()
     const { lang } = useLang()
+    const isVi = lang !== 'en'
     const { templates, kids } = useStore()
     const { addTemplate, updateTemplate, deleteTemplate, importDefaultPack, assignTemplateToKids } = useFireActions()
 
@@ -34,15 +35,15 @@ export default function Templates() {
     const [importPack, setImportPack] = useState(null)
     const [selectedTasks, setSelectedTasks] = useState([])
 
-    const getPackName = (pack) => lang === 'vi' ? (t(`pack.${toCamel(pack.id)}`) || pack.name) : pack.name
-    const getPackDesc = (pack) => lang === 'vi' ? (t(`pack.${toCamel(pack.id)}Desc`) || pack.description) : pack.description
-    const getPackTaskDesc = (task) => lang === 'vi'
+    const getPackName = (pack) => isVi ? (t(`pack.${toCamel(pack.id)}`) || pack.name) : pack.name
+    const getPackDesc = (pack) => isVi ? (t(`pack.${toCamel(pack.id)}Desc`) || pack.description) : pack.description
+    const getPackTaskDesc = (task) => isVi
         ? (task.descriptionVi || task.description || '')
         : (task.description || task.descriptionVi || '')
-    const descClassName = lang === 'vi' ? 'task-desc template-desc-highlight' : 'task-desc'
+    const descClassName = isVi ? 'task-desc template-desc-highlight' : 'task-desc'
     const toCamel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
     const getTemplateDesc = (tmpl) => {
-        if (lang === 'vi' && !tmpl?.descriptions?.vi) {
+        if (isVi && !tmpl?.descriptions?.vi) {
             const defaultVi = defaultTaskViByTitle.get(tmpl?.title)
             if (defaultVi) return defaultVi
         }
@@ -200,7 +201,7 @@ export default function Templates() {
                     <h2 className="section-title" style={{ marginBottom: 0 }}>
                         {t('tmpl.familyTemplates')}
                         <span className="section-note">
-                            {templates.length} {lang === 'vi' ? 'mẫu' : (templates.length !== 1 ? 'templates' : 'template')}
+                            {t('tmpl.templateCount', { count: templates.length })}
                         </span>
                     </h2>
                     {kids.length > 0 && (
@@ -262,7 +263,7 @@ export default function Templates() {
                     <div className="col">
                         {showPackDetail.tasks.map((task, i) => {
                             const viDesc = task.descriptionVi
-                            const useVi = lang === 'vi' && viDesc
+                            const useVi = isVi && viDesc
                             return (
                                 <div key={i} className="task-item" style={{ padding: '10px 14px' }}>
                                     <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>{i + 1}.</span>
@@ -292,7 +293,7 @@ export default function Templates() {
                             {selectedTasks.length === importPack.tasks.length ? t('tmpl.deselectAll') : t('tmpl.selectAll')}
                         </button>
                         <span style={{ marginLeft: 10, fontSize: 13, color: 'var(--text-muted)' }}>
-                            {selectedTasks.length}/{importPack.tasks.length} {lang === 'vi' ? 'đã chọn' : 'selected'}
+                            {selectedTasks.length}/{importPack.tasks.length} {t('tmpl.selectedCountLabel')}
                         </span>
                     </div>
                     <div className="col" style={{ maxHeight: 350, overflowY: 'auto' }}>
@@ -300,7 +301,7 @@ export default function Templates() {
                             const alreadyImported = templates.some((ft) => ft.title === task.title)
                             const isSelected = selectedTasks.includes(task.title)
                             const viDesc = task.descriptionVi
-                            const useVi = lang === 'vi' && viDesc
+                            const useVi = isVi && viDesc
                             return (
                                 <div key={i} className={`task-item ${alreadyImported ? 'imported' : ''}`}
                                     style={{ cursor: alreadyImported ? 'default' : 'pointer', padding: '10px 14px', opacity: alreadyImported ? 0.5 : 1 }}

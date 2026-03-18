@@ -14,6 +14,14 @@ export function I18nProvider({ children }) {
         localStorage.setItem('kidstrack-lang', newLang)
     }, [])
 
+    const toggleLang = useCallback(() => {
+        setLangState((prev) => {
+            const next = prev === 'vi' ? 'en' : 'vi'
+            localStorage.setItem('kidstrack-lang', next)
+            return next
+        })
+    }, [])
+
     const t = useCallback((key, paramsOrFallback, maybeFallback) => {
         const params = typeof paramsOrFallback === 'object' && paramsOrFallback !== null ? paramsOrFallback : null
         const fallback = typeof paramsOrFallback === 'string'
@@ -30,7 +38,7 @@ export function I18nProvider({ children }) {
     }, [lang])
 
     return (
-        <I18nContext.Provider value={{ lang, setLang, t }}>
+        <I18nContext.Provider value={{ lang, setLang, toggleLang, t }}>
             {children}
         </I18nContext.Provider>
     )
@@ -43,9 +51,9 @@ export function useT() {
     return ctx.t
 }
 
-/** Returns { lang, setLang } for the language switcher */
+/** Returns { lang, setLang, toggleLang } for the language switcher */
 export function useLang() {
     const ctx = useContext(I18nContext)
     if (!ctx) throw new Error('useLang must be used within I18nProvider')
-    return { lang: ctx.lang, setLang: ctx.setLang }
+    return { lang: ctx.lang, setLang: ctx.setLang, toggleLang: ctx.toggleLang }
 }

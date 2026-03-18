@@ -68,10 +68,11 @@ export function useFireSync() {
 export function useFireActions() {
     const { familyId } = useAuth()
     const { lang } = useLang()
+    const isVi = lang.startsWith('vi')
     const store = useStore()
 
     const getTemplateDescription = (template) => {
-        if (lang === 'vi' && !template?.descriptions?.vi) {
+        if (isVi && !template?.descriptions?.vi) {
             const defaultVi = defaultTaskViByTitle.get(template?.title)
             if (defaultVi) return defaultVi
         }

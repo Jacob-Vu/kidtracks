@@ -235,7 +235,7 @@ function SlideSnapshot({ slide, vi }) {
 export default function LandingPage() {
     const navigate = useNavigate()
     const { lang } = useLang()
-    const vi = lang === 'vi'
+    const vi = lang.startsWith('vi')
     const [activeSlide, setActiveSlide] = useState(0)
     const [paused, setPaused] = useState(false)
 

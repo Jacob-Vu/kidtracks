@@ -24,25 +24,28 @@ const LandingPage = lazy(() => import('./pages/LandingPage'))
 const TemplatePickerPage = lazy(() => import('./pages/TemplatePickerPage'))
 const WeeklyReport = lazy(() => import('./pages/WeeklyReport'))
 const ParentProfile = lazy(() => import('./pages/ParentProfile'))
+const FeedbackPage = lazy(() => import('./pages/FeedbackPage'))
 
 function RouteLoader() {
+  const t = useT()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '40vh', gap: 12 }}>
       <div className="spinner" />
-      <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Loading...</div>
+      <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{t('common.loading')}</div>
     </div>
   )
 }
 
 function LangSwitcher({ compact = false }) {
-  const { lang, setLang } = useLang()
+  const t = useT()
+  const { toggleLang } = useLang()
   return (
     <button
       className={`lang-switch${compact ? ' lang-switch--compact' : ''}`}
-      onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-      title={lang === 'vi' ? 'Switch to English' : 'Chuyen sang Tieng Viet'}
+      onClick={toggleLang}
+      title={t('common.langSwitchAria')}
     >
-      {lang === 'vi' ? 'EN' : 'VN'}
+      {t('common.langSwitch')}
     </button>
   )
 }
@@ -182,6 +185,7 @@ function ParentLayout() {
             <Route path="/ledger/:kidId" element={<Suspense fallback={<RouteLoader />}><Ledger /></Suspense>} />
             <Route path="/report/weekly" element={<Suspense fallback={<RouteLoader />}><WeeklyReport /></Suspense>} />
             <Route path="/profile" element={<Suspense fallback={<RouteLoader />}><ParentProfile /></Suspense>} />
+            <Route path="/feedback/new" element={<Suspense fallback={<RouteLoader />}><FeedbackPage /></Suspense>} />
           </Routes>
         </main>
         <nav className="bottom-nav">

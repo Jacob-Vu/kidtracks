@@ -78,6 +78,7 @@ const vi = {
     'dash.linkPasswordLabel': 'Mật khẩu',
     'dash.linkEmailBtn': 'Liên kết email',
     'dash.reportTitle': 'Tổng quan thành tích',
+    'dash.reportTrendTitle': 'Xu hướng thành tích',
     'dash.reportDesc': 'Hoàn thành việc hàng ngày theo từng bé',
     'dash.report7d': '7 ngày',
     'dash.report30d': '30 ngày',
@@ -282,6 +283,10 @@ const vi = {
     // ─── Theme ─────────────────────────────────────
     'theme.title': 'Giao diện',
     'theme.desc': 'Chọn màu sắc yêu thích cho trang của con',
+    'theme.customBtn': 'Màu tuỳ chỉnh',
+    'theme.customPrimary': 'Màu chính',
+    'theme.customActive': 'Đang dùng giao diện tuỳ chỉnh',
+    'theme.presetActive': 'Đang dùng giao diện preset',
 
     // ─── Common ────────────────────────────────────
     'common.save': 'Lưu',
@@ -295,6 +300,8 @@ const vi = {
     'common.permissionDenied': 'Lỗi quyền truy cập Firestore',
     'common.permissionDesc': 'Cập nhật quy tắc bảo mật Firestore trong Firebase Console.',
     'common.back': 'Quay lại',
+    'common.switchToEnglish': 'Chuyển sang tiếng Anh',
+    'common.switchToVietnamese': 'Chuyển sang tiếng Việt',
 
     // ─── Celebration ───────────────────────────────
     'celebrate.allDone': '🎉 Xong hết rồi!',
@@ -331,6 +338,9 @@ const vi = {
     'notif.saved': 'Đã lưu!',
     'notif.parentModeHint': 'Cài đặt nhắc nhở cho phụ huynh',
     'notif.defaultParent': 'Mặc định phụ huynh: nhắc nhở đang TẮT cho đến khi bạn bật.',
+    'notif.statusActive': 'Nhắc nhở đang bật và đã lên lịch.',
+    'notif.statusInactive': 'Nhắc nhở hiện đang tắt.',
+    'notif.statusBlocked': 'Trình duyệt đang chặn thông báo. Hãy bật trong cài đặt trang.',
 
     // ─── Default Pack Names ────────────────────────
     'pack.littleStar': 'Ngôi sao nhỏ',
@@ -474,6 +484,7 @@ const vi = {
     'feedback.badgeUnlocked': 'Mở khoá huy hiệu: {badge}!',
     'feedback.reportBtn': 'Phản hồi',
     'feedback.reportTitle': 'Gửi phản hồi hoặc báo lỗi',
+    'feedback.pageSubtitle': 'Mô tả vấn đề hoặc góp ý để chúng tôi cải thiện tốt hơn.',
     'feedback.reportType': 'Loại',
     'feedback.type.bug': 'Báo lỗi',
     'feedback.type.feedback': 'Phản hồi',
@@ -513,6 +524,42 @@ const vi = {
     // ─── Notifications (weekly) ────────────────────
     'notif.weeklyTitle': 'Báo cáo tuần đã sẵn sàng',
     'notif.weeklyBody': 'Nhấn để xem tổng kết tuần của gia đình.',
+    'authGate.title': 'Cần đăng nhập',
+    'authGate.desc': 'Vui lòng đăng nhập để tiếp tục.',
+    'authGate.cta': 'Đăng nhập',
+    'authGate.backHome': 'Về trang chủ',
+    'common.langSwitch': 'EN / VI',
+    'common.langSwitchAria': 'Chuyển ngôn ngữ',
+    'journal.play': 'Phát âm thanh',
+    'journal.pause': 'Tạm dừng âm thanh',
+    'journal.sttFailed': 'Không thể chuyển giọng nói thành văn bản. Vui lòng thử lại.',
+    'journal.sttEmpty': 'Không nhận được giọng nói. Vui lòng thử lại.',
+    'login.errIncorrectCredentials': 'Email hoặc mật khẩu không đúng.',
+    'login.errEmailInUse': 'Email này đã được sử dụng.',
+    'login.errWeakPassword': 'Mật khẩu quá yếu (tối thiểu 6 ký tự).',
+    'login.errEnterEmailForReset': 'Vui lòng nhập email để đặt lại mật khẩu.',
+    'login.errUsernameMin': 'Tên đăng nhập phải có ít nhất 3 ký tự.',
+    'login.errFamilyNotFound': 'Không tìm thấy gia đình với email này.',
+    'login.errWrongKidCredentials': 'Sai tên đăng nhập hoặc mật khẩu của con.',
+    'picker.all': 'Tất cả',
+    'picker.alreadyAddedBadge': 'Đã thêm',
+    'picker.swipeHint': 'Vuốt để xem thêm mẫu',
+    'picker.templatesUnit': 'mẫu',
+    'picker.alreadyAddedUnit': 'đã thêm',
+    'picker.packLabel': 'Bộ mẫu',
+    'picker.btnAlreadyToday': 'Đã thêm hôm nay',
+    'picker.btnDeselect': 'Bỏ chọn',
+    'picker.btnSelect': 'Chọn',
+    'picker.previewHint': 'Chạm vào thẻ để xem chi tiết',
+    'tmpl.templateCount': '{count} mẫu',
+    'tmpl.selectedCountLabel': 'đã chọn',
+    'voice.label': 'Giọng nói',
+    'voice.input': 'Nhập bằng giọng nói',
+    'voice.stopRecording': 'Dừng ghi',
+    'voice.transcribing': 'Đang chuyển giọng nói…',
+    'voice.processing': 'Đang xử lý giọng nói…',
+    'voice.micDenied': 'Không có quyền truy cập micro.',
+    'voice.sttFailed': 'Chuyển giọng nói thành văn bản thất bại. Vui lòng thử lại.',
     'badge.noneYet': 'Chưa mở khoá huy hiệu nào',
     'badge.stripTitle': 'Huy hiệu gần đây',
     'badge.unlockedOn': 'Mở khoá ngày {date}',
@@ -545,6 +592,9 @@ const vi = {
     'leaderboard.streakStar': 'Sao chuỗi ngày',
     'leaderboard.you': 'Bạn',
     'nav.profile': 'Hồ sơ',
+    'parent.profileSubtitle': 'Quản lý thông tin tài khoản và hồ sơ các con',
+    'parent.accountFallback': 'Tài khoản phụ huynh',
+    'parent.noLinkedEmail': 'Chưa liên kết email',
     'pwa.androidInstructions': 'Nhấn menu trình duyệt, chọn "Thêm vào màn hình chính".',
     'pwa.installBtn': 'Cài ứng dụng',
     'pwa.iosInstructions': 'Nhấn Share, sau đó chọn "Thêm vào màn hình chính".',
@@ -572,3 +622,4 @@ const vi = {
 }
 
 export default vi
+

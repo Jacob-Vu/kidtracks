@@ -9,7 +9,7 @@ import MobileHeader from '../components/MobileHeader'
 export default function KidLayout({ children }) {
     const navigate = useNavigate()
     const t = useT()
-    const { lang, setLang } = useLang()
+    const { toggleLang } = useLang()
     const { profile } = useAuth()
     const { kids } = useStore()
     const kid = kids.find((k) => k.id === profile?.kidId)
@@ -41,11 +41,14 @@ export default function KidLayout({ children }) {
                 </NavLink>
 
                 <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                    <button className="lang-switch" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
-                        {lang === 'vi' ? '🇬🇧 EN' : '🇻🇳 VN'}
+                    <button className="lang-switch" onClick={toggleLang} title={t('common.langSwitchAria')}>
+                        {t('common.langSwitch')}
                     </button>
-                    <button className="nav-link" onClick={signOut}
-                        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)' }}>
+                    <button
+                        className="nav-link"
+                        onClick={signOut}
+                        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)' }}
+                    >
                         <span className="nav-icon">🚪</span>{t('nav.logout')}
                     </button>
                 </div>

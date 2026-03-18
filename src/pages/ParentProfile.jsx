@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import useStore from '../store/useStore'
 import { useT } from '../i18n/I18nContext'
 import { formatMoney } from '../utils/format'
+import NotificationSettings from '../components/NotificationSettings'
 
 export default function ParentProfile() {
     const t = useT()
@@ -22,14 +23,14 @@ export default function ParentProfile() {
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
             <div className="page-header">
                 <h1 className="page-title">{t('nav.profile')}</h1>
-                <p className="page-subtitle">Manage account details and kid profiles</p>
+                <p className="page-subtitle">{t('parent.profileSubtitle')}</p>
             </div>
 
             <div className="card" style={{ marginBottom: 16 }}>
                 <div className="row between center" style={{ gap: 12, flexWrap: 'wrap' }}>
                     <div>
-                        <div style={{ fontWeight: 800, fontSize: 16 }}>{user?.displayName || user?.email || 'Parent account'}</div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>{user?.email || 'No linked email yet'}</div>
+                        <div style={{ fontWeight: 800, fontSize: 16 }}>{user?.displayName || user?.email || t('parent.accountFallback')}</div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>{user?.email || t('parent.noLinkedEmail')}</div>
                     </div>
                     <span className="badge badge-purple">{t('dash.kidsSummaryProfiles', { count: kids.length })}</span>
                 </div>
@@ -67,6 +68,8 @@ export default function ParentProfile() {
                     ))}
                 </div>
             </div>
+
+            <NotificationSettings />
         </div>
     )
 }

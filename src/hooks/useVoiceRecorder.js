@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { transcribeAudioBlob } from '../services/speechToText'
+const SR_LANGUAGE_CODE = { vi: 'vi-VN', en: 'en-US' }
 
 export function useVoiceRecorder(lang = 'vi') {
   // states: 'idle' | 'recording' | 'done'
@@ -70,7 +71,7 @@ export function useVoiceRecorder(lang = 'vi') {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (SR) {
       const recognition = new SR()
-      recognition.lang = lang === 'vi' ? 'vi-VN' : 'en-US'
+      recognition.lang = SR_LANGUAGE_CODE[lang] || SR_LANGUAGE_CODE.en
       recognition.continuous = true
       recognition.interimResults = true
       recognition.onresult = (e) => {

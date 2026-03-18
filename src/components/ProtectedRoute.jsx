@@ -1,10 +1,10 @@
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useLang } from '../i18n/I18nContext'
+import { useT } from '../i18n/I18nContext'
 
 export default function ProtectedRoute({ children, role }) {
     const { user, role: userRole, loading } = useAuth()
-    const { lang } = useLang()
+    const t = useT()
     const navigate = useNavigate()
 
     if (loading) return null
@@ -13,20 +13,13 @@ export default function ProtectedRoute({ children, role }) {
         return (
             <div className="auth-gate">
                 <div className="auth-gate-icon">🔒</div>
-                <h2 className="auth-gate-title">
-                    {lang === 'vi' ? 'Cần đăng nhập' : 'Sign in to continue'}
-                </h2>
-                <p className="auth-gate-desc">
-                    {lang === 'vi'
-                        ? 'Bạn cần tài khoản KidsTrack để truy cập trang này. Hoàn toàn miễn phí!'
-                        : 'You need a KidsTrack account to access this page. It\'s completely free!'
-                    }
-                </p>
+                <h2 className="auth-gate-title">{t('authGate.title')}</h2>
+                <p className="auth-gate-desc">{t('authGate.desc')}</p>
                 <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={() => navigate('/login')}>
-                    {lang === 'vi' ? '🚀 Đăng nhập / Tạo tài khoản' : '🚀 Sign in / Create account'}
+                    {t('authGate.cta')}
                 </button>
                 <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>
-                    {lang === 'vi' ? '← Về trang chủ' : '← Back to home'}
+                    {t('authGate.backHome')}
                 </button>
             </div>
         )

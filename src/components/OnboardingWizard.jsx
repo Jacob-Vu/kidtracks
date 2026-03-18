@@ -22,6 +22,7 @@ const AGE_TO_PACKS = {
 export default function OnboardingWizard() {
     const t = useT()
     const { lang } = useLang()
+    const isVi = lang.startsWith('vi')
     const navigate = useNavigate()
     const { kids } = useStore()
     const { addKid, importDefaultPack, addDailyTask } = useFireActions()
@@ -60,7 +61,7 @@ export default function OnboardingWizard() {
                     const pack = DEFAULT_PACKS.find((p) => p.id === packId)
                     if (!pack) continue
                     for (const task of pack.tasks) {
-                        const desc = lang === 'vi'
+                        const desc = isVi
                             ? (task.descriptionVi || task.description)
                             : task.description
                         await addDailyTask(newKid.id, today, task.title, desc)

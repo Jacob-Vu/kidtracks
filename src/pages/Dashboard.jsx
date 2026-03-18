@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { format, getISOWeek, getISOWeekYear, parseISO, subDays } from 'date-fns'
 import useStore from '../store/useStore'
 import { useFireActions } from '../hooks/useFirebaseSync'
-import { useT, useLang } from '../i18n/I18nContext'
+import { useT } from '../i18n/I18nContext'
 import { useAuth } from '../contexts/AuthContext'
 import KidAccountModal from '../components/KidAccountModal'
 import Modal from '../components/Modal'
@@ -37,7 +37,7 @@ function KidStreakBadge({ kid, dailyTasks, dayConfigs }) {
     )
 }
 
-function KidReport({ kid, dailyTasks, period, lang }) {
+function KidReport({ kid, dailyTasks, period }) {
     const t = useT()
     const dates = useMemo(() => (
         Array.from({ length: period }, (_, i) =>
@@ -149,7 +149,6 @@ function BadgeSync({ kidId }) {
 
 export default function Dashboard() {
     const t = useT()
-    const { lang } = useLang()
     const { user, profile, familyId, refreshProfile } = useAuth()
     const { kids, goals, dailyTasks, dayConfigs, ledger, isLoading } = useStore()
     const { deleteKid, addGoal, updateGoal, deleteGoal } = useFireActions()
@@ -262,6 +261,12 @@ export default function Dashboard() {
         if (weeklyReport.insights.worstDayIndex !== null) return `${t('weekly.worstDay')}: ${t(dayNameKeys[weeklyReport.insights.worstDayIndex])}`
         return t('weekly.noTips')
     }, [weeklyReport.insights, t])
+    const overviewCompletedTasks = weeklyReport.familyStats.completedTasks || 0
+    const overviewTotalTasks = weeklyReport.familyStats.totalTasks || 0
+    const overviewEarnings = useMemo(
+        () => (weeklyReport.kidStats || []).reduce((sum, kidStat) => sum + (kidStat.weekEarnings || 0), 0),
+        [weeklyReport.kidStats],
+    )
 
     const handleLink = async (fn) => {
         setLinkBusy(true)
@@ -300,14 +305,14 @@ export default function Dashboard() {
     }, [editGoal, deleteGoal])
 
     return (
-        <div>
+        <div className="dashboard-page">
             <NotificationBanner />
-            <div className="page-header row between center">
+            <div className="page-header row between center dashboard-page-header">
                 <div>
                     <h1 className="page-title">{t('dash.title')}</h1>
                     <p className="page-subtitle">{t('dash.subtitle')}</p>
                 </div>
-                <div className="row center" style={{ gap: 8, flexWrap: 'wrap' }}>
+                <div className="row center dashboard-head-stats">
                     <span className="badge badge-purple">{t('dash.kidsSummaryProfiles', { count: kids.length || 0 })}</span>
                     {weeklyHasData && (
                         <span className="badge badge-green">
@@ -318,7 +323,7 @@ export default function Dashboard() {
             </div>
 
             {shouldShowLinkPrompt && (
-                <div className="card" style={{ marginBottom: 16, borderColor: 'rgba(245,158,11,0.35)' }}>
+                <div className="card dashboard-alert-card">
                     <div className="row between center wrap" style={{ gap: 10 }}>
                         <div>
                             <div style={{ fontWeight: 800, fontSize: 15 }}>{t('dash.linkPromptTitle')}</div>
@@ -335,7 +340,7 @@ export default function Dashboard() {
                 <OnboardingWizard />
             ) : kids.length === 0 ? null : (
                 <>
-                    <div className="card dashboard-toolbar" style={{ marginBottom: 18 }}>
+                    <div className="card dashboard-toolbar dashboard-section">
                         <div className="dashboard-toolbar__left">
                             <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.primaryActionsTitle')}</div>
                             <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('dash.primaryActionsDesc')}</div>
@@ -348,10 +353,27 @@ export default function Dashboard() {
                     </div>
 
                     <div className="dashboard-top-grid">
-                        <div className="card" style={{ marginBottom: 0 }}>
+                        <div className="card dashboard-overview-card">
                             <div className="row between center" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-                                <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.kidsSummaryTitle')}</div>
+                                <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.reportTitle')}</div>
                                 <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('dash.kidsSummaryProfiles', { count: kids.length })}</span>
+                            </div>
+                            <div className="dashboard-overview-metrics">
+                                <div className="dashboard-overview-metric">
+                                    <div className="dashboard-overview-metric__label">
+                                        {t('weekly.totalTasks', { done: overviewCompletedTasks, total: overviewTotalTasks })}
+                                    </div>
+                                </div>
+                                <div className="dashboard-overview-metric">
+                                    <div className="dashboard-overview-metric__label">
+                                        {t('weekly.shareEarnings')}: {formatMoney(overviewEarnings)}
+                                    </div>
+                                </div>
+                                <div className="dashboard-overview-metric">
+                                    <div className="dashboard-overview-metric__label">
+                                        {t('weekly.modalCompletion', { pct: familyCompletionPct })}
+                                    </div>
+                                </div>
                             </div>
                             <div className="card-grid">
                                 {kids.map((kid) => (
@@ -382,27 +404,12 @@ export default function Dashboard() {
                                             const weeklyKid = weeklyStatsByKid.get(kid.id)
                                             const badgeCount = weeklyBadgesByKid.get(kid.id) || 0
                                             const completionPct = weeklyKid ? Math.round((weeklyKid.completionRate || 0) * 100) : 0
-                                            const earningsAmount = weeklyKid?.weekEarnings || 0
                                             return (
                                                 <div className="kid-weekly-mini" onClick={(e) => e.stopPropagation()}>
-                                                    <div className="kid-weekly-mini__title">{t('weekly.title')}</div>
                                                     <div className="kid-weekly-mini__grid">
                                                         <div className="kid-weekly-mini__item">
                                                             <span className="kid-weekly-mini__label">{t('weekly.completionLabel')}</span>
-                                                            <span className={`kid-weekly-mini__value ${completionPct >= 80
-                                                                ? 'kid-weekly-mini__value--good'
-                                                                : completionPct >= 50
-                                                                    ? 'kid-weekly-mini__value--mid'
-                                                                    : 'kid-weekly-mini__value--low'
-                                                                }`}>
-                                                                {completionPct}%
-                                                            </span>
-                                                        </div>
-                                                        <div className="kid-weekly-mini__item">
-                                                            <span className="kid-weekly-mini__label">{t('weekly.shareEarnings')}</span>
-                                                            <span className={`kid-weekly-mini__value ${earningsAmount >= 0 ? 'kid-weekly-mini__value--good' : 'kid-weekly-mini__value--low'}`}>
-                                                                {formatMoney(earningsAmount)}
-                                                            </span>
+                                                            <span className="kid-weekly-mini__value">{completionPct}%</span>
                                                         </div>
                                                         <div className="kid-weekly-mini__item">
                                                             <span className="kid-weekly-mini__label">{t('weekly.shareNewBadges')}</span>
@@ -412,7 +419,7 @@ export default function Dashboard() {
                                                 </div>
                                             )
                                         })()}
-                                        <div className="row" style={{ marginTop: 16, justifyContent: 'center', gap: 8 }}>
+                                        <div className="row kid-card-actions">
                                             <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/profile?kidId=${kid.id}`) }}>{t('nav.profile')}</button>
                                             <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/daily/${kid.id}`) }}>{t('dash.tasks')}</button>
                                             <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/ledger/${kid.id}`) }}>{t('dash.ledger')}</button>
@@ -450,7 +457,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="card" style={{ marginTop: 24 }}>
+                    <div className="card dashboard-section">
                         <div className="row between center" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                             <div style={{ fontWeight: 800, fontSize: 16 }}>🎯 {t('goal.parentSummaryTitle')}</div>
                             <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('goal.parentSummaryDesc')}</span>
@@ -478,16 +485,16 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="card" style={{ marginTop: 24 }}>
+                    <div className="card dashboard-section">
                         <LeaderboardCard data={leaderboardData} />
                     </div>
 
-                    {/* ── Performance Report ── */}
-                    <div className="card" style={{ marginTop: 32 }}>
-                        <div className="row between center" style={{ marginBottom: 16 }}>
+                    {/* Trend */}
+                    <div className="card dashboard-section dashboard-trend-card">
+                        <div className="row between center dashboard-trend-head">
                             <div>
-                                <div style={{ fontWeight: 800, fontSize: 16 }}>📊 {t('dash.reportTitle')}</div>
-                                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{t('dash.reportDesc')}</div>
+                                <div className="dashboard-trend-title">📈 {t('dash.reportTrendTitle')}</div>
+                                <div className="dashboard-trend-subtitle">{t('dash.reportDesc')}</div>
                             </div>
                             <div className="chip-group">
                                 <button className={`chip chip--sm${reportPeriod === 7 ? ' selected' : ''}`} onClick={() => setReportPeriod(7)}>
@@ -507,7 +514,6 @@ export default function Dashboard() {
                                         kid={kid}
                                         dailyTasks={dailyTasks}
                                         period={reportPeriod}
-                                        lang={lang}
                                     />
                                 ))}
                             </div>
@@ -517,13 +523,6 @@ export default function Dashboard() {
                             </div>
                         )}
 
-                        {/* Legend */}
-                        <div className="report-legend">
-                            <span className="report-legend-dot" style={{ background: 'var(--accent-green)' }} /> {t('dash.reportLegendFull')}
-                            <span className="report-legend-dot" style={{ background: 'var(--accent-amber)', marginLeft: 12 }} /> {t('dash.reportLegendPartial')}
-                            <span className="report-legend-dot" style={{ background: 'var(--accent-red)', marginLeft: 12 }} /> {t('dash.reportLegendNone')}
-                            <span className="report-legend-dot" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', marginLeft: 12 }} /> {t('dash.reportLegendNoTasks')}
-                        </div>
                     </div>
                 </>
             )}

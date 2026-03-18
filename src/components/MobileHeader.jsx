@@ -9,7 +9,7 @@ export default function MobileHeader({ title }) {
     const navigate = useNavigate()
     const location = useLocation()
     const t = useT()
-    const { lang, setLang } = useLang()
+    const { toggleLang } = useLang()
     const { user, role } = useAuth()
 
     const isHome = location.pathname === '/' || location.pathname === '/kid'
@@ -40,10 +40,10 @@ export default function MobileHeader({ title }) {
             <div className="mobile-header-actions">
                 <button
                     className="mobile-header-btn mobile-header-lang-btn"
-                    onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-                    aria-label={lang === 'vi' ? 'Switch to English' : 'Chuyen sang tieng Viet'}
+                    onClick={toggleLang}
+                    aria-label={t('common.langSwitchAria')}
                 >
-                    {lang === 'vi' ? 'EN' : 'VN'}
+                    {t('common.langSwitch')}
                 </button>
 
                 {role === 'parent' && <FeedbackLauncher compact />}

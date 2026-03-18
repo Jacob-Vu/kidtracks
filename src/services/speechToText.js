@@ -3,6 +3,7 @@ import { app } from '../firebase/config'
 
 const functions = getFunctions(app, 'asia-southeast1')
 const MAX_AUDIO_BYTES = 10 * 1024 * 1024
+const STT_LANGUAGE_CODE = { vi: 'vi-VN', en: 'en-US' }
 
 const blobToBase64 = (blob) => new Promise((resolve, reject) => {
   const reader = new FileReader()
@@ -23,7 +24,7 @@ export async function transcribeAudioBlob(blob, lang = 'vi') {
   if (!audioBase64) return ''
 
   const call = httpsCallable(functions, 'transcribeSpeech')
-  const languageCode = lang === 'vi' ? 'vi-VN' : 'en-US'
+  const languageCode = STT_LANGUAGE_CODE[lang] || STT_LANGUAGE_CODE.en
   const response = await call({
     audioBase64,
     mimeType: blob.type || 'audio/webm',

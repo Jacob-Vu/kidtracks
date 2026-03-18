@@ -108,6 +108,13 @@ export default function useNotifications() {
             return false
         }
     })
+    const status = !isSupported
+        ? 'unsupported'
+        : permission === 'denied'
+            ? 'blocked'
+            : enabled && permission === 'granted'
+                ? 'active'
+                : 'inactive'
     const timersRef = useRef([])
 
     const requestPermission = useCallback(async () => {
@@ -197,6 +204,7 @@ export default function useNotifications() {
         isSupported,
         permission,
         enabled,
+        status,
         setEnabled,
         requestPermission,
         scheduleReminders,

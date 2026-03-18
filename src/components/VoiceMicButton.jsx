@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useVoiceInput } from '../hooks/useVoiceInput'
-import { useLang } from '../i18n/I18nContext'
+import { useLang, useT } from '../i18n/I18nContext'
 import { trackVoiceInputUsed } from '../hooks/useAnalytics'
 
 // Mic button that appends voice transcript to a field value via onAppend callback.
@@ -8,6 +8,7 @@ import { trackVoiceInputUsed } from '../hooks/useAnalytics'
 //   onAppend(text)  - called with final transcript to append to the field
 //   disabled        - disable the button
 export default function VoiceMicButton({ onAppend, disabled, field = 'unknown', role = 'parent' }) {
+  const t = useT()
   const { lang } = useLang()
   const {
     listening,
@@ -22,8 +23,6 @@ export default function VoiceMicButton({ onAppend, disabled, field = 'unknown', 
   const pendingTrackRef = useRef(false)
   const lastErrorRef = useRef('')
 
-  if (!canUseVoice) return null
-
   useEffect(() => {
     if (!pendingTrackRef.current) return
     if (!error || error === lastErrorRef.current) return
@@ -36,6 +35,8 @@ export default function VoiceMicButton({ onAppend, disabled, field = 'unknown', 
     })
     pendingTrackRef.current = false
   }, [error, field, role, currentMode])
+
+  if (!canUseVoice) return null
 
   const handleClick = () => {
     if (listening) {
@@ -58,12 +59,12 @@ export default function VoiceMicButton({ onAppend, disabled, field = 'unknown', 
     })
   }
 
-  const label = lang === 'vi' ? 'Giong noi' : 'Voice'
+  const label = t('voice.label')
   const title = listening
-    ? (lang === 'vi' ? 'Dung ghi am' : 'Stop recording')
+    ? t('voice.stopRecording')
     : transcribing
-      ? (lang === 'vi' ? 'Dang chuyen thanh van ban' : 'Transcribing audio')
-      : (lang === 'vi' ? 'Nhap bang giong noi' : 'Voice input')
+      ? t('voice.transcribing')
+      : t('voice.input')
 
   return (
     <span className="voice-input-wrap">
@@ -82,13 +83,13 @@ export default function VoiceMicButton({ onAppend, disabled, field = 'unknown', 
         <span className="voice-input-live">{liveText}</span>
       )}
       {transcribing && (
-        <span className="voice-input-live">{lang === 'vi' ? 'Dang xu ly...' : 'Processing...'}</span>
+        <span className="voice-input-live">{t('voice.processing')}</span>
       )}
       {error === 'mic_denied' && (
-        <span className="voice-input-error">{lang === 'vi' ? 'Chua cap quyen mic' : 'Microphone denied'}</span>
+        <span className="voice-input-error">{t('voice.micDenied')}</span>
       )}
       {error === 'stt_failed' && (
-        <span className="voice-input-error">{lang === 'vi' ? 'Khong the chuyen giong noi' : 'Speech-to-text failed'}</span>
+        <span className="voice-input-error">{t('voice.sttFailed')}</span>
       )}
     </span>
   )

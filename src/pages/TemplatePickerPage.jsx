@@ -26,11 +26,13 @@ function normalize(str) {
 }
 
 function getDesc(task, lang) {
-    if (lang === 'vi' && task.descriptionVi) return task.descriptionVi
+    const isVi = lang !== 'en'
+    if (isVi && task.descriptionVi) return task.descriptionVi
     return task.description || task.descriptionVi || ''
 }
 
 function TemplateRow({ tmpl, selected, alreadyAdded, onToggle, lang }) {
+    const t = useT()
     const primary = getDesc(tmpl, lang)
     return (
         <div
@@ -49,7 +51,7 @@ function TemplateRow({ tmpl, selected, alreadyAdded, onToggle, lang }) {
                 {primary && <div className="tpicker-row-desc">{primary}</div>}
             </div>
             {alreadyAdded && (
-                <span className="badge badge-gray" style={{ fontSize: 10, flexShrink: 0 }}>Đã có</span>
+                <span className="badge badge-gray" style={{ fontSize: 10, flexShrink: 0 }}>{t('picker.alreadyAddedBadge')}</span>
             )}
         </div>
     )
@@ -120,7 +122,8 @@ export default function TemplatePickerPage() {
 
     const previewTmpl = previewId ? ALL_TASKS.find((tmpl) => tmpl.id === previewId) : null
     const previewPack = previewTmpl ? DEFAULT_PACKS.find((p) => p.id === previewTmpl.packId) : null
-    const otherLang = lang === 'vi' ? 'en' : 'vi'
+    const isVi = lang !== 'en'
+    const otherLang = isVi ? 'en' : 'vi'
 
     return (
         <div className="tpicker-page">
@@ -148,7 +151,7 @@ export default function TemplatePickerPage() {
                             className={`chip chip--sm${filterPack === 'all' ? ' selected' : ''}`}
                             onClick={() => setFilterPack('all')}
                         >
-                            {lang === 'vi' ? 'Tất cả' : 'All'}
+                            {t('picker.all')}
                         </button>
                         {DEFAULT_PACKS.map((pack) => (
                             <button
@@ -161,7 +164,7 @@ export default function TemplatePickerPage() {
                         ))}
                     </div>
                     <div className="tpicker-chip-hint">
-                        {lang === 'vi' ? 'Vuốt ngang để xem thêm bộ mẫu ->' : 'Swipe to see more packs ->'}
+                        {t('picker.swipeHint')}
                     </div>
                 </div>
             </div>
@@ -173,9 +176,9 @@ export default function TemplatePickerPage() {
                         {selectableFiltered.every((tmpl) => selected.has(tmpl.id)) ? t('tmpl.deselectAll') : t('tmpl.selectAll')}
                     </button>
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                        {filtered.length} {lang === 'vi' ? 'mẫu' : 'templates'}
+                        {filtered.length} {t('picker.templatesUnit')}
                         {filtered.length !== selectableFiltered.length && (
-                            <> · {filtered.length - selectableFiltered.length} {lang === 'vi' ? 'đã có' : 'already added'}</>
+                            <> · {filtered.length - selectableFiltered.length} {t('picker.alreadyAddedUnit')}</>
                         )}
                     </span>
                 </div>
@@ -227,7 +230,7 @@ export default function TemplatePickerPage() {
                             {previewPack && (
                                 <div style={{ marginTop: 12 }}>
                                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {lang === 'vi' ? 'Bộ mẫu' : 'Pack'}
+                                        {t('picker.packLabel')}
                                     </div>
                                     <span className="badge badge-purple" style={{ marginRight: 4, fontSize: 11 }}>
                                         {previewPack.icon} {previewPack.name}
@@ -244,16 +247,16 @@ export default function TemplatePickerPage() {
                                 disabled={existingTaskTitles.includes(previewTmpl.title)}
                             >
                                 {existingTaskTitles.includes(previewTmpl.title)
-                                    ? (lang === 'vi' ? '✓ Đã có hôm nay' : '✓ Already added')
+                                    ? t('picker.btnAlreadyToday')
                                     : selected.has(previewTmpl.id)
-                                        ? (lang === 'vi' ? '☐ Bỏ chọn' : '☐ Deselect')
-                                        : (lang === 'vi' ? '+ Chọn' : '+ Select')
+                                        ? t('picker.btnDeselect')
+                                        : t('picker.btnSelect')
                                 }
                             </button>
                         </>
                     ) : (
                         <div style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', marginTop: 40 }}>
-                            {lang === 'vi' ? 'Chọn một mẫu để xem chi tiết' : 'Select a template to preview'}
+                            {t('picker.previewHint')}
                         </div>
                     )}
                 </div>

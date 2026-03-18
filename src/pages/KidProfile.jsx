@@ -16,7 +16,7 @@ export default function KidProfile() {
     const { profile } = useAuth()
     const { kids } = useStore()
     const { updateKid } = useFireActions()
-    const { theme, setTheme } = useTheme()
+    const { theme, setTheme, themeMode, customPrimary, setCustomPrimary, enableCustomTheme } = useTheme()
     const kid = kids.find((k) => k.id === profile?.kidId)
     const { unlockedBadges, totalUnlocked, totalBadges } = useBadges(kid?.id)
 
@@ -152,6 +152,27 @@ export default function KidProfile() {
                             {th.emoji}
                         </button>
                     ))}
+                </div>
+                <div className="theme-custom-picker">
+                    <button
+                        type="button"
+                        className={`btn btn-sm ${themeMode === 'custom' ? 'btn-primary' : 'btn-ghost'}`}
+                        onClick={enableCustomTheme}
+                    >
+                        {t('theme.customBtn')}
+                    </button>
+                    <label className="theme-custom-picker__label">
+                        {t('theme.customPrimary')}
+                        <input
+                            type="color"
+                            value={customPrimary}
+                            onChange={(e) => setCustomPrimary(e.target.value)}
+                            aria-label={t('theme.customPrimary')}
+                        />
+                    </label>
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 8 }}>
+                    {theme === 'custom' ? t('theme.customActive') : t('theme.presetActive')}
                 </div>
             </div>
 

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-03-18T03:28:13.905Z",
-  "usageKeyCount": 415,
-  "dynamicPatternCount": 3,
+  "generatedAt": "2026-03-18T08:04:19.950Z",
+  "usageKeyCount": 471,
+  "dynamicPatternCount": 4,
   "missing": [],
   "fallbackToKey": [],
   "viSameAsEn": [
@@ -12,14 +12,6 @@
     {
       "key": "dash.linkEmailLabel",
       "value": "Email"
-    },
-    {
-      "key": "dash.reportLegendFull",
-      "value": "100%"
-    },
-    {
-      "key": "dash.reportLegendNone",
-      "value": "0%"
     },
     {
       "key": "goal.targetPlaceholder",
@@ -80,6 +72,8 @@
       "badge.task10",
       "badge.task10Desc",
       "common.error",
+      "common.switchToEnglish",
+      "common.switchToVietnamese",
       "daily.addToPocker",
       "daily.allTasksCompleted",
       "daily.noTemplatesAlert",
@@ -88,6 +82,13 @@
       "dash.addFirst",
       "dash.noKids",
       "dash.noKidsDesc",
+      "dash.reportLegendFull",
+      "dash.reportLegendNoTasks",
+      "dash.reportLegendNone",
+      "dash.reportLegendPartial",
+      "feedback.type.bug",
+      "feedback.type.feedback",
+      "feedback.type.idea",
       "goal.completed",
       "goal.create",
       "goal.deleteBtn",
@@ -169,6 +170,8 @@
       "badge.task10",
       "badge.task10Desc",
       "common.error",
+      "common.switchToEnglish",
+      "common.switchToVietnamese",
       "daily.addToPocker",
       "daily.allTasksCompleted",
       "daily.noTemplatesAlert",
@@ -177,6 +180,13 @@
       "dash.addFirst",
       "dash.noKids",
       "dash.noKidsDesc",
+      "dash.reportLegendFull",
+      "dash.reportLegendNoTasks",
+      "dash.reportLegendNone",
+      "dash.reportLegendPartial",
+      "feedback.type.bug",
+      "feedback.type.feedback",
+      "feedback.type.idea",
       "goal.completed",
       "goal.create",
       "goal.deleteBtn",

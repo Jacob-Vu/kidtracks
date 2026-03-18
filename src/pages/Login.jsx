@@ -50,7 +50,7 @@ export default function Login() {
     const navigate = useNavigate()
     const { user, profile, loading } = useAuth()
     const t = useT()
-    const { lang, setLang } = useLang()
+    const { lang, toggleLang } = useLang()
 
     const [tab, setTab] = useState('parent')
     const [error, setError] = useState('')
@@ -130,7 +130,7 @@ export default function Login() {
         } catch (err) {
             const code = err.code
             if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
-                setError(lang === 'vi' ? 'Sai email hoặc mật khẩu.' : 'Incorrect email or password.')
+                setError(t('login.errIncorrectCredentials'))
             } else {
                 setError(err.message)
             }
@@ -152,9 +152,9 @@ export default function Login() {
         } catch (err) {
             const code = err.code
             if (code === 'auth/email-already-in-use') {
-                setError(lang === 'vi' ? 'Email này đã được sử dụng. Hãy đăng nhập.' : 'Email already in use. Try signing in.')
+                setError(t('login.errEmailInUse'))
             } else if (code === 'auth/weak-password') {
-                setError(lang === 'vi' ? 'Mật khẩu quá yếu (tối thiểu 6 ký tự).' : 'Password too weak (min 6 characters).')
+                setError(t('login.errWeakPassword'))
             } else {
                 setError(err.message)
             }
@@ -164,7 +164,7 @@ export default function Login() {
 
     const handleForgotPassword = async () => {
         if (!parentEmail.trim()) {
-            setError(lang === 'vi' ? 'Nhập email trước khi đặt lại mật khẩu.' : 'Enter your email address first.')
+            setError(t('login.errEnterEmailForReset'))
             return
         }
         setError('')
@@ -182,7 +182,7 @@ export default function Login() {
         const username = parentSimpleUsername.trim().toLowerCase().replace(/\s+/g, '')
         if (!username) return
         if (username.length < 3) {
-            setError(lang === 'vi' ? 'Username phải có ít nhất 3 ký tự.' : 'Username must be at least 3 characters.')
+            setError(t('login.errUsernameMin'))
             return
         }
         setError('')
@@ -226,7 +226,7 @@ export default function Login() {
         try {
             const lookup = await lookupFamilyByParentEmail(kidParentEmail.trim())
             if (!lookup?.familyId) {
-                setError(lang === 'vi' ? 'Không tìm thấy gia đình. Kiểm tra lại email.' : 'Family not found. Check parent email.')
+                setError(t('login.errFamilyNotFound'))
                 setBusy(false)
                 return
             }
@@ -237,7 +237,7 @@ export default function Login() {
         } catch (err) {
             setError(
                 err.code === 'auth/invalid-credential'
-                    ? (lang === 'vi' ? 'Sai tên đăng nhập hoặc mật khẩu.' : 'Wrong username or password.')
+                    ? t('login.errWrongKidCredentials')
                     : err.message
             )
             setBusy(false)
@@ -253,10 +253,10 @@ export default function Login() {
                 {/* Language toggle */}
                 <button
                     className="login-lang-btn"
-                    onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-                    aria-label={lang === 'vi' ? 'Switch to English' : 'Chuyển sang tiếng Việt'}
+                    onClick={toggleLang}
+                    aria-label={t('common.langSwitchAria')}
                 >
-                    {lang === 'vi' ? '🇬🇧 EN' : '🇻🇳 VN'}
+                    {t('common.langSwitch')}
                 </button>
 
                 {/* Logo + branding */}

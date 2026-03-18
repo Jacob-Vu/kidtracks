@@ -148,6 +148,10 @@ body {
   --bg-secondary: #22103a;
 }
 
+[data-theme="custom"] {
+  --gradient-hero: linear-gradient(135deg, #0f0c29, #261f47, #1e1a38);
+}
+
 /* ─── Scrollbar ─────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
@@ -313,6 +317,43 @@ body {
   margin-bottom: 24px;
 }
 
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.dashboard-page-header {
+  margin-bottom: 0;
+}
+
+.dashboard-head-stats {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dashboard-alert-card {
+  margin-bottom: 0;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.dashboard-section {
+  margin-top: 0;
+}
+
+.dashboard-overview-card {
+  margin-bottom: 0;
+  padding: 20px 20px 18px;
+}
+
+.dashboard-overview-card .card-grid {
+  gap: 14px;
+}
+
+.dashboard-overview-card .kid-card {
+  padding: 18px 16px;
+}
+
 .dashboard-weekly-panel {
   display: flex;
   flex-direction: column;
@@ -355,6 +396,61 @@ body {
   font-size: 12px;
   color: var(--text-secondary);
   line-height: 1.45;
+}
+
+.dashboard-overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.dashboard-overview-metric {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 11px;
+}
+
+.dashboard-overview-metric__label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.kid-card-actions {
+  margin-top: 14px;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.kid-card-actions .btn {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.dashboard-trend-card {
+  margin-top: 0;
+}
+
+.dashboard-trend-head {
+  margin-bottom: 16px;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dashboard-trend-title {
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.dashboard-trend-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 /* ─── Buttons ─────────────────────────────────── */
@@ -2011,15 +2107,21 @@ textarea {
 }
 
 .feedback-launcher-btn {
-  border: 1px solid rgba(34, 211, 238, 0.5);
-  background: linear-gradient(145deg, #0ea5e9 0%, #22d3ee 100%);
-  color: #022534;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
   border-radius: var(--radius-md);
-  padding: 7px 12px;
+  padding: 7px 11px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 16px rgba(14, 165, 233, 0.28);
+  transition: all 0.2s ease;
+}
+
+.feedback-launcher-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-purple-light);
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .feedback-launcher-btn--compact {
@@ -2059,6 +2161,15 @@ textarea {
   font-size: 12px;
 }
 
+.feedback-page {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.feedback-page-card {
+  margin-top: 8px;
+}
+
 .mobile-header {
   display: none;
 }
@@ -2068,6 +2179,10 @@ textarea {
 }
 
 @media (max-width: 768px) {
+  .dashboard-overview-metrics {
+    grid-template-columns: 1fr;
+  }
+
   .app-layout {
     flex-direction: column;
   }
@@ -2936,6 +3051,31 @@ textarea {
   padding-top: 1px;
 }
 
+.theme-custom-picker {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.theme-custom-picker__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.theme-custom-picker__label input[type="color"] {
+  width: 40px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  padding: 2px;
+}
+
 .theme-sidebar-picker {
   display: flex;
   gap: 6px;
@@ -2960,6 +3100,24 @@ textarea {
 .theme-sidebar-dot--active {
   border-color: var(--text-primary);
   transform: scale(1.15);
+}
+
+.notif-status {
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.notif-status--active {
+  color: var(--accent-green);
+}
+
+.notif-status--inactive {
+  color: var(--text-muted);
+}
+
+.notif-status--blocked {
+  color: var(--accent-red);
 }
 
 /* ─── Daily Journal ──────────────────────────── */
@@ -5482,6 +5640,19 @@ textarea {
   .page-header .row.center {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .dashboard-overview-card {
+    padding: 16px;
+  }
+
+  .dashboard-overview-card .card-grid {
+    gap: 10px;
+  }
+
+  .kid-card-actions .btn {
+    padding: 6px 8px;
+    font-size: 11px;
   }
 }
 
