@@ -13,12 +13,13 @@ import VoiceMicButton from '../components/VoiceMicButton'
 import GoalCard from '../components/GoalCard'
 import GoalModal from '../components/GoalModal'
 import useGoalMilestones from '../hooks/useGoalMilestones'
-import { trackTaskCompleted, trackAllTasksDone, trackCelebrationShown } from '../hooks/useAnalytics'
+import { trackTaskCompleted, trackAllTasksDone, trackCelebrationShown, trackGoalCreated, trackStreakMilestone, trackTaskCreated } from '../hooks/useAnalytics'
 import BadgeStrip from '../components/BadgeStrip'
 import useBadges from '../hooks/useBadges'
 import useKidFeedback from '../hooks/useKidFeedback'
 import useLeaderboard from '../hooks/useLeaderboard'
 import LeaderboardCard from '../components/LeaderboardCard'
+import { GOAL_MILESTONES } from '../utils/goals'
 
 export default function KidDashboard() {
     const t = useT()
@@ -30,6 +31,7 @@ export default function KidDashboard() {
     const today = format(new Date(), 'yyyy-MM-dd')
 
     const todayTasks = kid ? dailyTasks.filter((t) => t.kidId === kid.id && t.date === today) : []
+    const todayConfig = kid ? dayConfigs.find((c) => c.kidId === kid.id && c.date === today) : null
     const completedToday = todayTasks.filter((t) => t.status === 'completed').length
     const totalToday = todayTasks.length
     const kidGoals = kid ? goals.filter((g) => g.kidId === kid.id) : []
@@ -82,6 +84,21 @@ export default function KidDashboard() {
         if (newlyUnlocked.length === 0) return
         newlyUnlocked.forEach((badge) => notifyBadgeUnlock(badge))
     }, [newlyUnlocked, notifyBadgeUnlock])
+
+    useEffect(() => {
+        if (!kid?.id) return
+        ;[3, 7, 14, 30].forEach((milestone) => {
+            if (currentStreak < milestone) return
+            const key = `kidstrack-streak-milestone-${kid.id}-${milestone}`
+            try {
+                if (localStorage.getItem(key) === '1') return
+                trackStreakMilestone(milestone)
+                localStorage.setItem(key, '1')
+            } catch {
+                trackStreakMilestone(milestone)
+            }
+        })
+    }, [kid?.id, currentStreak])
 
     useGoalMilestones(activeGoal, kid?.balance || 0, async (goalId, updates) => {
         await updateGoal(goalId, updates)
@@ -137,6 +154,12 @@ export default function KidDashboard() {
             setEditTask(null)
         } else {
             await addDailyTask(kid.id, today, taskTitle.trim(), taskDesc.trim())
+            trackTaskCreated({
+                kid_id: kid.id,
+                source: 'manual',
+                has_description: !!taskDesc.trim(),
+                task_type: 'daily_task',
+            })
             setShowAdd(false)
         }
     }
@@ -147,6 +170,7 @@ export default function KidDashboard() {
             await updateGoal(editGoal.id, payload)
         } else {
             await addGoal(kid.id, payload.title, payload.targetAmount, payload.icon, payload.dueDate)
+            trackGoalCreated(GOAL_MILESTONES.length)
         }
         setShowGoalModal(false)
         setEditGoal(null)
@@ -237,7 +261,13 @@ export default function KidDashboard() {
                             <div className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
                                 onClick={() => {
                                     if (task.status !== 'completed') {
-                                        trackTaskCompleted({ kid_id: kid.id, task_id: task.id, date: today })
+                                        trackTaskCompleted({
+                                            kid_id: kid.id,
+                                            task_id: task.id,
+                                            date: today,
+                                            task_type: 'daily_task',
+                                            has_reward: !!(todayConfig && Number(todayConfig.rewardAmount) > 0),
+                                        })
                                         notifyTaskComplete(task.id)
                                     }
                                     toggleTaskStatus(task.id)
@@ -329,14 +359,22 @@ export default function KidDashboard() {
                             <div className="form-group-row">
                                 <input type="text" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)}
                                     placeholder={t('daily.whatTodo')} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSave()} />
-                                <VoiceMicButton onAppend={(text) => setTaskTitle((prev) => prev ? prev + ' ' + text : text)} />
+                                <VoiceMicButton
+                                    field="task_title"
+                                    role="kid"
+                                    onAppend={(text) => setTaskTitle((prev) => prev ? prev + ' ' + text : text)}
+                                />
                             </div>
                         </div>
                         <div className="form-group">
                             <label>{t('tmpl.descLabel')}</label>
                             <div className="form-group-row">
                                 <textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} placeholder={t('daily.additionalDetails')} rows={3} />
-                                <VoiceMicButton onAppend={(text) => setTaskDesc((prev) => prev ? prev + ' ' + text : text)} />
+                                <VoiceMicButton
+                                    field="task_description"
+                                    role="kid"
+                                    onAppend={(text) => setTaskDesc((prev) => prev ? prev + ' ' + text : text)}
+                                />
                             </div>
                         </div>
                         <div className="modal-footer">

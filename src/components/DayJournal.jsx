@@ -262,6 +262,16 @@ export default function DayJournal({ kidId, date, role, kidName }) {
           {voiceError === 'mic_denied' && (
             <div className="login-error" style={{ marginBottom: 8 }}>{t('journal.micDenied')}</div>
           )}
+          {voiceError === 'stt_failed' && (
+            <div className="login-error" style={{ marginBottom: 8 }}>
+              {lang === 'vi' ? 'Khong the chuyen giong noi thanh van ban.' : 'Unable to convert speech to text.'}
+            </div>
+          )}
+          {voiceError === 'stt_empty' && (
+            <div className="login-error" style={{ marginBottom: 8 }}>
+              {lang === 'vi' ? 'Khong nghe ro noi dung ghi am.' : 'No speech detected from the recording.'}
+            </div>
+          )}
           {recState === 'done' && audioBlob && (
             <div className="journal-preview-audio">
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('journal.previewAudio')}</span>

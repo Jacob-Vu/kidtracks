@@ -3,6 +3,7 @@ import { LogOut } from 'lucide-react'
 import { useT, useLang } from '../i18n/I18nContext'
 import { useAuth } from '../contexts/AuthContext'
 import { signOut } from '../firebase/auth'
+import FeedbackLauncher from './FeedbackLauncher'
 
 export default function MobileHeader({ title }) {
     const navigate = useNavigate()
@@ -19,7 +20,6 @@ export default function MobileHeader({ title }) {
 
     return (
         <header className="mobile-header">
-            {/* Left slot */}
             <div className="mobile-header-left">
                 {isHome ? (
                     <div className="mobile-header-logo">⭐</div>
@@ -35,18 +35,18 @@ export default function MobileHeader({ title }) {
                 )}
             </div>
 
-            {/* Center: title */}
             <div className="mobile-header-title">{title || t('app.name')}</div>
 
-            {/* Right slot: lang + avatar + logout */}
             <div className="mobile-header-actions">
                 <button
                     className="mobile-header-btn mobile-header-lang-btn"
                     onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-                    aria-label={lang === 'vi' ? 'Switch to English' : 'Chuyển sang tiếng Việt'}
+                    aria-label={lang === 'vi' ? 'Switch to English' : 'Chuyen sang tieng Viet'}
                 >
                     {lang === 'vi' ? 'EN' : 'VN'}
                 </button>
+
+                {role === 'parent' && <FeedbackLauncher compact />}
 
                 {user?.photoURL ? (
                     <img

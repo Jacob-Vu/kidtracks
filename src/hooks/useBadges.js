@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import useStore from '../store/useStore'
 import { useFireActions } from './useFirebaseSync'
 import { evaluateBadgesForKid } from '../utils/badges'
+import { trackBadgeUnlocked } from './useAnalytics'
 
 export default function useBadges(kidId) {
     const { dailyTasks, dayConfigs, goals, badges } = useStore()
@@ -20,6 +21,7 @@ export default function useBadges(kidId) {
 
         evaluated.newlyUnlocked.forEach((badge) => {
             upsertBadge(kidId, badge.code, badge.unlockedAt)
+            trackBadgeUnlocked({ badge_id: badge.code, kid_id: kidId })
         })
     }, [kidId, evaluated.newlyUnlocked, upsertBadge])
 

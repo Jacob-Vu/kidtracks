@@ -1,44 +1,118 @@
 import { useState, useRef, useCallback } from 'react'
+import { transcribeAudioBlob } from '../services/speechToText'
 
-// Lightweight voice-to-text hook — SpeechRecognition only, no audio storage.
-// Use this for filling form fields; use useVoiceRecorder when you need the audio blob.
+// Voice-to-text hook for form inputs.
+// Primary path: browser SpeechRecognition.
+// Fallback path: MediaRecorder + Firebase callable + Google STT.
 export function useVoiceInput(lang = 'vi') {
   const [listening, setListening] = useState(false)
+  const [transcribing, setTranscribing] = useState(false)
   const [liveText, setLiveText] = useState('')
   const [error, setError] = useState('')
+
   const recognitionRef = useRef(null)
+  const recorderRef = useRef(null)
+  const streamRef = useRef(null)
+  const chunksRef = useRef([])
+  const modeRef = useRef('idle')
+  const onFinalRef = useRef(null)
 
   const hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+  const hasRecorder = !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder)
+  const canUseVoice = hasSR || hasRecorder
+
+  const stopMediaTracks = useCallback(() => {
+    if (!streamRef.current) return
+    streamRef.current.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+  }, [])
+
+  const startFallbackRecording = useCallback(async () => {
+    setError('')
+    setLiveText('')
+    setTranscribing(false)
+
+    let stream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
+    } catch (_) {
+      setError('mic_denied')
+      return
+    }
+
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : 'audio/mp4'
+
+    chunksRef.current = []
+    const recorder = new MediaRecorder(stream, { mimeType })
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunksRef.current.push(event.data)
+    }
+    recorder.onstop = async () => {
+      const blob = new Blob(chunksRef.current, { type: mimeType })
+      stopMediaTracks()
+      try {
+        const text = await transcribeAudioBlob(blob, lang)
+        if (text) onFinalRef.current?.(text, { mode: 'fallback_api' })
+        else setError('stt_empty')
+      } catch (_) {
+        setError('stt_failed')
+      } finally {
+        setTranscribing(false)
+        setLiveText('')
+      }
+    }
+
+    recorder.start(200)
+    recorderRef.current = recorder
+    modeRef.current = 'fallback'
+    setListening(true)
+  }, [lang, stopMediaTracks])
 
   const start = useCallback((onFinal) => {
+    onFinalRef.current = onFinal
+    modeRef.current = 'idle'
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) { setError('unsupported'); return }
+
+    if (!SR) {
+      if (!hasRecorder) {
+        setError('unsupported')
+        return
+      }
+      startFallbackRecording()
+      return
+    }
 
     setError('')
     setLiveText('')
+    setTranscribing(false)
 
     const recognition = new SR()
     recognition.lang = lang === 'vi' ? 'vi-VN' : 'en-US'
     recognition.continuous = false
     recognition.interimResults = true
 
-    recognition.onresult = (e) => {
+    recognition.onresult = (event) => {
       let final = ''
       let interim = ''
-      for (let i = 0; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript
-        else interim += e.results[i][0].transcript
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) final += event.results[i][0].transcript
+        else interim += event.results[i][0].transcript
       }
       setLiveText((final || interim).trim())
       if (final) {
-        onFinal?.(final.trim())
+        onFinal?.(final.trim(), { mode: 'local' })
         setListening(false)
         setLiveText('')
       }
     }
 
-    recognition.onerror = (e) => {
-      if (e.error === 'not-allowed') setError('mic_denied')
+    recognition.onerror = (event) => {
+      if (event.error === 'not-allowed') setError('mic_denied')
       setListening(false)
       setLiveText('')
     }
@@ -51,17 +125,28 @@ export function useVoiceInput(lang = 'vi') {
     try {
       recognition.start()
       recognitionRef.current = recognition
+      modeRef.current = 'sr'
       setListening(true)
     } catch (_) {
       setError('unsupported')
     }
-  }, [lang])
+  }, [hasRecorder, lang, startFallbackRecording])
 
   const stop = useCallback(() => {
+    if (modeRef.current === 'fallback') {
+      if (recorderRef.current?.state === 'recording') {
+        setListening(false)
+        setLiveText('')
+        setTranscribing(true)
+        recorderRef.current.stop()
+      }
+      return
+    }
+
     try { recognitionRef.current?.stop() } catch (_) {}
     setListening(false)
     setLiveText('')
   }, [])
 
-  return { listening, liveText, error, hasSR, start, stop }
+  return { listening, transcribing, liveText, error, hasSR, canUseVoice, currentMode: modeRef.current, start, stop }
 }

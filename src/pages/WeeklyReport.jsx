@@ -14,6 +14,7 @@ import {
 import { useT } from '../i18n/I18nContext'
 import useWeeklyReport from '../hooks/useWeeklyReport'
 import { formatMoney } from '../utils/format'
+import { trackWeeklyReportShared, trackWeeklyReportViewed } from '../hooks/useAnalytics'
 
 const toWeekParam = (date) => `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`
 
@@ -132,6 +133,7 @@ export default function WeeklyReport() {
     )
 
     const queryWeek = searchParams.get('week')
+    const via = searchParams.get('via') || 'link'
 
     useEffect(() => {
         const parsed = parseWeekParam(queryWeek)
@@ -224,6 +226,10 @@ export default function WeeklyReport() {
         return () => window.clearTimeout(timer)
     }, [actionStatus])
 
+    useEffect(() => {
+        trackWeeklyReportViewed({ week: toWeekParam(selectedWeekStart), via })
+    }, [selectedWeekStart, via])
+
     const copySummaryToClipboard = async () => {
         if (navigator.clipboard?.writeText) {
             await navigator.clipboard.writeText(shareSummaryText)
@@ -250,11 +256,13 @@ export default function WeeklyReport() {
                     text: shareSummaryText,
                     url: window.location.href,
                 })
+                trackWeeklyReportShared('share')
                 setActionStatus({ type: 'success', message: t('weekly.shareSuccess') })
                 return
             }
 
             await copySummaryToClipboard()
+            trackWeeklyReportShared('copy')
             setActionStatus({ type: 'success', message: t('weekly.shareCopiedFallback') })
         } catch (err) {
             if (err?.name === 'AbortError') return
@@ -265,6 +273,7 @@ export default function WeeklyReport() {
     const handleCopySummary = async () => {
         try {
             await copySummaryToClipboard()
+            trackWeeklyReportShared('copy')
             setActionStatus({ type: 'success', message: t('weekly.copySuccess') })
         } catch {
             setActionStatus({ type: 'error', message: t('weekly.copyError') })

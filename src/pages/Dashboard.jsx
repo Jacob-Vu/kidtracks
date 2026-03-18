@@ -21,6 +21,8 @@ import useGoalMilestones from '../hooks/useGoalMilestones'
 import useBadges from '../hooks/useBadges'
 import useLeaderboard from '../hooks/useLeaderboard'
 import LeaderboardCard from '../components/LeaderboardCard'
+import { trackGoalCreated, trackWeeklyReportCtaClicked } from '../hooks/useAnalytics'
+import { GOAL_MILESTONES } from '../utils/goals'
 
 const LS_WEEKLY_MODAL_SEEN = 'kidstrack-weekly-modal-seen'
 const toWeekParam = (date) => `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`
@@ -170,6 +172,10 @@ export default function Dashboard() {
     const weeklyReportDate = useMemo(() => parseISO(weeklyReport.weekStart), [weeklyReport.weekStart])
     const weeklyReportWeek = useMemo(() => toWeekParam(weeklyReportDate), [weeklyReportDate])
     const weeklyHasData = weeklyReport.familyStats.totalTasks > 0
+    const familyCompletionPct = useMemo(() => {
+        const pct = (weeklyReport.familyStats.completionRate || 0) * 100
+        return Math.round(pct * 10) / 10
+    }, [weeklyReport.familyStats.completionRate])
     const weeklyStatsByKid = useMemo(() => {
         const map = new Map()
         weeklyReport.kidStats.forEach((item) => {
@@ -223,10 +229,11 @@ export default function Dashboard() {
         setShowWeeklyModal(false)
     }, [markWeeklyModalSeen])
 
-    const handleOpenWeeklyReport = useCallback(() => {
+    const handleOpenWeeklyReport = useCallback((via = 'button') => {
         markWeeklyModalSeen()
         setShowWeeklyModal(false)
-        navigate(`/report/weekly?week=${weeklyReportWeek}`)
+        trackWeeklyReportCtaClicked(via)
+        navigate(`/report/weekly?week=${weeklyReportWeek}&via=${via}`)
     }, [markWeeklyModalSeen, navigate, weeklyReportWeek])
 
     const providerIds = (user?.providerData || []).map((p) => p.providerId)
@@ -279,6 +286,7 @@ export default function Dashboard() {
             await updateGoal(editGoal.id, payload)
         } else if (goalKidId) {
             await addGoal(goalKidId, payload.title, payload.targetAmount, payload.icon, payload.dueDate)
+            trackGoalCreated(GOAL_MILESTONES.length)
         }
         setGoalKidId(null)
         setEditGoal(null)
@@ -303,7 +311,7 @@ export default function Dashboard() {
                     <span className="badge badge-purple">{t('dash.kidsSummaryProfiles', { count: kids.length || 0 })}</span>
                     {weeklyHasData && (
                         <span className="badge badge-green">
-                            {t('weekly.modalCompletion', { pct: weeklyReport.familyStats.completionRate })}
+                            {t('weekly.modalCompletion', { pct: familyCompletionPct })}
                         </span>
                     )}
                 </div>
@@ -335,7 +343,7 @@ export default function Dashboard() {
                         <div className="dashboard-toolbar__actions">
                             <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('dash.addKid')}</button>
                             <button className="btn btn-secondary" onClick={() => navigate('/templates')}>{t('tmpl.title')}</button>
-                            <button className="btn btn-secondary" onClick={handleOpenWeeklyReport}>{t('weekly.openReportCta')}</button>
+                            <button className="btn btn-secondary" onClick={() => handleOpenWeeklyReport('button')}>{t('weekly.openReportCta')}</button>
                         </div>
                     </div>
 
@@ -423,7 +431,7 @@ export default function Dashboard() {
                             <div className="dashboard-weekly-panel__week">{t('weekly.modalWeek', { week: weeklyReportWeek })}</div>
                             <div className="dashboard-weekly-panel__title">{t('weekly.title')}</div>
                             <div className="dashboard-weekly-panel__completion">
-                                {t('weekly.modalCompletion', { pct: weeklyReport.familyStats.completionRate })}
+                                {t('weekly.modalCompletion', { pct: familyCompletionPct })}
                             </div>
                             <div className="dashboard-weekly-panel__metrics">
                                 <div className="dashboard-weekly-panel__metric">
@@ -436,7 +444,7 @@ export default function Dashboard() {
                                     <span className="dashboard-weekly-panel__label">{topInsightText}</span>
                                 </div>
                             </div>
-                            <button className="btn btn-primary btn-sm" onClick={handleOpenWeeklyReport}>
+                            <button className="btn btn-primary btn-sm" onClick={() => handleOpenWeeklyReport('button')}>
                                 {t('weekly.openReportCta')}
                             </button>
                         </div>
@@ -589,7 +597,7 @@ export default function Dashboard() {
             <WeeklyReportModal
                 isOpen={showWeeklyModal}
                 onClose={handleCloseWeeklyModal}
-                onOpenReport={handleOpenWeeklyReport}
+                onOpenReport={() => handleOpenWeeklyReport('modal')}
                 weekKey={weeklyReportWeek}
                 weekStart={weeklyReport.weekStart}
                 weekEnd={weeklyReport.weekEnd}

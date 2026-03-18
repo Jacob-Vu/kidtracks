@@ -5,6 +5,7 @@ import DEFAULT_PACKS from '../data/defaultTemplates'
 import { useFireActions } from '../hooks/useFirebaseSync'
 import { useT, useLang } from '../i18n/I18nContext'
 import useStore from '../store/useStore'
+import { trackOnboardingCompleted, trackOnboardingStepCompleted } from '../hooks/useAnalytics'
 
 const AVATARS = ['🧒', '👦', '👧', '🧑', '👶', '🐻', '🦁', '🐰', '🐱', '🐶']
 const AGE_RANGES = [
@@ -40,6 +41,11 @@ export default function OnboardingWizard() {
         )
     }
 
+    const totalTasks = selectedPackIds.reduce((sum, packId) => {
+        const pack = DEFAULT_PACKS.find((p) => p.id === packId)
+        return sum + (pack?.tasks.length || 0)
+    }, 0)
+
     // Watch for the newly created kid to appear in the store
     useEffect(() => {
         if (!waitingForKid || !prevKidsSnapshotRef.current) return
@@ -63,10 +69,11 @@ export default function OnboardingWizard() {
             } catch (err) {
                 console.error('Failed to add daily tasks:', err)
             }
+            trackOnboardingCompleted(kids.length, totalTasks)
             navigate(`/daily/${newKid.id}`)
         }
         addTasksAndNavigate()
-    }, [kids, waitingForKid])
+    }, [kids, waitingForKid, navigate, selectedPackIds, totalTasks, lang, addDailyTask])
 
     const handleComplete = async () => {
         if (!childName.trim() || selectedPackIds.length === 0 || busy) return
@@ -85,11 +92,6 @@ export default function OnboardingWizard() {
             setBusy(false)
         }
     }
-
-    const totalTasks = selectedPackIds.reduce((sum, packId) => {
-        const pack = DEFAULT_PACKS.find((p) => p.id === packId)
-        return sum + (pack?.tasks.length || 0)
-    }, 0)
 
     const selectedPackNames = selectedPackIds
         .map((id) => DEFAULT_PACKS.find((p) => p.id === id)?.name || id)
@@ -123,7 +125,10 @@ export default function OnboardingWizard() {
                                 placeholder={t('onboard.namePlaceholder')}
                                 autoFocus
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && childName.trim()) setStep(1)
+                                    if (e.key === 'Enter' && childName.trim()) {
+                                        trackOnboardingStepCompleted(1, 0)
+                                        setStep(1)
+                                    }
                                 }}
                             />
                         </div>
@@ -167,7 +172,10 @@ export default function OnboardingWizard() {
                             className="btn btn-primary"
                             style={{ width: '100%', marginTop: 8 }}
                             disabled={!childName.trim()}
-                            onClick={() => setStep(1)}
+                            onClick={() => {
+                                trackOnboardingStepCompleted(1, 0)
+                                setStep(1)
+                            }}
                         >
                             {t('onboard.next')} →
                         </button>
@@ -215,7 +223,10 @@ export default function OnboardingWizard() {
                                 className="btn btn-primary"
                                 style={{ flex: 2 }}
                                 disabled={selectedPackIds.length === 0}
-                                onClick={() => setStep(2)}
+                                onClick={() => {
+                                    trackOnboardingStepCompleted(2, selectedPackIds.length)
+                                    setStep(2)
+                                }}
                             >
                                 {t('onboard.next')} →
                             </button>
@@ -235,7 +246,10 @@ export default function OnboardingWizard() {
                         <button
                             className="btn btn-primary onboarding-start-btn"
                             disabled={busy}
-                            onClick={handleComplete}
+                            onClick={() => {
+                                trackOnboardingStepCompleted(3, selectedPackIds.length)
+                                handleComplete()
+                            }}
                         >
                             {busy ? t('onboard.starting') : t('onboard.startBtn')}
                         </button>

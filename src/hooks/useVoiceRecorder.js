@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { transcribeAudioBlob } from '../services/speechToText'
 
 export function useVoiceRecorder(lang = 'vi') {
   // states: 'idle' | 'recording' | 'done'
@@ -11,20 +12,20 @@ export function useVoiceRecorder(lang = 'vi') {
   const recognitionRef = useRef(null)
   const recorderRef = useRef(null)
   const chunksRef = useRef([])
+  const transcriptRef = useRef('')
   const timerRef = useRef(null)
   const startTimeRef = useRef(null)
-  const streamRef = useRef(null)
 
   const start = useCallback(async () => {
     setError('')
     setTranscript('')
+    transcriptRef.current = ''
     setAudioBlob(null)
     setDuration(0)
 
     let stream
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
     } catch (err) {
       setError('mic_denied')
       return
@@ -40,10 +41,27 @@ export function useVoiceRecorder(lang = 'vi') {
     const recorder = new MediaRecorder(stream, { mimeType })
     chunksRef.current = []
     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-    recorder.onstop = () => {
+    const hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+    recorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: mimeType })
       setAudioBlob(blob)
       stream.getTracks().forEach((t) => t.stop())
+
+      // If SpeechRecognition is unavailable or produced no transcript,
+      // fallback to Firebase Function + Google STT.
+      if (!transcriptRef.current.trim()) {
+        try {
+          const text = await transcribeAudioBlob(blob, lang)
+          if (text) {
+            transcriptRef.current = text
+            setTranscript(text)
+          } else if (!hasSR) {
+            setError('stt_empty')
+          }
+        } catch (_) {
+          if (!hasSR) setError('stt_failed')
+        }
+      }
     }
     recorder.start(200)
     recorderRef.current = recorder
@@ -62,7 +80,9 @@ export function useVoiceRecorder(lang = 'vi') {
           if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '
           else interim += e.results[i][0].transcript
         }
-        setTranscript((final + interim).trim())
+        const mergedText = (final + interim).trim()
+        transcriptRef.current = mergedText
+        setTranscript(mergedText)
       }
       recognition.onerror = () => {} // silence errors
       try { recognition.start() } catch (_) {}
@@ -86,6 +106,7 @@ export function useVoiceRecorder(lang = 'vi') {
 
   const clear = useCallback(() => {
     setTranscript('')
+    transcriptRef.current = ''
     setAudioBlob(null)
     setDuration(0)
     setError('')

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { getGoalProgress, getReachedMilestones, mergeUnlockedMilestones } from '../utils/goals'
+import { trackGoalCompleted } from './useAnalytics'
 
 export default function useGoalMilestones(goal, currentAmount, onPersist) {
     const signatureRef = useRef('')
@@ -25,6 +26,14 @@ export default function useGoalMilestones(goal, currentAmount, onPersist) {
         if (isCompleted && goal.status !== 'completed') {
             updates.status = 'completed'
             updates.completedAt = goal.completedAt || new Date().toISOString()
+            const createdAt = new Date(goal.createdAt || Date.now())
+            const completedAt = new Date(updates.completedAt)
+            const daysToComplete = Math.max(0, Math.round((completedAt - createdAt) / 86400000))
+            trackGoalCompleted({
+                days_to_complete: daysToComplete,
+                target_amount: Number(goal.targetAmount) || 0,
+                kid_id: goal.kidId || '',
+            })
         }
 
         onPersist(goal.id, updates)

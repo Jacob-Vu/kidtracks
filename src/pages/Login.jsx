@@ -15,7 +15,7 @@ import {
     signInWithGoogle,
     signUpParentEmail,
 } from '../firebase/auth'
-import { trackLogin, trackSignUp, trackFamilyCreated } from '../hooks/useAnalytics'
+import { trackLogin, trackSignUp, trackFamilyCreated, trackSignupCompleted, trackSignupStarted } from '../hooks/useAnalytics'
 
 const GoogleIcon = () => (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="social-btn__icon social-btn__icon--google">
@@ -94,10 +94,12 @@ export default function Login() {
     const handleSocialSignIn = async (signInFn, method) => {
         setError('')
         setBusy(true)
+        trackSignupStarted(method, lang)
         try {
             const result = await signInFn()
             if (result.isNew) {
                 trackSignUp(method)
+                trackSignupCompleted(method)
                 setParentMode('setup')
                 setBusy(false)
                 return
@@ -140,9 +142,11 @@ export default function Login() {
         if (!parentEmail.trim() || parentPassword.length < 6) return
         setError('')
         setBusy(true)
+        trackSignupStarted('email', lang)
         try {
             await signUpParentEmail(parentEmail.trim(), parentPassword.trim())
             trackSignUp('email')
+            trackSignupCompleted('email')
             setParentMode('setup')
             setBusy(false)
         } catch (err) {
@@ -183,10 +187,12 @@ export default function Login() {
         }
         setError('')
         setBusy(true)
+        trackSignupStarted('simple', lang)
         try {
             const result = await signInParentSimple(username, username)
             if (result.isNew) {
                 trackSignUp('quick_start')
+                trackSignupCompleted('simple')
                 setParentMode('setup')
                 setBusy(false)
                 return

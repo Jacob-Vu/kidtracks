@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom'
 import { useFireSync } from './hooks/useFirebaseSync'
 import { useAuth } from './contexts/AuthContext'
@@ -10,7 +10,8 @@ import KidLayout from './layouts/KidLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import MobileHeader from './components/MobileHeader'
 import InstallPrompt from './components/InstallPrompt'
-import { usePageTracking } from './hooks/useAnalytics'
+import FeedbackLauncher from './components/FeedbackLauncher'
+import { trackSessionStarted, usePageTracking } from './hooks/useAnalytics'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Templates = lazy(() => import('./pages/Templates'))
@@ -33,15 +34,15 @@ function RouteLoader() {
   )
 }
 
-function LangSwitcher() {
+function LangSwitcher({ compact = false }) {
   const { lang, setLang } = useLang()
   return (
     <button
-      className="lang-switch"
+      className={`lang-switch${compact ? ' lang-switch--compact' : ''}`}
       onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-      title={lang === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+      title={lang === 'vi' ? 'Switch to English' : 'Chuyen sang Tieng Viet'}
     >
-      {lang === 'vi' ? '🇬🇧 EN' : '🇻🇳 VN'}
+      {lang === 'vi' ? 'EN' : 'VN'}
     </button>
   )
 }
@@ -52,6 +53,18 @@ function AppContent() {
   const { isLoading, firestoreError } = useStore()
   useFireSync()
   usePageTracking()
+
+  useEffect(() => {
+    if (!user || !profile?.role) return
+    const key = `kidstrack-session-started-${user.uid}`
+    try {
+      if (sessionStorage.getItem(key) === '1') return
+      trackSessionStarted(profile.role)
+      sessionStorage.setItem(key, '1')
+    } catch {
+      trackSessionStarted(profile.role)
+    }
+  }, [user, profile?.role])
 
   if (loading || (user && profile && isLoading)) {
     return (
@@ -122,18 +135,6 @@ function ParentLayout() {
           </NavLink>
         ))}
         <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-          {user && (
-            <button
-              type="button"
-              onClick={() => navigate('/profile')}
-              style={{ padding: '8px 12px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: 'transparent', border: '1px solid var(--border)', borderRadius: 10, cursor: 'pointer', color: 'inherit' }}
-            >
-              {user.photoURL && <img src={user.photoURL} style={{ width: 36, height: 36, borderRadius: '50%' }} alt="" />}
-              <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user.displayName || user.email}
-              </span>
-            </button>
-          )}
           <div className="theme-sidebar-picker">
             {THEMES.map((th) => (
               <button
@@ -146,15 +147,30 @@ function ParentLayout() {
               />
             ))}
           </div>
-          <LangSwitcher />
-          <button className="nav-link" onClick={signOut}
-            style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)' }}>
-            <span className="nav-icon">🚪</span>{t('nav.signout')}
-          </button>
         </div>
       </aside>
       <div className="main-wrapper">
         <MobileHeader />
+        <div className="desktop-top-actions">
+          <LangSwitcher compact />
+          <FeedbackLauncher />
+          {user && (
+            <button
+              type="button"
+              className="desktop-top-actions__profile"
+              onClick={() => navigate('/profile')}
+              title={user.displayName || user.email || ''}
+            >
+              {user.photoURL
+                ? <img src={user.photoURL} className="desktop-top-actions__avatar" alt="" />
+                : <span className="desktop-top-actions__avatar desktop-top-actions__avatar--fallback">{(user.email || '?')[0].toUpperCase()}</span>}
+              <span className="desktop-top-actions__name">{user.displayName || user.email}</span>
+            </button>
+          )}
+          <button className="desktop-top-actions__signout" onClick={signOut} title={t('nav.signout')} aria-label={t('nav.signout')}>
+            🚪
+          </button>
+        </div>
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Suspense fallback={<RouteLoader />}><Dashboard /></Suspense>} />

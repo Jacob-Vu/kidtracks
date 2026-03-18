@@ -3,12 +3,18 @@ const { setGlobalOptions } = require("firebase-functions/v2");
 const { getFirestore } = require("firebase-admin/firestore");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
+const { GoogleAuth } = require("google-auth-library");
 
 setGlobalOptions({ region: "asia-southeast1" });
 
 initializeApp();
 const db = getFirestore();
 const adminAuth = getAuth();
+const googleAuth = new GoogleAuth({
+  scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+});
+const STT_LOCATION = process.env.STT_LOCATION || "asia-southeast1";
+const MAX_STT_AUDIO_BYTES = 10 * 1024 * 1024;
 
 function normalizeUsername(value) {
   return String(value || "").trim().toLowerCase().replace(/\s+/g, "");
@@ -76,6 +82,96 @@ function ensureAuth(request) {
     throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
   }
 }
+
+exports.transcribeSpeech = onCall({ timeoutSeconds: 60, memory: "256MiB" }, async (request) => {
+  ensureAuth(request);
+
+  const audioBase64Raw = String(request.data?.audioBase64 || "").trim();
+  const languageCode = String(request.data?.languageCode || "vi-VN").trim() || "vi-VN";
+
+  if (!audioBase64Raw) {
+    throw new HttpsError("invalid-argument", "Missing audioBase64.");
+  }
+
+  const audioBase64 = audioBase64Raw.includes(",")
+    ? audioBase64Raw.split(",")[1]
+    : audioBase64Raw;
+
+  let audioBytes;
+  try {
+    audioBytes = Buffer.from(audioBase64, "base64");
+  } catch (_) {
+    throw new HttpsError("invalid-argument", "Invalid audio payload.");
+  }
+
+  if (!audioBytes || audioBytes.length === 0) {
+    throw new HttpsError("invalid-argument", "Audio payload is empty.");
+  }
+  if (audioBytes.length > MAX_STT_AUDIO_BYTES) {
+    throw new HttpsError("invalid-argument", "Audio is too large (max 10MB).");
+  }
+
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+  if (!projectId) {
+    throw new HttpsError("internal", "Missing project id for STT request.");
+  }
+
+  const recognizerPath = `projects/${projectId}/locations/${STT_LOCATION}/recognizers/_`;
+  const endpoint = `https://speech.googleapis.com/v2/${recognizerPath}:recognize`;
+
+  try {
+    const authClient = await googleAuth.getClient();
+    const tokenInfo = await authClient.getAccessToken();
+    const accessToken = typeof tokenInfo === "string" ? tokenInfo : tokenInfo?.token;
+
+    if (!accessToken) {
+      throw new Error("missing_access_token");
+    }
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        recognizer: recognizerPath,
+        config: {
+          autoDecodingConfig: {},
+          languageCodes: [languageCode],
+          model: "chirp_2",
+          features: {
+            enableAutomaticPunctuation: true,
+          },
+        },
+        content: audioBase64,
+      }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("transcribeSpeech failed", {
+        status: response.status,
+        body: payload,
+      });
+      throw new HttpsError("internal", "Speech transcription failed.");
+    }
+
+    const text = Array.isArray(payload.results)
+      ? payload.results
+        .map((item) => item?.alternatives?.[0]?.transcript || "")
+        .filter(Boolean)
+        .join(" ")
+        .trim()
+      : "";
+
+    return { text };
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    console.error("transcribeSpeech unexpected error", err);
+    throw new HttpsError("internal", "Speech transcription failed.");
+  }
+});
 
 /**
  * ─── Kids ─────────────────────────────────────────────────────────────

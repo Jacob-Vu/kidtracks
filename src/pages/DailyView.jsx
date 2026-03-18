@@ -10,7 +10,7 @@ import Modal from '../components/Modal'
 import { formatMoney } from '../utils/format'
 import DayJournal from '../components/DayJournal'
 import VoiceMicButton from '../components/VoiceMicButton'
-import { trackTemplateImported } from '../hooks/useAnalytics'
+import { trackTemplateImported, trackTaskCompleted, trackTaskCreated, trackStreakMilestone } from '../hooks/useAnalytics'
 import useStreak from '../hooks/useStreak'
 
 const REWARD_PRESETS = [10000, 20000, 50000]
@@ -74,6 +74,21 @@ export default function DailyView() {
         window.addEventListener('resize', handler)
         return () => window.removeEventListener('resize', handler)
     }, [])
+
+    useEffect(() => {
+        if (!selectedKidId) return
+        ;[3, 7, 14, 30].forEach((milestone) => {
+            if (currentStreak < milestone) return
+            const key = `kidstrack-streak-milestone-${selectedKidId}-${milestone}`
+            try {
+                if (localStorage.getItem(key) === '1') return
+                trackStreakMilestone(milestone)
+                localStorage.setItem(key, '1')
+            } catch {
+                trackStreakMilestone(milestone)
+            }
+        })
+    }, [selectedKidId, currentStreak])
 
     const completedCount = tasks.filter((t) => t.status === 'completed').length
     const failedCount = tasks.filter((t) => t.status === 'failed').length
@@ -146,6 +161,12 @@ export default function DailyView() {
             setEditTask(null)
         } else {
             await addDailyTask(selectedKidId, currentDate, taskTitle.trim(), taskDesc.trim())
+            trackTaskCreated({
+                kid_id: selectedKidId,
+                source: 'manual',
+                has_description: !!taskDesc.trim(),
+                task_type: 'daily_task',
+            })
             setShowAddTask(false)
         }
     }
@@ -343,7 +364,19 @@ export default function DailyView() {
                             <button
                                 type="button"
                                 className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
-                                onClick={() => !isFinalized && toggleTaskStatus(task.id)}
+                                onClick={() => {
+                                    if (isFinalized) return
+                                    if (task.status !== 'completed') {
+                                        trackTaskCompleted({
+                                            kid_id: selectedKidId,
+                                            task_id: task.id,
+                                            date: currentDate,
+                                            task_type: 'daily_task',
+                                            has_reward: !!(config && Number(config.rewardAmount) > 0),
+                                        })
+                                    }
+                                    toggleTaskStatus(task.id)
+                                }}
                                 title="Mark complete"
                                 aria-label="Mark complete"
                                 disabled={isFinalized}
@@ -380,14 +413,22 @@ export default function DailyView() {
                             <div className="form-group-row">
                                 <input type="text" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)}
                                     placeholder={t('daily.whatTodo')} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSaveTask()} />
-                                <VoiceMicButton onAppend={(text) => setTaskTitle((prev) => prev ? prev + ' ' + text : text)} />
+                                <VoiceMicButton
+                                    field="task_title"
+                                    role="parent"
+                                    onAppend={(text) => setTaskTitle((prev) => prev ? prev + ' ' + text : text)}
+                                />
                             </div>
                         </div>
                         <div className="form-group">
                             <label>{t('tmpl.descLabel')}</label>
                             <div className="form-group-row">
                                 <textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} placeholder={t('daily.additionalDetails')} rows={3} />
-                                <VoiceMicButton onAppend={(text) => setTaskDesc((prev) => prev ? prev + ' ' + text : text)} />
+                                <VoiceMicButton
+                                    field="task_description"
+                                    role="parent"
+                                    onAppend={(text) => setTaskDesc((prev) => prev ? prev + ' ' + text : text)}
+                                />
                             </div>
                         </div>
                         <div className="modal-footer">
