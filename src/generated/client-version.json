@@ -1,8 +1,8 @@
 {
-  "appVersion": "1.0.0",
-  "buildNumber": 0,
+  "appVersion": "0.0.0",
+  "buildNumber": 2,
   "channel": "production",
-  "commitHash": "",
-  "deployedAt": "",
-  "display": "v1.0.0+0"
+  "commitHash": "55b7dc7",
+  "deployedAt": "2026-03-18T10:27:56.722Z",
+  "display": "v0.0.0+2"
 }
