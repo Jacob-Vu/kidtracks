@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useT, useLang } from '../i18n/I18nContext'
 import { signOut } from '../firebase/auth'
@@ -7,6 +7,7 @@ import { formatMoney } from '../utils/format'
 import MobileHeader from '../components/MobileHeader'
 
 export default function KidLayout({ children }) {
+    const navigate = useNavigate()
     const t = useT()
     const { lang, setLang } = useLang()
     const { profile } = useAuth()
@@ -19,13 +20,17 @@ export default function KidLayout({ children }) {
                 <div className="sidebar-logo">⭐ {t('app.name')}</div>
 
                 {kid && (
-                    <div className="kid-sidebar-profile">
+                    <button
+                        type="button"
+                        className="kid-sidebar-profile kid-sidebar-profile--button"
+                        onClick={() => navigate('/kid/profile')}
+                    >
                         <span style={{ fontSize: 28 }}>{kid.avatar}</span>
                         <div>
                             <div style={{ fontWeight: 800, fontSize: 14 }}>{kid.displayName || kid.name}</div>
                             <div style={{ fontSize: 12, color: 'var(--accent-amber)', fontWeight: 700 }}>{formatMoney(kid.balance)}</div>
                         </div>
-                    </div>
+                    </button>
                 )}
 
                 <NavLink to="/kid" end className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>

@@ -9,7 +9,7 @@ export default function MobileHeader({ title }) {
     const location = useLocation()
     const t = useT()
     const { lang, setLang } = useLang()
-    const { user } = useAuth()
+    const { user, role } = useAuth()
 
     const isHome = location.pathname === '/' || location.pathname === '/kid'
 
@@ -51,15 +51,25 @@ export default function MobileHeader({ title }) {
                 {user?.photoURL ? (
                     <img
                         src={user.photoURL}
-                        className="mobile-header-avatar"
+                        className="mobile-header-avatar mobile-header-avatar--clickable"
                         alt={user.displayName || ''}
                         title={user.displayName || user.email || ''}
+                        onClick={() => navigate(role === 'kid' ? '/kid/profile' : '/profile')}
                     />
                 ) : (
                     <div
-                        className="mobile-header-avatar mobile-header-avatar--initials"
+                        className="mobile-header-avatar mobile-header-avatar--initials mobile-header-avatar--clickable"
                         title={user?.displayName || user?.email || ''}
                         aria-label={user?.displayName || user?.email || t('nav.profile')}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigate(role === 'kid' ? '/kid/profile' : '/profile')}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault()
+                                navigate(role === 'kid' ? '/kid/profile' : '/profile')
+                            }
+                        }}
                     >
                         {initials}
                     </div>

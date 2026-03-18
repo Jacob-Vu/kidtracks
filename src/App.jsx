@@ -1,25 +1,37 @@
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
+import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom'
 import { useFireSync } from './hooks/useFirebaseSync'
 import { useAuth } from './contexts/AuthContext'
 import { useT, useLang } from './i18n/I18nContext'
 import { useTheme, THEMES } from './contexts/ThemeContext'
 import { signOut } from './firebase/auth'
 import useStore from './store/useStore'
-import Dashboard from './pages/Dashboard'
-import Templates from './pages/Templates'
-import DailyView from './pages/DailyView'
-import Ledger from './pages/Ledger'
-import Login from './pages/Login'
-import KidDashboard from './pages/KidDashboard'
-import KidProfile from './pages/KidProfile'
-import LandingPage from './pages/LandingPage'
-import TemplatePickerPage from './pages/TemplatePickerPage'
-import WeeklyReport from './pages/WeeklyReport'
 import KidLayout from './layouts/KidLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import MobileHeader from './components/MobileHeader'
 import InstallPrompt from './components/InstallPrompt'
 import { usePageTracking } from './hooks/useAnalytics'
+
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Templates = lazy(() => import('./pages/Templates'))
+const DailyView = lazy(() => import('./pages/DailyView'))
+const Ledger = lazy(() => import('./pages/Ledger'))
+const Login = lazy(() => import('./pages/Login'))
+const KidDashboard = lazy(() => import('./pages/KidDashboard'))
+const KidProfile = lazy(() => import('./pages/KidProfile'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const TemplatePickerPage = lazy(() => import('./pages/TemplatePickerPage'))
+const WeeklyReport = lazy(() => import('./pages/WeeklyReport'))
+const ParentProfile = lazy(() => import('./pages/ParentProfile'))
+
+function RouteLoader() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '40vh', gap: 12 }}>
+      <div className="spinner" />
+      <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Loading...</div>
+    </div>
+  )
+}
 
 function LangSwitcher() {
   const { lang, setLang } = useLang()
@@ -69,9 +81,9 @@ function AppContent() {
     <>
       <Routes>
         <Route path="/" element={<HomeRoute />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/kid" element={<ProtectedRoute role="kid"><KidLayout><KidDashboard /></KidLayout></ProtectedRoute>} />
-        <Route path="/kid/profile" element={<ProtectedRoute role="kid"><KidLayout><KidProfile /></KidLayout></ProtectedRoute>} />
+        <Route path="/login" element={<Suspense fallback={<RouteLoader />}><Login /></Suspense>} />
+        <Route path="/kid" element={<ProtectedRoute role="kid"><KidLayout><Suspense fallback={<RouteLoader />}><KidDashboard /></Suspense></KidLayout></ProtectedRoute>} />
+        <Route path="/kid/profile" element={<ProtectedRoute role="kid"><KidLayout><Suspense fallback={<RouteLoader />}><KidProfile /></Suspense></KidLayout></ProtectedRoute>} />
         <Route path="/*" element={<ProtectedRoute role="parent"><ParentLayout /></ProtectedRoute>} />
       </Routes>
       <InstallPrompt />
@@ -82,13 +94,14 @@ function AppContent() {
 function HomeRoute() {
   const { user, loading, role } = useAuth()
   if (loading) return null
-  if (!user) return <LandingPage />
+  if (!user) return <Suspense fallback={<RouteLoader />}><LandingPage /></Suspense>
   if (role === 'kid') return <Navigate to="/kid" replace />
   return <ProtectedRoute role="parent"><ParentLayout /></ProtectedRoute>
 }
 
 function ParentLayout() {
   const t = useT()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { theme, setTheme } = useTheme()
   const NAV = [
@@ -110,12 +123,16 @@ function ParentLayout() {
         ))}
         <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
           {user && (
-            <div style={{ padding: '8px 12px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-              {user.photoURL && <img src={user.photoURL} style={{ width: 28, height: 28, borderRadius: '50%' }} alt="" />}
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              style={{ padding: '8px 12px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: 'transparent', border: '1px solid var(--border)', borderRadius: 10, cursor: 'pointer', color: 'inherit' }}
+            >
+              {user.photoURL && <img src={user.photoURL} style={{ width: 36, height: 36, borderRadius: '50%' }} alt="" />}
               <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user.displayName || user.email}
               </span>
-            </div>
+            </button>
           )}
           <div className="theme-sidebar-picker">
             {THEMES.map((th) => (
@@ -140,14 +157,15 @@ function ParentLayout() {
         <MobileHeader />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/templates" element={<Templates />} />
-            <Route path="/daily" element={<DailyView />} />
-            <Route path="/daily/:kidId" element={<DailyView />} />
-            <Route path="/daily/:kidId/pick-templates" element={<TemplatePickerPage />} />
-            <Route path="/ledger" element={<Ledger />} />
-            <Route path="/ledger/:kidId" element={<Ledger />} />
-            <Route path="/report/weekly" element={<WeeklyReport />} />
+            <Route path="/" element={<Suspense fallback={<RouteLoader />}><Dashboard /></Suspense>} />
+            <Route path="/templates" element={<Suspense fallback={<RouteLoader />}><Templates /></Suspense>} />
+            <Route path="/daily" element={<Suspense fallback={<RouteLoader />}><DailyView /></Suspense>} />
+            <Route path="/daily/:kidId" element={<Suspense fallback={<RouteLoader />}><DailyView /></Suspense>} />
+            <Route path="/daily/:kidId/pick-templates" element={<Suspense fallback={<RouteLoader />}><TemplatePickerPage /></Suspense>} />
+            <Route path="/ledger" element={<Suspense fallback={<RouteLoader />}><Ledger /></Suspense>} />
+            <Route path="/ledger/:kidId" element={<Suspense fallback={<RouteLoader />}><Ledger /></Suspense>} />
+            <Route path="/report/weekly" element={<Suspense fallback={<RouteLoader />}><WeeklyReport /></Suspense>} />
+            <Route path="/profile" element={<Suspense fallback={<RouteLoader />}><ParentProfile /></Suspense>} />
           </Routes>
         </main>
         <nav className="bottom-nav">

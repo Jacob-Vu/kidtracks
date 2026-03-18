@@ -9,7 +9,6 @@ import KidAccountModal from '../components/KidAccountModal'
 import Modal from '../components/Modal'
 import OnboardingWizard from '../components/OnboardingWizard'
 import NotificationBanner from '../components/NotificationBanner'
-import NotificationSettings from '../components/NotificationSettings'
 import WeeklyReportModal from '../components/WeeklyReportModal'
 import GoalCard from '../components/GoalCard'
 import GoalModal from '../components/GoalModal'
@@ -171,6 +170,20 @@ export default function Dashboard() {
     const weeklyReportDate = useMemo(() => parseISO(weeklyReport.weekStart), [weeklyReport.weekStart])
     const weeklyReportWeek = useMemo(() => toWeekParam(weeklyReportDate), [weeklyReportDate])
     const weeklyHasData = weeklyReport.familyStats.totalTasks > 0
+    const weeklyStatsByKid = useMemo(() => {
+        const map = new Map()
+        weeklyReport.kidStats.forEach((item) => {
+            map.set(item.kid.id, item)
+        })
+        return map
+    }, [weeklyReport.kidStats])
+    const weeklyBadgesByKid = useMemo(() => {
+        const map = new Map()
+        weeklyReport.badgeHighlights.perKid.forEach(({ kid, badges }) => {
+            map.set(kid.id, badges.length)
+        })
+        return map
+    }, [weeklyReport.badgeHighlights.perKid])
 
     useEffect(() => {
         if (enabled && permission === 'granted' && kids.length > 0) {
@@ -226,6 +239,22 @@ export default function Dashboard() {
         const cutoff = format(subDays(new Date(), reportPeriod - 1), 'yyyy-MM-dd')
         return dailyTasks.some((t) => t.date >= cutoff)
     }, [dailyTasks, reportPeriod])
+    const topInsightText = useMemo(() => {
+        const dayNameKeys = [
+            'weekly.dayNameMon',
+            'weekly.dayNameTue',
+            'weekly.dayNameWed',
+            'weekly.dayNameThu',
+            'weekly.dayNameFri',
+            'weekly.dayNameSat',
+            'weekly.dayNameSun',
+        ]
+        if (weeklyReport.insights.mostPopularTask) return `${t('weekly.mostPopular')}: ${weeklyReport.insights.mostPopularTask}`
+        if (weeklyReport.insights.hardestTask) return `${t('weekly.hardest')}: ${weeklyReport.insights.hardestTask}`
+        if (weeklyReport.insights.bestDayIndex !== null) return `${t('weekly.bestDay')}: ${t(dayNameKeys[weeklyReport.insights.bestDayIndex])}`
+        if (weeklyReport.insights.worstDayIndex !== null) return `${t('weekly.worstDay')}: ${t(dayNameKeys[weeklyReport.insights.worstDayIndex])}`
+        return t('weekly.noTips')
+    }, [weeklyReport.insights, t])
 
     const handleLink = async (fn) => {
         setLinkBusy(true)
@@ -271,10 +300,12 @@ export default function Dashboard() {
                     <p className="page-subtitle">{t('dash.subtitle')}</p>
                 </div>
                 <div className="row center" style={{ gap: 8, flexWrap: 'wrap' }}>
-                    <button className="btn btn-secondary" onClick={() => navigate('/report/weekly')}>
-                        {t('weekly.openReportCta')}
-                    </button>
-                    <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('dash.addKid')}</button>
+                    <span className="badge badge-purple">{t('dash.kidsSummaryProfiles', { count: kids.length || 0 })}</span>
+                    {weeklyHasData && (
+                        <span className="badge badge-green">
+                            {t('weekly.modalCompletion', { pct: weeklyReport.familyStats.completionRate })}
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -296,86 +327,118 @@ export default function Dashboard() {
                 <OnboardingWizard />
             ) : kids.length === 0 ? null : (
                 <>
-                    <div className="card" style={{ marginBottom: 18 }}>
-                        <div className="row between center wrap" style={{ gap: 10 }}>
-                            <div>
-                                <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.primaryActionsTitle')}</div>
-                                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('dash.primaryActionsDesc')}</div>
-                            </div>
-                            <div className="row center" style={{ gap: 8, flexWrap: 'wrap' }}>
-                                <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-                                    {t('dash.addKid')}
-                                </button>
-                                <button className="btn btn-secondary" onClick={() => navigate('/report/weekly')}>
-                                    {t('weekly.openReportCta')}
-                                </button>
-                                <button className="btn btn-secondary" onClick={() => navigate('/templates')}>
-                                    {t('tmpl.title')}
-                                </button>
-                            </div>
+                    <div className="card dashboard-toolbar" style={{ marginBottom: 18 }}>
+                        <div className="dashboard-toolbar__left">
+                            <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.primaryActionsTitle')}</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('dash.primaryActionsDesc')}</div>
+                        </div>
+                        <div className="dashboard-toolbar__actions">
+                            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('dash.addKid')}</button>
+                            <button className="btn btn-secondary" onClick={() => navigate('/templates')}>{t('tmpl.title')}</button>
+                            <button className="btn btn-secondary" onClick={handleOpenWeeklyReport}>{t('weekly.openReportCta')}</button>
                         </div>
                     </div>
 
-                    <div className="card" style={{ marginBottom: 24 }}>
-                        <div className="row between center" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-                            <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.kidsSummaryTitle')}</div>
-                            <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('dash.kidsSummaryProfiles', { count: kids.length })}</span>
+                    <div className="dashboard-top-grid">
+                        <div className="card" style={{ marginBottom: 0 }}>
+                            <div className="row between center" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                                <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.kidsSummaryTitle')}</div>
+                                <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('dash.kidsSummaryProfiles', { count: kids.length })}</span>
+                            </div>
+                            <div className="card-grid">
+                                {kids.map((kid) => (
+                                    <div
+                                        key={kid.id}
+                                        className="kid-card"
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => navigate(`/daily/${kid.id}`)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault()
+                                                navigate(`/daily/${kid.id}`)
+                                            }
+                                        }}
+                                        aria-label={`Open ${kid.displayName || kid.name} daily tasks`}
+                                    >
+                                        <BadgeSync kidId={kid.id} />
+                                        <span className="kid-avatar">{kid.avatar}</span>
+                                        <div className="kid-name">{kid.displayName || kid.name}</div>
+                                        {kid.username && (
+                                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>@{kid.username}</div>
+                                        )}
+                                        <div className="kid-balance">{formatMoney(kid.balance)}</div>
+                                        <div className="kid-balance-label">{t('dash.pocketMoney')}</div>
+                                        <KidStreakBadge kid={kid} dailyTasks={dailyTasks} dayConfigs={dayConfigs} />
+                                        {weeklyHasData && (() => {
+                                            const weeklyKid = weeklyStatsByKid.get(kid.id)
+                                            const badgeCount = weeklyBadgesByKid.get(kid.id) || 0
+                                            const completionPct = weeklyKid ? Math.round((weeklyKid.completionRate || 0) * 100) : 0
+                                            const earningsAmount = weeklyKid?.weekEarnings || 0
+                                            return (
+                                                <div className="kid-weekly-mini" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="kid-weekly-mini__title">{t('weekly.title')}</div>
+                                                    <div className="kid-weekly-mini__grid">
+                                                        <div className="kid-weekly-mini__item">
+                                                            <span className="kid-weekly-mini__label">{t('weekly.completionLabel')}</span>
+                                                            <span className={`kid-weekly-mini__value ${completionPct >= 80
+                                                                ? 'kid-weekly-mini__value--good'
+                                                                : completionPct >= 50
+                                                                    ? 'kid-weekly-mini__value--mid'
+                                                                    : 'kid-weekly-mini__value--low'
+                                                                }`}>
+                                                                {completionPct}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="kid-weekly-mini__item">
+                                                            <span className="kid-weekly-mini__label">{t('weekly.shareEarnings')}</span>
+                                                            <span className={`kid-weekly-mini__value ${earningsAmount >= 0 ? 'kid-weekly-mini__value--good' : 'kid-weekly-mini__value--low'}`}>
+                                                                {formatMoney(earningsAmount)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="kid-weekly-mini__item">
+                                                            <span className="kid-weekly-mini__label">{t('weekly.shareNewBadges')}</span>
+                                                            <span className="kid-weekly-mini__value">{badgeCount}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
+                                        <div className="row" style={{ marginTop: 16, justifyContent: 'center', gap: 8 }}>
+                                            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/profile?kidId=${kid.id}`) }}>{t('nav.profile')}</button>
+                                            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/daily/${kid.id}`) }}>{t('dash.tasks')}</button>
+                                            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/ledger/${kid.id}`) }}>{t('dash.ledger')}</button>
+                                            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setEditKid(kid) }} aria-label="Edit kid">✏️</button>
+                                            <button className="btn btn-danger btn-sm" onClick={(e) => {
+                                                e.stopPropagation()
+                                                setDeleteKidTarget(kid)
+                                            }} aria-label="Delete kid">🗑️</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    <div className="card-grid">
-                        {kids.map((kid) => (
-                            <div
-                                key={kid.id}
-                                className="kid-card"
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => navigate(`/daily/${kid.id}`)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault()
-                                        navigate(`/daily/${kid.id}`)
-                                    }
-                                }}
-                                aria-label={`Open ${kid.displayName || kid.name} daily tasks`}
-                            >
-                                <BadgeSync kidId={kid.id} />
-                                <span className="kid-avatar">{kid.avatar}</span>
-                                <div className="kid-name">{kid.displayName || kid.name}</div>
-                                {kid.username && (
-                                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>@{kid.username}</div>
-                                )}
-                                <div className="kid-balance">{formatMoney(kid.balance)}</div>
-                                <div className="kid-balance-label">{t('dash.pocketMoney')}</div>
-                                <KidStreakBadge kid={kid} dailyTasks={dailyTasks} dayConfigs={dayConfigs} />
-                                <div className="row" style={{ marginTop: 16, justifyContent: 'center', gap: 8 }}>
-                                    <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/daily/${kid.id}`) }}>{t('dash.tasks')}</button>
-                                    <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/ledger/${kid.id}`) }}>{t('dash.ledger')}</button>
-                                    <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setEditKid(kid) }} aria-label="Edit kid">✏️</button>
-                                    <button className="btn btn-danger btn-sm" onClick={(e) => {
-                                        e.stopPropagation()
-                                        setDeleteKidTarget(kid)
-                                    }} aria-label="Delete kid">🗑️</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    </div>
 
-                    <div className="card">
-                        <div className="row between center wrap" style={{ gap: 10 }}>
-                            <div>
-                                <div style={{ fontWeight: 800, fontSize: 16 }}>{t('weekly.title')}</div>
-                                <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                                    {t('weekly.modalWeek', { week: weeklyReportWeek })}
+                        <div className="card dashboard-weekly-panel">
+                            <div className="dashboard-weekly-panel__week">{t('weekly.modalWeek', { week: weeklyReportWeek })}</div>
+                            <div className="dashboard-weekly-panel__title">{t('weekly.title')}</div>
+                            <div className="dashboard-weekly-panel__completion">
+                                {t('weekly.modalCompletion', { pct: weeklyReport.familyStats.completionRate })}
+                            </div>
+                            <div className="dashboard-weekly-panel__metrics">
+                                <div className="dashboard-weekly-panel__metric">
+                                    <span className="dashboard-weekly-panel__label">{t('weekly.totalTasks', { done: weeklyReport.familyStats.completedTasks, total: weeklyReport.familyStats.totalTasks })}</span>
+                                </div>
+                                <div className="dashboard-weekly-panel__metric">
+                                    <span className="dashboard-weekly-panel__label">{t('weekly.badgesUnlockedCount', { count: weeklyReport.badgeHighlights.totalUnlocked || 0 })}</span>
+                                </div>
+                                <div className="dashboard-weekly-panel__metric">
+                                    <span className="dashboard-weekly-panel__label">{topInsightText}</span>
                                 </div>
                             </div>
-                            <div className="row center" style={{ gap: 10, flexWrap: 'wrap' }}>
-                                <span className="badge badge-purple" style={{ fontSize: 12 }}>
-                                    {t('weekly.modalCompletion', { pct: weeklyReport.familyStats.completionRate })}
-                                </span>
-                                <button className="btn btn-primary btn-sm" onClick={handleOpenWeeklyReport}>
-                                    {t('weekly.openReportCta')}
-                                </button>
-                            </div>
+                            <button className="btn btn-primary btn-sm" onClick={handleOpenWeeklyReport}>
+                                {t('weekly.openReportCta')}
+                            </button>
                         </div>
                     </div>
 
@@ -535,6 +598,4 @@ export default function Dashboard() {
         </div>
     )
 }
-
-
 
