@@ -132,12 +132,20 @@ export default function FeedbackPage() {
                         <div className="row between center" style={{ marginBottom: 8 }}>
                             <label>{t('feedback.reportType')}</label>
                             <button
-                                className="btn btn-ghost btn-sm"
+                                className="btn btn-ghost btn-sm lang-switch--flag-only"
                                 type="button"
                                 onClick={toggleLang}
                                 disabled={busy}
+                                aria-label={t('common.langSwitchAria')}
+                                title={t('common.langSwitchAria')}
                             >
-                                {t('common.langSwitch')}
+                                <span className="lang-switch__flag" aria-hidden>
+                                    <img
+                                        className="lang-switch__flag-img"
+                                        src={lang.startsWith('vi') ? '/flags/vn.svg' : '/flags/us.svg'}
+                                        alt=""
+                                    />
+                                </span>
                             </button>
                         </div>
                         <div className="feedback-type-group">

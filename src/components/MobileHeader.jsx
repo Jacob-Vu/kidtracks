@@ -3,16 +3,17 @@ import { LogOut } from 'lucide-react'
 import { useT, useLang } from '../i18n/I18nContext'
 import { useAuth } from '../contexts/AuthContext'
 import { signOut } from '../firebase/auth'
-import FeedbackLauncher from './FeedbackLauncher'
 
 export default function MobileHeader({ title }) {
     const navigate = useNavigate()
     const location = useLocation()
     const t = useT()
-    const { toggleLang } = useLang()
+    const { lang, toggleLang } = useLang()
     const { user, role } = useAuth()
 
     const isHome = location.pathname === '/' || location.pathname === '/kid'
+
+    const isVi = lang.startsWith('vi')
 
     const initials = user?.displayName
         ? user.displayName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
@@ -39,14 +40,19 @@ export default function MobileHeader({ title }) {
 
             <div className="mobile-header-actions">
                 <button
-                    className="mobile-header-btn mobile-header-lang-btn"
+                    className="mobile-header-btn mobile-header-lang-btn lang-switch--flag-only"
                     onClick={toggleLang}
                     aria-label={t('common.langSwitchAria')}
+                    title={t('common.langSwitchAria')}
                 >
-                    {t('common.langSwitch')}
+                    <span className="lang-switch__flag" aria-hidden>
+                        <img
+                            className="lang-switch__flag-img"
+                            src={isVi ? '/flags/vn.svg' : '/flags/us.svg'}
+                            alt=""
+                        />
+                    </span>
                 </button>
-
-                {role === 'parent' && <FeedbackLauncher compact />}
 
                 {user?.photoURL ? (
                     <img
@@ -87,3 +93,4 @@ export default function MobileHeader({ title }) {
         </header>
     )
 }
+

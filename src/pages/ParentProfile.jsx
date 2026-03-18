@@ -5,6 +5,7 @@ import useStore from '../store/useStore'
 import { useT } from '../i18n/I18nContext'
 import { formatMoney } from '../utils/format'
 import NotificationSettings from '../components/NotificationSettings'
+import ClientVersionInfo from '../components/ClientVersionInfo'
 
 export default function ParentProfile() {
     const t = useT()
@@ -70,6 +71,7 @@ export default function ParentProfile() {
             </div>
 
             <NotificationSettings />
+            <ClientVersionInfo />
         </div>
     )
 }

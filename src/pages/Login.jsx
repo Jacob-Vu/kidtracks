@@ -51,6 +51,7 @@ export default function Login() {
     const { user, profile, loading } = useAuth()
     const t = useT()
     const { lang, toggleLang } = useLang()
+    const isVi = lang.startsWith('vi')
 
     const [tab, setTab] = useState('parent')
     const [error, setError] = useState('')
@@ -252,11 +253,18 @@ export default function Login() {
             <div className="login-card">
                 {/* Language toggle */}
                 <button
-                    className="login-lang-btn"
+                    className="login-lang-btn lang-switch--flag-only"
                     onClick={toggleLang}
                     aria-label={t('common.langSwitchAria')}
+                    title={t('common.langSwitchAria')}
                 >
-                    {t('common.langSwitch')}
+                    <span className="lang-switch__flag" aria-hidden>
+                        <img
+                            className="lang-switch__flag-img"
+                            src={isVi ? '/flags/vn.svg' : '/flags/us.svg'}
+                            alt=""
+                        />
+                    </span>
                 </button>
 
                 {/* Logo + branding */}

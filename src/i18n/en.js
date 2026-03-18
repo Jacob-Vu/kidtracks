@@ -2,6 +2,9 @@ const en = {
     // ─── App / Nav ─────────────────────────────────
     'app.name': 'KidsTrack',
     'app.loading': 'Loading your family…',
+    'app.versionLabel': 'App Version',
+    'app.versionCopy': 'Copy',
+    'app.versionCopied': 'Copied',
     'nav.dashboard': 'Dashboard',
     'nav.templates': 'Task Templates',
     'nav.daily': 'Daily Tasks',

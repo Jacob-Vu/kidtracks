@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" role="img" aria-label="Vietnam flag">
+  <rect width="64" height="48" fill="#da251d" />
+  <polygon
+    fill="#ffde00"
+    points="32,10 36.7,24.4 52,24.4 39.6,33.2 44.3,47.5 32,38.5 19.7,47.5 24.4,33.2 12,24.4 27.3,24.4"
+  />
+</svg>

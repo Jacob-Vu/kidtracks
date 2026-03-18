@@ -14,11 +14,9 @@ import GoalCard from '../components/GoalCard'
 import GoalModal from '../components/GoalModal'
 import { formatMoney } from '../utils/format'
 import { linkParentApple, linkParentEmailPassword, linkParentFacebook, linkParentGoogle, upgradeSimpleParentEmail } from '../firebase/auth'
-import useStreak from '../hooks/useStreak'
 import useNotifications from '../hooks/useNotifications'
 import useWeeklyReport from '../hooks/useWeeklyReport'
 import useGoalMilestones from '../hooks/useGoalMilestones'
-import useBadges from '../hooks/useBadges'
 import useLeaderboard from '../hooks/useLeaderboard'
 import LeaderboardCard from '../components/LeaderboardCard'
 import { trackGoalCreated, trackWeeklyReportCtaClicked } from '../hooks/useAnalytics'
@@ -27,17 +25,7 @@ import { GOAL_MILESTONES } from '../utils/goals'
 const LS_WEEKLY_MODAL_SEEN = 'kidstrack-weekly-modal-seen'
 const toWeekParam = (date) => `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`
 
-function KidStreakBadge({ kid, dailyTasks, dayConfigs }) {
-    const { currentStreak } = useStreak(kid.id, dailyTasks, dayConfigs)
-    if (currentStreak === 0) return null
-    return (
-        <span className={`streak-badge${currentStreak >= 3 ? ' streak-badge--hot' : ''}`} style={{ fontSize: 12, marginTop: 4 }}>
-            🔥 {currentStreak}
-        </span>
-    )
-}
-
-function KidReport({ kid, dailyTasks, period }) {
+function KidReport({ kid, dailyTasks, period, onOpenProfile }) {
     const t = useT()
     const dates = useMemo(() => (
         Array.from({ length: period }, (_, i) =>
@@ -53,9 +41,12 @@ function KidReport({ kid, dailyTasks, period }) {
     })
 
     const activeDays = days.filter((d) => d.rate !== null)
-    const avgRate = activeDays.length > 0
-        ? Math.round(activeDays.reduce((s, d) => s + d.rate, 0) / activeDays.length * 100)
+    const totalTasksInPeriod = activeDays.reduce((sum, day) => sum + (day.total || 0), 0)
+    const totalDoneInPeriod = activeDays.reduce((sum, day) => sum + (day.done || 0), 0)
+    const completionPct = totalTasksInPeriod > 0
+        ? Math.round((totalDoneInPeriod / totalTasksInPeriod) * 100)
         : null
+    const avgRate = completionPct
 
     // Current streak: count from today backwards while rate === 1
     let streak = 0
@@ -73,18 +64,29 @@ function KidReport({ kid, dailyTasks, period }) {
     }
 
     return (
-        <div className="report-kid-block">
+        <button
+            type="button"
+            className="report-kid-block report-kid-block--clickable"
+            onClick={() => onOpenProfile?.(kid)}
+            title={`${t('nav.profile')}: ${kid.displayName || kid.name}`}
+        >
             <div className="report-kid-header">
                 <span style={{ fontSize: 24 }}>{kid.avatar}</span>
-                <div>
-                    <div style={{ fontWeight: 800, fontSize: 14 }}>{kid.displayName || kid.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                        {avgRate !== null
-                            ? t('dash.reportAvg', { pct: avgRate })
-                            : t('dash.reportNoData')
-                        }
-                        {streak > 0 && <span> · 🔥 {t('dash.reportDayStreak', { count: streak })}</span>}
+                <div className="report-kid-main">
+                    <div className="report-kid-name">{kid.displayName || kid.name}</div>
+                    <div className="report-kid-subline">
+                        <span className="report-kid-meta-item">
+                            {totalTasksInPeriod > 0
+                                ? t('weekly.totalTasks', { done: totalDoneInPeriod, total: totalTasksInPeriod })
+                                : t('dash.reportNoData')}
+                        </span>
+                        {streak > 0 && (
+                            <span className="report-kid-meta-item">
+                                {t('dash.reportDayStreak', { count: streak })}
+                            </span>
+                        )}
                     </div>
+                    <div className="report-kid-balance">{t('kidDash.balance')}: <strong>{formatMoney(kid.balance || 0)}</strong></div>
                 </div>
                 {avgRate !== null && (
                     <div className="report-avg-badge" style={{
@@ -126,7 +128,7 @@ function KidReport({ kid, dailyTasks, period }) {
                     </>
                 )}
             </div>
-        </div>
+        </button>
     )
 }
 
@@ -139,11 +141,6 @@ const getPrimaryGoal = (goals, kidId) => {
 
 function GoalMilestoneSync({ goal, balance, onPersist }) {
     useGoalMilestones(goal, balance, onPersist)
-    return null
-}
-
-function BadgeSync({ kidId }) {
-    useBadges(kidId)
     return null
 }
 
@@ -175,20 +172,6 @@ export default function Dashboard() {
         const pct = (weeklyReport.familyStats.completionRate || 0) * 100
         return Math.round(pct * 10) / 10
     }, [weeklyReport.familyStats.completionRate])
-    const weeklyStatsByKid = useMemo(() => {
-        const map = new Map()
-        weeklyReport.kidStats.forEach((item) => {
-            map.set(item.kid.id, item)
-        })
-        return map
-    }, [weeklyReport.kidStats])
-    const weeklyBadgesByKid = useMemo(() => {
-        const map = new Map()
-        weeklyReport.badgeHighlights.perKid.forEach(({ kid, badges }) => {
-            map.set(kid.id, badges.length)
-        })
-        return map
-    }, [weeklyReport.badgeHighlights.perKid])
 
     useEffect(() => {
         if (enabled && permission === 'granted' && kids.length > 0) {
@@ -245,22 +228,6 @@ export default function Dashboard() {
         const cutoff = format(subDays(new Date(), reportPeriod - 1), 'yyyy-MM-dd')
         return dailyTasks.some((t) => t.date >= cutoff)
     }, [dailyTasks, reportPeriod])
-    const topInsightText = useMemo(() => {
-        const dayNameKeys = [
-            'weekly.dayNameMon',
-            'weekly.dayNameTue',
-            'weekly.dayNameWed',
-            'weekly.dayNameThu',
-            'weekly.dayNameFri',
-            'weekly.dayNameSat',
-            'weekly.dayNameSun',
-        ]
-        if (weeklyReport.insights.mostPopularTask) return `${t('weekly.mostPopular')}: ${weeklyReport.insights.mostPopularTask}`
-        if (weeklyReport.insights.hardestTask) return `${t('weekly.hardest')}: ${weeklyReport.insights.hardestTask}`
-        if (weeklyReport.insights.bestDayIndex !== null) return `${t('weekly.bestDay')}: ${t(dayNameKeys[weeklyReport.insights.bestDayIndex])}`
-        if (weeklyReport.insights.worstDayIndex !== null) return `${t('weekly.worstDay')}: ${t(dayNameKeys[weeklyReport.insights.worstDayIndex])}`
-        return t('weekly.noTips')
-    }, [weeklyReport.insights, t])
     const overviewCompletedTasks = weeklyReport.familyStats.completedTasks || 0
     const overviewTotalTasks = weeklyReport.familyStats.totalTasks || 0
     const overviewEarnings = useMemo(
@@ -350,10 +317,21 @@ export default function Dashboard() {
                             <button className="btn btn-secondary" onClick={() => navigate('/templates')}>{t('tmpl.title')}</button>
                             <button className="btn btn-secondary" onClick={() => handleOpenWeeklyReport('button')}>{t('weekly.openReportCta')}</button>
                         </div>
+                        <div className="dashboard-toolbar__kid-links">
+                            {kids.map((kid) => (
+                                <button
+                                    key={`profile-link-${kid.id}`}
+                                    className="dashboard-toolbar__kid-link"
+                                    onClick={() => navigate(`/profile?kidId=${kid.id}`)}
+                                >
+                                    <span style={{ fontSize: 16 }} aria-hidden>{kid.avatar}</span>
+                                    <span>{kid.displayName || kid.name}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="dashboard-top-grid">
-                        <div className="card dashboard-overview-card">
+                    <div className="card dashboard-overview-card dashboard-section">
                             <div className="row between center" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                                 <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.reportTitle')}</div>
                                 <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('dash.kidsSummaryProfiles', { count: kids.length })}</span>
@@ -375,87 +353,41 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="card-grid">
-                                {kids.map((kid) => (
-                                    <div
-                                        key={kid.id}
-                                        className="kid-card"
-                                        role="button"
-                                        tabIndex={0}
-                                        onClick={() => navigate(`/daily/${kid.id}`)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault()
-                                                navigate(`/daily/${kid.id}`)
-                                            }
-                                        }}
-                                        aria-label={`Open ${kid.displayName || kid.name} daily tasks`}
-                                    >
-                                        <BadgeSync kidId={kid.id} />
-                                        <span className="kid-avatar">{kid.avatar}</span>
-                                        <div className="kid-name">{kid.displayName || kid.name}</div>
-                                        {kid.username && (
-                                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>@{kid.username}</div>
-                                        )}
-                                        <div className="kid-balance">{formatMoney(kid.balance)}</div>
-                                        <div className="kid-balance-label">{t('dash.pocketMoney')}</div>
-                                        <KidStreakBadge kid={kid} dailyTasks={dailyTasks} dayConfigs={dayConfigs} />
-                                        {weeklyHasData && (() => {
-                                            const weeklyKid = weeklyStatsByKid.get(kid.id)
-                                            const badgeCount = weeklyBadgesByKid.get(kid.id) || 0
-                                            const completionPct = weeklyKid ? Math.round((weeklyKid.completionRate || 0) * 100) : 0
-                                            return (
-                                                <div className="kid-weekly-mini" onClick={(e) => e.stopPropagation()}>
-                                                    <div className="kid-weekly-mini__grid">
-                                                        <div className="kid-weekly-mini__item">
-                                                            <span className="kid-weekly-mini__label">{t('weekly.completionLabel')}</span>
-                                                            <span className="kid-weekly-mini__value">{completionPct}%</span>
-                                                        </div>
-                                                        <div className="kid-weekly-mini__item">
-                                                            <span className="kid-weekly-mini__label">{t('weekly.shareNewBadges')}</span>
-                                                            <span className="kid-weekly-mini__value">{badgeCount}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })()}
-                                        <div className="row kid-card-actions">
-                                            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/profile?kidId=${kid.id}`) }}>{t('nav.profile')}</button>
-                                            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/daily/${kid.id}`) }}>{t('dash.tasks')}</button>
-                                            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/ledger/${kid.id}`) }}>{t('dash.ledger')}</button>
-                                            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setEditKid(kid) }} aria-label="Edit kid">✏️</button>
-                                            <button className="btn btn-danger btn-sm" onClick={(e) => {
-                                                e.stopPropagation()
-                                                setDeleteKidTarget(kid)
-                                            }} aria-label="Delete kid">🗑️</button>
-                                        </div>
+                            <div className="dashboard-trend-card">
+                                <div className="row between center dashboard-trend-head">
+                                    <div>
+                                        <div className="dashboard-trend-title">📈 {t('dash.reportTrendTitle')}</div>
+                                        <div className="dashboard-trend-subtitle">{t('dash.reportDesc')}</div>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                    <div className="chip-group">
+                                        <button className={`chip chip--sm${reportPeriod === 7 ? ' selected' : ''}`} onClick={() => setReportPeriod(7)}>
+                                            {t('dash.report7d')}
+                                        </button>
+                                        <button className={`chip chip--sm${reportPeriod === 30 ? ' selected' : ''}`} onClick={() => setReportPeriod(30)}>
+                                            {t('dash.report30d')}
+                                        </button>
+                                    </div>
+                                </div>
 
-                        <div className="card dashboard-weekly-panel">
-                            <div className="dashboard-weekly-panel__week">{t('weekly.modalWeek', { week: weeklyReportWeek })}</div>
-                            <div className="dashboard-weekly-panel__title">{t('weekly.title')}</div>
-                            <div className="dashboard-weekly-panel__completion">
-                                {t('weekly.modalCompletion', { pct: familyCompletionPct })}
+                                {hasAnyTaskData ? (
+                                    <div className="report-grid">
+                                        {kids.map((kid) => (
+                                            <KidReport
+                                                key={kid.id}
+                                                kid={kid}
+                                                dailyTasks={dailyTasks}
+                                                period={reportPeriod}
+                                                onOpenProfile={(targetKid) => navigate(`/profile?kidId=${targetKid.id}`)}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+                                        {t('dash.reportEmpty')}
+                                    </div>
+                                )}
                             </div>
-                            <div className="dashboard-weekly-panel__metrics">
-                                <div className="dashboard-weekly-panel__metric">
-                                    <span className="dashboard-weekly-panel__label">{t('weekly.totalTasks', { done: weeklyReport.familyStats.completedTasks, total: weeklyReport.familyStats.totalTasks })}</span>
-                                </div>
-                                <div className="dashboard-weekly-panel__metric">
-                                    <span className="dashboard-weekly-panel__label">{t('weekly.badgesUnlockedCount', { count: weeklyReport.badgeHighlights.totalUnlocked || 0 })}</span>
-                                </div>
-                                <div className="dashboard-weekly-panel__metric">
-                                    <span className="dashboard-weekly-panel__label">{topInsightText}</span>
-                                </div>
-                            </div>
-                            <button className="btn btn-primary btn-sm" onClick={() => handleOpenWeeklyReport('button')}>
-                                {t('weekly.openReportCta')}
-                            </button>
                         </div>
-                    </div>
 
                     <div className="card dashboard-section">
                         <div className="row between center" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
@@ -489,41 +421,6 @@ export default function Dashboard() {
                         <LeaderboardCard data={leaderboardData} />
                     </div>
 
-                    {/* Trend */}
-                    <div className="card dashboard-section dashboard-trend-card">
-                        <div className="row between center dashboard-trend-head">
-                            <div>
-                                <div className="dashboard-trend-title">📈 {t('dash.reportTrendTitle')}</div>
-                                <div className="dashboard-trend-subtitle">{t('dash.reportDesc')}</div>
-                            </div>
-                            <div className="chip-group">
-                                <button className={`chip chip--sm${reportPeriod === 7 ? ' selected' : ''}`} onClick={() => setReportPeriod(7)}>
-                                    {t('dash.report7d')}
-                                </button>
-                                <button className={`chip chip--sm${reportPeriod === 30 ? ' selected' : ''}`} onClick={() => setReportPeriod(30)}>
-                                    {t('dash.report30d')}
-                                </button>
-                            </div>
-                        </div>
-
-                        {hasAnyTaskData ? (
-                            <div className="report-grid">
-                                {kids.map((kid) => (
-                                    <KidReport
-                                        key={kid.id}
-                                        kid={kid}
-                                        dailyTasks={dailyTasks}
-                                        period={reportPeriod}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-                                {t('dash.reportEmpty')}
-                            </div>
-                        )}
-
-                    </div>
                 </>
             )}
 
@@ -605,4 +502,6 @@ export default function Dashboard() {
         </div>
     )
 }
+
+
 

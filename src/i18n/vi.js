@@ -2,6 +2,9 @@ const vi = {
     // ─── App / Nav ─────────────────────────────────
     'app.name': 'KidsTrack',
     'app.loading': 'Đang tải dữ liệu gia đình…',
+    'app.versionLabel': 'Phiên bản ứng dụng',
+    'app.versionCopy': 'Sao chép',
+    'app.versionCopied': 'Đã chép',
     'nav.dashboard': 'Tổng quan',
     'nav.templates': 'Mẫu công việc',
     'nav.daily': 'Việc hàng ngày',

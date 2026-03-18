@@ -26,7 +26,7 @@ export default function Ledger() {
 
     const handleAddManual = async () => {
         if (!amount || isNaN(parseInt(amount))) return
-        const amtRaw = parseInt(amount) * 1000
+        const amtRaw = parseInt(amount)
         await addManualTransaction(selectedKidId, isDeduction ? -amtRaw : amtRaw, label.trim() || undefined)
         setAmount(''); setLabel(''); setShowAdd(false)
     }

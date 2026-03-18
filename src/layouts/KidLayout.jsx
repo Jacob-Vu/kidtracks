@@ -9,10 +9,11 @@ import MobileHeader from '../components/MobileHeader'
 export default function KidLayout({ children }) {
     const navigate = useNavigate()
     const t = useT()
-    const { toggleLang } = useLang()
+    const { lang, toggleLang } = useLang()
     const { profile } = useAuth()
     const { kids } = useStore()
     const kid = kids.find((k) => k.id === profile?.kidId)
+    const isVi = lang.startsWith('vi')
 
     return (
         <div className="app-layout">
@@ -41,8 +42,19 @@ export default function KidLayout({ children }) {
                 </NavLink>
 
                 <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                    <button className="lang-switch" onClick={toggleLang} title={t('common.langSwitchAria')}>
-                        {t('common.langSwitch')}
+                    <button
+                        className="lang-switch lang-switch--flag-only"
+                        onClick={toggleLang}
+                        title={t('common.langSwitchAria')}
+                        aria-label={t('common.langSwitchAria')}
+                    >
+                        <span className="lang-switch__flag" aria-hidden>
+                            <img
+                                className="lang-switch__flag-img"
+                                src={isVi ? '/flags/vn.svg' : '/flags/us.svg'}
+                                alt=""
+                            />
+                        </span>
                     </button>
                     <button
                         className="nav-link"
@@ -72,3 +84,4 @@ export default function KidLayout({ children }) {
         </div>
     )
 }
+

@@ -10,7 +10,6 @@ import KidLayout from './layouts/KidLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import MobileHeader from './components/MobileHeader'
 import InstallPrompt from './components/InstallPrompt'
-import FeedbackLauncher from './components/FeedbackLauncher'
 import { trackSessionStarted, usePageTracking } from './hooks/useAnalytics'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -38,14 +37,22 @@ function RouteLoader() {
 
 function LangSwitcher({ compact = false }) {
   const t = useT()
-  const { toggleLang } = useLang()
+  const { lang, toggleLang } = useLang()
+  const isVi = lang.startsWith('vi')
   return (
     <button
-      className={`lang-switch${compact ? ' lang-switch--compact' : ''}`}
+      className={`lang-switch lang-switch--flag-only${compact ? ' lang-switch--compact' : ''}`}
       onClick={toggleLang}
       title={t('common.langSwitchAria')}
+      aria-label={t('common.langSwitchAria')}
     >
-      {t('common.langSwitch')}
+      <span className="lang-switch__flag" aria-hidden>
+        <img
+          className="lang-switch__flag-img"
+          src={isVi ? '/flags/vn.svg' : '/flags/us.svg'}
+          alt=""
+        />
+      </span>
     </button>
   )
 }
@@ -156,7 +163,6 @@ function ParentLayout() {
         <MobileHeader />
         <div className="desktop-top-actions">
           <LangSwitcher compact />
-          <FeedbackLauncher />
           {user && (
             <button
               type="button"
@@ -205,3 +211,4 @@ function ParentLayout() {
 export default function App() {
   return <AppContent />
 }
+

@@ -8,6 +8,7 @@ import { useTheme, THEMES } from '../contexts/ThemeContext'
 import useBadges from '../hooks/useBadges'
 import BadgeGallery from '../components/BadgeGallery'
 import { LS_FEEDBACK_SOUND, LS_LOW_STIMULATION } from '../hooks/useKidFeedback'
+import ClientVersionInfo from '../components/ClientVersionInfo'
 
 const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏿', '👦🏿', '👧🏿', '🦸', '🦸‍♂️', '🦸‍♀️', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐯', '🐰', '🐻']
 
@@ -290,6 +291,7 @@ export default function KidProfile() {
                     </button>
                 </div>
             </div>
+            <ClientVersionInfo />
         </div>
     )
 }
