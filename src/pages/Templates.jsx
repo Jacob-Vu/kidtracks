@@ -28,6 +28,7 @@ export default function Templates() {
     const [importMsg, setImportMsg] = useState('')
     const [showPackDetail, setShowPackDetail] = useState(null)
     const [filterKidId, setFilterKidId] = useState('all')
+    const [activeTab, setActiveTab] = useState('default')
 
     // Import selection modal state
     const [importPack, setImportPack] = useState(null)
@@ -77,6 +78,7 @@ export default function Templates() {
         } else {
             await addTemplate(title.trim(), descriptions)
             setShowAdd(false)
+            setActiveTab('family')
         }
         setTitle('')
         setDescriptionEn('')
@@ -138,7 +140,23 @@ export default function Templates() {
 
             {importMsg && <div className="toast-inline" style={{ marginBottom: 20 }}>{importMsg}</div>}
 
+            <div className="chip-group" style={{ marginBottom: 18 }}>
+                <button
+                    className={`chip${activeTab === 'default' ? ' selected' : ''}`}
+                    onClick={() => setActiveTab('default')}
+                >
+                    {t('tmpl.defaultPacks')}
+                </button>
+                <button
+                    className={`chip${activeTab === 'family' ? ' selected' : ''}`}
+                    onClick={() => setActiveTab('family')}
+                >
+                    {t('tmpl.familyTemplates')}
+                </button>
+            </div>
+
             {/* Default Packs */}
+            {activeTab === 'default' && (
             <section style={{ marginBottom: 36 }}>
                 <h2 className="section-title">
                     {t('tmpl.defaultPacks')}
@@ -173,8 +191,10 @@ export default function Templates() {
                     })}
                 </div>
             </section>
+            )}
 
             {/* Family Templates */}
+            {activeTab === 'family' && (
             <section>
                 <div className="row between center" style={{ marginBottom: 16 }}>
                     <h2 className="section-title" style={{ marginBottom: 0 }}>
@@ -231,6 +251,7 @@ export default function Templates() {
                     </div>
                 )}
             </section>
+            )}
 
             {/* Pack Preview (read-only) */}
             {showPackDetail && (

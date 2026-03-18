@@ -82,6 +82,19 @@ const en = {
     'dash.report7d': '7 days',
     'dash.report30d': '30 days',
     'dash.reportEmpty': 'No task data yet for this period. Start assigning daily tasks!',
+    'dash.primaryActionsTitle': 'Primary Actions',
+    'dash.primaryActionsDesc': 'Start with the most important actions today',
+    'dash.kidsSummaryTitle': 'Kids Summary',
+    'dash.kidsSummaryProfiles': '{count} profiles',
+    'dash.reportLegendFull': '100%',
+    'dash.reportLegendPartial': 'Partial',
+    'dash.reportLegendNone': '0%',
+    'dash.reportLegendNoTasks': 'No tasks',
+    'dash.reportLast30': 'Last 30 days',
+    'dash.reportToday': 'Today',
+    'dash.reportAvg': 'Avg {pct}%',
+    'dash.reportNoData': 'No data yet',
+    'dash.reportDayStreak': '{count} day streak',
 
     // ─── Templates ─────────────────────────────────
     'tmpl.title': '📋 Task Templates',
@@ -316,6 +329,8 @@ const en = {
     'notif.timeEvening': 'Evening review',
     'notif.permDenied': 'Notifications blocked by browser. Enable them in site settings.',
     'notif.saved': 'Saved!',
+    'notif.parentModeHint': 'Parent reminder settings',
+    'notif.defaultParent': 'Parent mode default: reminders are OFF until you enable them.',
 
     // ─── Default Pack Names ────────────────────────
     'pack.littleStar': 'Little Star',
@@ -450,9 +465,12 @@ const en = {
 
     // ─── Kid Feedback ──────────────────────────────
     'feedback.title': 'Sounds & Effects',
-    'feedback.desc': 'Toggle sounds when completing tasks',
+    'feedback.desc': 'Kid profile feedback settings',
     'feedback.soundLabel': 'Feedback sounds',
     'feedback.soundHint': 'Sounds play on task completion, new badges, or reaching goals.',
+    'feedback.defaultKid': 'Kid mode default: sounds ON. Parent mode can keep reminders OFF.',
+    'feedback.lowStimLabel': 'Low stimulation mode',
+    'feedback.lowStimHint': 'Reduce motion and celebratory effects for a calmer experience.',
     'feedback.badgeUnlocked': 'Badge unlocked: {badge}!',
 
     // ─── Leaderboard ───────────────────────────────
@@ -480,6 +498,55 @@ const en = {
     // ─── Notifications (weekly) ────────────────────
     'notif.weeklyTitle': 'Weekly report is ready',
     'notif.weeklyBody': 'Tap to review your family weekly summary.',
+
+    // Missing key sweep
+    'badge.noneYet': 'No badges unlocked yet',
+    'badge.stripTitle': 'Recent Badges',
+    'badge.unlockedOn': 'Unlocked on {date}',
+    'landing.social.communityCta': 'Try KidsTrack free',
+    'landing.social.communityDesc': 'Join families building stronger daily habits together.',
+    'landing.social.communityEyebrow': 'Community',
+    'landing.social.communityTitle': 'Loved by busy parents',
+    'landing.social.communityTrustCopy': 'Trusted by families across Vietnam and beyond.',
+    'landing.social.sectionAria': 'Parent testimonials and trust metrics',
+    'landing.social.testimonialsTitle': 'What parents say',
+    'landing.social.metrics.families': 'Active families',
+    'landing.social.metrics.tasks': 'Tasks completed',
+    'landing.social.metrics.streak': 'Avg streak (days)',
+    'leaderboard.completion': 'Completion',
+    'leaderboard.hiddenDesc': 'Keep completing tasks this week to unlock rankings.',
+    'leaderboard.hiddenTitle': 'Ranking hidden',
+    'leaderboard.improvedBy': '+{value}% vs last week',
+    'leaderboard.kid': 'Kid',
+    'leaderboard.kidTitle': 'Kid leaderboard',
+    'leaderboard.rank': 'Rank',
+    'leaderboard.streakStar': 'Streak star',
+    'leaderboard.you': 'You',
+    'nav.profile': 'Profile',
+    'pwa.androidInstructions': 'Tap menu, then "Add to Home screen".',
+    'pwa.installBtn': 'Install App',
+    'pwa.iosInstructions': 'Tap Share, then "Add to Home Screen".',
+    'pwa.title': 'Install KidsTrack',
+    'weekly.badgesUnlockedCount': '{count} unlocked',
+    'weekly.newBadgesEmpty': 'No new badges this week yet.',
+    'weekly.newBadgesSection': 'Newly unlocked badges',
+
+    // ─── Badge definitions (new keys) ─────────────
+    'badge.consistency3Name': '3-Day Streak',
+    'badge.consistency3Desc': 'Complete tasks 3 days in a row',
+    'badge.consistency7Name': '7-Day Streak',
+    'badge.consistency7Desc': 'Complete tasks 7 days in a row',
+    'badge.completion10Name': 'First 10 Tasks',
+    'badge.completion10Desc': 'Complete your first 10 tasks',
+    'badge.perfectWeekName': 'Perfect Week',
+    'badge.financeGoalName': 'First Goal',
+    'badge.financeGoalDesc': 'Reach your first savings goal',
+    'badge.routineName': 'Morning & Evening',
+    'badge.routineDesc': 'Complete both morning and evening tasks on the same day',
+    'badge.categoryConsistency': 'Consistency',
+    'badge.categoryCompletion': 'Completion',
+    'badge.categoryFinance': 'Finance',
+    'badge.categoryResponsibility': 'Responsibility',
 }
 
 export default en

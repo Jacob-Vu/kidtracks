@@ -22,7 +22,7 @@ const parentState = {
     },
 }
 
-test('redirects unauthenticated users to login', async ({ page }) => {
+test('unauthenticated users see the landing page at root', async ({ page }) => {
     await page.addInitScript(() => {
         window.localStorage.setItem('kidstrack-lang', 'en')
         window.localStorage.removeItem('kidstrack-e2e-state')
@@ -30,11 +30,13 @@ test('redirects unauthenticated users to login', async ({ page }) => {
 
     await page.goto('/?e2e=1')
 
-    await expect(page).toHaveURL(/\/login/)
-    await expect(page.getByText(/motivate your kids, every day/i)).toBeVisible()
+    // App shows the landing page for unauthenticated users at '/'
+    await expect(page).toHaveURL(/\/$|\/\?e2e/)
+    await expect(page.getByRole('heading', { name: /build great habits/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /sign in/i }).first()).toBeVisible()
 })
 
-test('parent can sign out back to login', async ({ page }) => {
+test('parent can sign out back to landing page', async ({ page }) => {
     const stateWithKid = {
         ...parentState,
         collections: {
@@ -52,8 +54,9 @@ test('parent can sign out back to login', async ({ page }) => {
     await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
     await page.getByRole('button', { name: /sign out/i }).click()
 
-    await expect(page).toHaveURL(/\/login/)
-    await expect(page.getByText(/motivate your kids, every day/i)).toBeVisible()
+    // After sign-out, the app shows the landing page at '/'
+    await expect(page.getByRole('heading', { name: /build great habits/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /sign in/i }).first()).toBeVisible()
 })
 
 test('kid parent email input accepts the full email while editing', async ({ page }) => {

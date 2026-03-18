@@ -7,7 +7,7 @@ import { useFireActions } from '../hooks/useFirebaseSync'
 import { useTheme, THEMES } from '../contexts/ThemeContext'
 import useBadges from '../hooks/useBadges'
 import BadgeGallery from '../components/BadgeGallery'
-import { LS_FEEDBACK_SOUND } from '../hooks/useKidFeedback'
+import { LS_FEEDBACK_SOUND, LS_LOW_STIMULATION } from '../hooks/useKidFeedback'
 
 const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏿', '👦🏿', '👧🏿', '🦸', '🦸‍♂️', '🦸‍♀️', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐯', '🐰', '🐻']
 
@@ -43,6 +43,14 @@ export default function KidProfile() {
             return true
         }
     })
+    const [lowStimulationMode, setLowStimulationMode] = useState(() => {
+        try {
+            const raw = localStorage.getItem(LS_LOW_STIMULATION)
+            return raw === null ? false : raw === 'true'
+        } catch {
+            return false
+        }
+    })
 
     useEffect(() => {
         if (!kid) return
@@ -57,6 +65,18 @@ export default function KidProfile() {
             const next = !prev
             try {
                 localStorage.setItem(LS_FEEDBACK_SOUND, next ? 'true' : 'false')
+            } catch {
+                // Ignore localStorage failures.
+            }
+            return next
+        })
+    }
+
+    const handleLowStimulationToggle = () => {
+        setLowStimulationMode((prev) => {
+            const next = !prev
+            try {
+                localStorage.setItem(LS_LOW_STIMULATION, next ? 'true' : 'false')
             } catch {
                 // Ignore localStorage failures.
             }
@@ -162,6 +182,24 @@ export default function KidProfile() {
                 <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
                     {t('feedback.soundHint')}
                 </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 6 }}>
+                    {t('feedback.defaultKid')}
+                </div>
+                <div className="row between center" style={{ marginTop: 14 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                        <div style={{ fontWeight: 700 }}>{t('feedback.lowStimLabel')}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{t('feedback.lowStimHint')}</div>
+                    </div>
+                    <label className="notif-toggle" data-testid="feedback-low-stim-toggle">
+                        <input
+                            type="checkbox"
+                            checked={lowStimulationMode}
+                            onChange={handleLowStimulationToggle}
+                            aria-label={t('feedback.lowStimLabel')}
+                        />
+                        <span className="notif-toggle-slider" />
+                    </label>
+                </div>
             </div>
 
             <div className="card" style={{ marginBottom: 24 }}>
@@ -172,13 +210,16 @@ export default function KidProfile() {
                     </div>
                     <div className="form-group">
                         <label>{t('kidProf.avatar')}</label>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <div className="avatar-grid">
                             {AVATARS.map((a) => (
                                 <button key={a} onClick={() => setAvatar(a)}
+                                    aria-label={a}
+                                    aria-pressed={avatar === a}
                                     style={{
                                         fontSize: 28, background: avatar === a ? 'rgba(124,58,237,0.2)' : 'transparent',
                                         border: avatar === a ? '2px solid var(--accent-purple)' : '2px solid transparent',
-                                        borderRadius: 'var(--radius-sm)', padding: 6, cursor: 'pointer'
+                                        borderRadius: 'var(--radius-sm)', padding: 6, cursor: 'pointer',
+                                        transition: 'all 0.15s',
                                     }}>
                                     {a}
                                 </button>

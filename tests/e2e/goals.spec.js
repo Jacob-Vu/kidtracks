@@ -34,7 +34,11 @@ const parentState = {
 test.beforeEach(async ({ page }) => {
     await page.addInitScript((state) => {
         window.localStorage.setItem('kidstrack-lang', 'en')
-        window.localStorage.setItem('kidstrack-e2e-state', JSON.stringify(state))
+        // Only set initial state if not already in localStorage — this prevents
+        // page.reload() from wiping state that was updated during the test.
+        if (!window.localStorage.getItem('kidstrack-e2e-state')) {
+            window.localStorage.setItem('kidstrack-e2e-state', JSON.stringify(state))
+        }
     }, parentState)
 })
 

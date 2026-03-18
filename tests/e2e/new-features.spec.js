@@ -116,6 +116,8 @@ test('template description switches by selected language', async ({ page }) => {
 
     await page.goto('/templates?e2e=1')
 
+    // Family templates are shown in the 'Family Templates' tab
+    await page.getByRole('button', { name: /family templates|mẫu gia đình/i }).click()
     await expect(page.getByText('Rửa tay trước bữa ăn')).toBeVisible()
 
     await page.locator('.lang-switch').first().click()

@@ -37,16 +37,25 @@ export default function NotificationSettings() {
     return (
         <div className="notif-settings card">
             <div className="row between center" style={{ marginBottom: 12 }}>
-                <div style={{ fontWeight: 800, fontSize: 15 }}>🔔 {t('notif.settingsTitle')}</div>
-                <label className="notif-toggle">
+                <div>
+                    <div style={{ fontWeight: 800, fontSize: 15 }}>🔔 {t('notif.settingsTitle')}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                        {t('notif.parentModeHint')}
+                    </div>
+                </div>
+                <label className="notif-toggle" aria-label={t('notif.settingsTitle')}>
                     <input
                         type="checkbox"
                         checked={enabled && permission === 'granted'}
                         onChange={handleToggle}
+                        aria-label={t('notif.settingsTitle')}
                     />
                     <span className="notif-toggle-slider" />
                 </label>
             </div>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, fontStyle: 'italic' }}>
+                {t('notif.defaultParent')}
+            </p>
             {permission === 'denied' && (
                 <p style={{ fontSize: 12, color: 'var(--accent-red)', marginBottom: 8 }}>
                     {t('notif.permDenied')}

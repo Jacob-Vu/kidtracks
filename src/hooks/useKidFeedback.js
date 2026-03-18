@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export const LS_FEEDBACK_SOUND = 'kidstrack-feedback-sound-enabled'
+export const LS_LOW_STIMULATION = 'kidstrack-low-stimulation-mode'
 const AUDIO_DEBUG_EVENT = 'kidstrack:feedback-audio'
 
 const readSoundSetting = () => {
@@ -18,6 +19,18 @@ const readSoundSetting = () => {
 const readReducedMotion = () => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+const readLowStimulationMode = () => {
+    if (typeof window === 'undefined') return false
+
+    try {
+        const raw = localStorage.getItem(LS_LOW_STIMULATION)
+        if (raw === null) return false
+        return raw === 'true'
+    } catch {
+        return false
+    }
 }
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value))
@@ -44,9 +57,11 @@ const createTone = (ctx, { frequency, duration, type = 'sine', gain = 0.02, dela
 
 export default function useKidFeedback() {
     const [soundEnabled, setSoundEnabled] = useState(readSoundSetting)
-    const [reducedMotion, setReducedMotion] = useState(readReducedMotion)
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(readReducedMotion)
+    const [lowStimulationMode, setLowStimulationMode] = useState(readLowStimulationMode)
     const [taskPopId, setTaskPopId] = useState(null)
     const [badgeUnlock, setBadgeUnlock] = useState(null)
+    const reducedMotion = prefersReducedMotion || lowStimulationMode
 
     const taskPopTimerRef = useRef(null)
     const badgeTimerRef = useRef(null)
@@ -63,10 +78,20 @@ export default function useKidFeedback() {
     }, [soundEnabled])
 
     useEffect(() => {
+        if (typeof window === 'undefined') return
+
+        try {
+            localStorage.setItem(LS_LOW_STIMULATION, lowStimulationMode ? 'true' : 'false')
+        } catch {
+            // Ignore localStorage failures in private mode.
+        }
+    }, [lowStimulationMode])
+
+    useEffect(() => {
         if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined
 
         const media = window.matchMedia('(prefers-reduced-motion: reduce)')
-        const update = () => setReducedMotion(media.matches)
+        const update = () => setPrefersReducedMotion(media.matches)
         update()
 
         if (typeof media.addEventListener === 'function') {
@@ -84,10 +109,14 @@ export default function useKidFeedback() {
     }, [])
 
     const playSound = useCallback((eventType) => {
-        if (!soundEnabled || typeof window === 'undefined') return
+        if (!soundEnabled || lowStimulationMode || typeof window === 'undefined') return
 
         const AudioCtx = window.AudioContext || window.webkitAudioContext
         if (!AudioCtx) return
+
+        // Dispatch debug event first so tests can always detect when sound was requested,
+        // even if the actual AudioContext operations fail in headless/test environments.
+        window.dispatchEvent(new CustomEvent(AUDIO_DEBUG_EVENT, { detail: { eventType } }))
 
         try {
             if (!audioContextRef.current) {
@@ -113,12 +142,10 @@ export default function useKidFeedback() {
                 createTone(ctx, { frequency: 780, duration: 0.1, gain: 0.018, delay: 0.08, type: 'sine' })
                 createTone(ctx, { frequency: 1040, duration: 0.13, gain: 0.02, delay: 0.15, type: 'sine' })
             }
-
-            window.dispatchEvent(new CustomEvent(AUDIO_DEBUG_EVENT, { detail: { eventType } }))
         } catch {
             // Ignore audio API failures.
         }
-    }, [soundEnabled])
+    }, [soundEnabled, lowStimulationMode])
 
     const notifyTaskComplete = useCallback((taskId) => {
         playSound('task_complete')
@@ -137,14 +164,18 @@ export default function useKidFeedback() {
     const notifyBadgeUnlock = useCallback((badge) => {
         playSound('badge_unlock')
 
+        if (lowStimulationMode) return
+
         if (badgeTimerRef.current) clearTimeout(badgeTimerRef.current)
         setBadgeUnlock(badge)
         badgeTimerRef.current = setTimeout(() => setBadgeUnlock(null), 2400)
-    }, [playSound])
+    }, [playSound, lowStimulationMode])
 
     return {
         soundEnabled,
         setSoundEnabled,
+        lowStimulationMode,
+        setLowStimulationMode,
         reducedMotion,
         taskPopId,
         badgeUnlock,

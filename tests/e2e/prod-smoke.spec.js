@@ -25,7 +25,7 @@ const parentState = {
     },
 }
 
-test('production smoke: unauthenticated user lands on login', async ({ page }) => {
+test('production smoke: unauthenticated user sees landing page', async ({ page }) => {
     await page.addInitScript(() => {
         window.localStorage.setItem('kidstrack-lang', 'en')
         window.localStorage.removeItem('kidstrack-e2e-state')
@@ -33,8 +33,9 @@ test('production smoke: unauthenticated user lands on login', async ({ page }) =
 
     await page.goto('/?e2e=1')
 
-    await expect(page).toHaveURL(/\/login/)
-    await expect(page.getByText(/motivate your kids, every day/i)).toBeVisible()
+    // App shows landing page for unauthenticated users
+    await expect(page.getByRole('heading', { name: /build great habits/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /sign in/i }).first()).toBeVisible()
 })
 
 test('production smoke: parent dashboard loads with e2e fixture', async ({ page }) => {

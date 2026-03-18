@@ -48,8 +48,10 @@
   --gradient-red: linear-gradient(135deg, #ef4444, #dc2626);
 
   --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --focus-ring: #f8fafc;
+  --focus-ring-shadow: rgba(15, 23, 42, 0.65);
 
   /* Spacing */
   --radius-sm: 8px;
@@ -311,6 +313,18 @@ body {
   box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3);
 }
 
+.btn-secondary {
+  background: rgba(124, 58, 237, 0.16);
+  color: #e9d5ff;
+  border: 1px solid rgba(167, 139, 250, 0.45);
+}
+
+.btn-secondary:hover {
+  background: rgba(124, 58, 237, 0.24);
+  color: #f5edff;
+  border-color: rgba(196, 181, 253, 0.7);
+}
+
 .btn-teal {
   background: var(--gradient-teal);
   color: white;
@@ -352,7 +366,7 @@ body {
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--border);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .btn-ghost:hover {
@@ -391,8 +405,9 @@ body {
 .bottom-nav-link:focus-visible,
 .modal-close:focus-visible,
 .task-checkbox:focus-visible {
-  outline: 2px solid #c4b5fd;
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring-shadow);
 }
 
 /* ─── Form Elements ───────────────────────────── */
@@ -438,6 +453,16 @@ select:focus {
   border-color: var(--accent-purple-light);
   background: rgba(124, 58, 237, 0.08);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+input[type="text"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible,
+input[type="number"]:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 select option {
@@ -757,8 +782,9 @@ textarea {
 }
 
 .kid-card:focus-visible {
-  outline: 2px solid #c4b5fd;
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring-shadow);
 }
 
 .kid-avatar {
@@ -1091,6 +1117,20 @@ textarea {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+/* Horizontal scrolling chip row for mobile overflow */
+.chip-group--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE */
+  padding-bottom: 4px;
+}
+
+.chip-group--scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 .chip {
@@ -1922,6 +1962,76 @@ textarea {
   }
 }
 
+/* ─── 320px narrow screen adjustments ──────────── */
+@media (max-width: 360px) {
+  .main-content {
+    padding: 12px 12px 72px 12px;
+  }
+
+  .page-title {
+    font-size: var(--text-2xl);
+  }
+
+  .card {
+    padding: var(--space-4);
+  }
+
+  .btn {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .kid-avatar {
+    font-size: 36px;
+  }
+
+  .kid-balance {
+    font-size: var(--text-2xl);
+  }
+
+  .kid-hero-avatar {
+    font-size: 44px;
+  }
+
+  .kid-hero-name {
+    font-size: 20px;
+  }
+
+  .page-header {
+    margin-bottom: 20px;
+  }
+
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pack-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-nav {
+    padding: 14px 16px;
+  }
+
+  .landing-hero {
+    padding: 48px 16px 40px;
+  }
+
+  .landing-cta-primary {
+    font-size: 14px;
+    padding: 12px 24px;
+  }
+
+  .modal {
+    padding: 20px 16px;
+  }
+}
+
 /* ─── PWA Install Prompt ────────────────────────*/
 .install-prompt {
   position: fixed;
@@ -2218,6 +2328,34 @@ textarea {
   margin-bottom: 12px;
 }
 
+.tpicker-chip-scroll-wrap {
+  position: relative;
+}
+
+.tpicker-chip-scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-right: 24px;
+}
+
+.tpicker-chip-scroll-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(15, 12, 41, 0), rgba(15, 12, 41, 0.95));
+}
+
+.tpicker-chip-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: none;
+}
+
 .tpicker-search {
   width: 100%;
   padding: 9px 14px;
@@ -2366,6 +2504,10 @@ textarea {
     border-top: 1px solid var(--border);
     padding-left: 0;
     padding-top: 12px;
+  }
+
+  .tpicker-chip-hint {
+    display: block;
   }
 }
 
@@ -2809,6 +2951,66 @@ textarea {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ─── Low Stimulation Mode ───────────────────── */
+/* Applied via data-feedback-reduced-motion="true" on the page root */
+[data-feedback-reduced-motion="true"] .confetti-piece {
+  display: none;
+}
+
+[data-feedback-reduced-motion="true"] .celebration-card {
+  animation: none;
+}
+
+[data-feedback-reduced-motion="true"] .celebration-star {
+  animation: none;
+}
+
+[data-feedback-reduced-motion="true"] .streak-badge--hot {
+  animation: none;
+}
+
+[data-feedback-reduced-motion="true"] .badge-unlock-toast {
+  animation: none;
+}
+
+[data-feedback-reduced-motion="true"] .task-item--feedback-pop {
+  animation: none;
+}
+
+[data-feedback-reduced-motion="true"] .kid-hero-card {
+  background: rgba(124, 58, 237, 0.08);
+}
+
+/* Badge unlock toast (used in KidDashboard) */
+.badge-unlock-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(236,72,153,0.12));
+  border: 1px solid rgba(124,58,237,0.4);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  animation: slideIn 0.3s ease;
+}
+
+.badge-unlock-toast--reduced {
+  animation: none;
+  background: rgba(124,58,237,0.1);
+  border-color: rgba(124,58,237,0.25);
+}
+
+.badge-unlock-toast__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.badge-unlock-toast__text {
+  color: var(--text-primary);
 }
 
 /* ─── Landing Page ───────────────────────────── */
@@ -3363,6 +3565,30 @@ textarea {
 
 .notif-toggle input:checked + .notif-toggle-slider::before {
   transform: translateX(20px);
+}
+
+.notif-toggle input:focus-visible + .notif-toggle-slider {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring-shadow);
+  border-radius: 24px;
+}
+
+.theme-swatch:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring-shadow);
+}
+
+.goal-icon-btn:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring-shadow);
+}
+
+.theme-sidebar-dot:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 /* ─── Onboarding Wizard ───────────────────────── */
@@ -4178,6 +4404,45 @@ textarea {
   }
 }
 
+@media (max-width: 480px) {
+  .main-content {
+    padding: 16px;
+  }
+
+  .page-header {
+    margin-bottom: 20px;
+  }
+
+  .page-title {
+    font-size: 1.55rem;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .page-header.row.between.center {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header .row.center {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .report-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
 /* Badge Strip + Gallery */
 .badge-strip {
   background: var(--bg-card);
@@ -4511,4 +4776,41 @@ textarea {
   .leaderboard-improve {
     display: none;
   }
+}
+
+/* ─── Kid Profile Avatar Grid ────────────────── */
+.avatar-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 400px) {
+  .avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+}
+
+/* ─── Responsive Improvements ────────────────── */
+@media (max-width: 768px) {
+  .goal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header .row.center {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ─── Form Select (native dropdown) ─────────── */
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%2394a3b8' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px !important;
 }

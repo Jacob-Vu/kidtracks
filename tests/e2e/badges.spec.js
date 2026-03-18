@@ -175,4 +175,7 @@ test('weekly report highlights newly unlocked badges in selected week', async ({
     await expect(page.getByText(/newly unlocked badges/i)).toBeVisible()
     await expect(page.getByText(/3-day streak/i)).toBeVisible()
     await expect(page.getByText(/1 unlocked/i)).toBeVisible()
+    // 'weekly.newBadgesSection' = 'Newly unlocked badges'
+    // 'badge.consistency3Name' = '3-Day Streak'
+    // 'weekly.badgesUnlockedCount' with count=1 = '1 unlocked'
 })

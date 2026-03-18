@@ -100,7 +100,10 @@ const buildBadgeUnlockState = () => {
 test('sound toggle persists and disables task/day feedback audio', async ({ page }) => {
     await page.addInitScript((state) => {
         window.localStorage.setItem('kidstrack-lang', 'en')
-        window.localStorage.setItem('kidstrack-feedback-sound-enabled', 'true')
+        // Only set initial sound state on first load — preserves toggle persistence across reload
+        if (!window.localStorage.getItem('kidstrack-e2e-state')) {
+            window.localStorage.setItem('kidstrack-feedback-sound-enabled', 'true')
+        }
         window.localStorage.setItem('kidstrack-e2e-state', JSON.stringify(state))
         window.__kidFeedbackAudio = []
         window.addEventListener('kidstrack:feedback-audio', (event) => {
@@ -120,7 +123,7 @@ test('sound toggle persists and disables task/day feedback audio', async ({ page
     await page.getByRole('link', { name: /my profile/i }).click()
     const toggle = page.getByTestId('feedback-sound-toggle').locator('input[type="checkbox"]')
     await expect(toggle).toBeChecked()
-    await toggle.click()
+    await page.getByTestId('feedback-sound-toggle').click()
     await expect(toggle).not.toBeChecked()
 
     await page.getByRole('link', { name: /my dashboard/i }).click()

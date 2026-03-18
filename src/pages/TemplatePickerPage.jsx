@@ -142,22 +142,27 @@ export default function TemplatePickerPage() {
                     onChange={(e) => setSearch(e.target.value)}
                     autoFocus
                 />
-                <div className="chip-group" style={{ flexWrap: 'nowrap', overflowX: 'auto' }}>
-                    <button
-                        className={`chip chip--sm${filterPack === 'all' ? ' selected' : ''}`}
-                        onClick={() => setFilterPack('all')}
-                    >
-                        {lang === 'vi' ? 'Tất cả' : 'All'}
-                    </button>
-                    {DEFAULT_PACKS.map((pack) => (
+                <div className="tpicker-chip-scroll-wrap">
+                    <div className="chip-group tpicker-chip-scroll">
                         <button
-                            key={pack.id}
-                            className={`chip chip--sm${filterPack === pack.id ? ' selected' : ''}`}
-                            onClick={() => setFilterPack(pack.id)}
+                            className={`chip chip--sm${filterPack === 'all' ? ' selected' : ''}`}
+                            onClick={() => setFilterPack('all')}
                         >
-                            {pack.icon} {pack.name}
+                            {lang === 'vi' ? 'Tất cả' : 'All'}
                         </button>
-                    ))}
+                        {DEFAULT_PACKS.map((pack) => (
+                            <button
+                                key={pack.id}
+                                className={`chip chip--sm${filterPack === pack.id ? ' selected' : ''}`}
+                                onClick={() => setFilterPack(pack.id)}
+                            >
+                                {pack.icon} {pack.name}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="tpicker-chip-hint">
+                        {lang === 'vi' ? 'Vuốt ngang để xem thêm bộ mẫu ->' : 'Swipe to see more packs ->'}
+                    </div>
                 </div>
             </div>
 

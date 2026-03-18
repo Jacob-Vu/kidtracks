@@ -187,8 +187,6 @@ export default function KidDashboard() {
                 </div>
             </div>
 
-            <BadgeStrip recentBadges={recentBadges} totalUnlocked={totalUnlocked} totalBadges={totalBadges} />
-            <LeaderboardCard data={leaderboardData} variant="kid" currentKidId={kid.id} />
             {badgeUnlock && (
                 <div
                     className={`badge-unlock-toast${reducedMotion ? ' badge-unlock-toast--reduced' : ''}`}
@@ -201,46 +199,6 @@ export default function KidDashboard() {
                 </div>
             )}
 
-            {/* Savings goal */}
-            <h2 className="section-title">🎯 {t('goal.sectionTitle')}</h2>
-            <div style={{ marginBottom: 24 }}>
-                <GoalCard
-                    goal={activeGoal}
-                    currentAmount={kid.balance}
-                    onCreate={() => { setEditGoal(null); setShowGoalModal(true) }}
-                    onEdit={() => { setEditGoal(activeGoal); setShowGoalModal(true) }}
-                    onDelete={async () => {
-                        if (!activeGoal) return
-                        await deleteGoal(activeGoal.id)
-                    }}
-                />
-            </div>
-
-            {/* 10-day strip */}
-            <h2 className="section-title">📊 {t('kidDash.last10Days')}</h2>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 28, overflowX: 'auto' }}>
-                {last10.map((d) => {
-                    const pct = d.total > 0 ? Math.round((d.done / d.total) * 100) : 0
-                    const isToday = d.date === today
-                    return (
-                        <div key={d.date} style={{
-                            minWidth: 52, textAlign: 'center', padding: '8px 6px', borderRadius: 'var(--radius-md)',
-                            background: isToday ? 'rgba(124,58,237,0.15)' : 'var(--bg-card)',
-                            border: `1px solid ${isToday ? 'rgba(124,58,237,0.4)' : 'var(--border-light)'}`,
-                        }}>
-                            <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700 }}>{d.day}</div>
-                            <div style={{
-                                fontSize: 18, fontWeight: 800, marginTop: 4,
-                                color: pct === 100 ? 'var(--accent-green)' : pct > 0 ? 'var(--accent-amber)' : 'var(--text-muted)',
-                            }}>
-                                {d.total === 0 ? '–' : pct === 100 ? '⭐' : `${pct}%`}
-                            </div>
-                            <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>{d.done}/{d.total}</div>
-                        </div>
-                    )
-                })}
-            </div>
-
             {/* Routine banner */}
             {routineBanner > 0 && (
                 <div className="routine-banner">
@@ -249,7 +207,7 @@ export default function KidDashboard() {
                 </div>
             )}
 
-            {/* Today's tasks */}
+            {/* Today's tasks — primary critical section first */}
             <div className="row between center" style={{ marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
                 <h2 className="section-title" style={{ marginBottom: 0 }}>
                     {t('kidDash.todayTasks')} ({completedToday}/{totalToday})
@@ -295,6 +253,49 @@ export default function KidDashboard() {
                     ))}
                 </div>
             )}
+
+            {/* 10-day progress strip — secondary context */}
+            <h2 className="section-title">📊 {t('kidDash.last10Days')}</h2>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 28, overflowX: 'auto' }}>
+                {last10.map((d) => {
+                    const pct = d.total > 0 ? Math.round((d.done / d.total) * 100) : 0
+                    const isToday = d.date === today
+                    return (
+                        <div key={d.date} style={{
+                            minWidth: 52, textAlign: 'center', padding: '8px 6px', borderRadius: 'var(--radius-md)',
+                            background: isToday ? 'rgba(124,58,237,0.15)' : 'var(--bg-card)',
+                            border: `1px solid ${isToday ? 'rgba(124,58,237,0.4)' : 'var(--border-light)'}`,
+                        }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700 }}>{d.day}</div>
+                            <div style={{
+                                fontSize: 18, fontWeight: 800, marginTop: 4,
+                                color: pct === 100 ? 'var(--accent-green)' : pct > 0 ? 'var(--accent-amber)' : 'var(--text-muted)',
+                            }}>
+                                {d.total === 0 ? '–' : pct === 100 ? '⭐' : `${pct}%`}
+                            </div>
+                            <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>{d.done}/{d.total}</div>
+                        </div>
+                    )
+                })}
+            </div>
+
+            {/* Savings goal */}
+            <h2 className="section-title">🎯 {t('goal.sectionTitle')}</h2>
+            <div style={{ marginBottom: 24 }}>
+                <GoalCard
+                    goal={activeGoal}
+                    currentAmount={kid.balance}
+                    onCreate={() => { setEditGoal(null); setShowGoalModal(true) }}
+                    onEdit={() => { setEditGoal(activeGoal); setShowGoalModal(true) }}
+                    onDelete={async () => {
+                        if (!activeGoal) return
+                        await deleteGoal(activeGoal.id)
+                    }}
+                />
+            </div>
+
+            <BadgeStrip recentBadges={recentBadges} totalUnlocked={totalUnlocked} totalBadges={totalBadges} />
+            <LeaderboardCard data={leaderboardData} variant="kid" currentKidId={kid.id} />
 
             {/* Recent history */}
             <h2 className="section-title">{t('kidDash.recentHistory')}</h2>

@@ -35,7 +35,7 @@ export default function LandingPage() {
         <div className="landing">
             <header className="landing-nav">
                 <div className="landing-logo">⭐ KidsTrack</div>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('/login')}>
+                <button className="btn btn-secondary btn-sm" onClick={() => navigate('/login')}>
                     {vi ? 'Đăng nhập' : 'Sign in'}
                 </button>
             </header>
@@ -154,7 +154,7 @@ export default function LandingPage() {
                 <span>·</span>
                 <span>{vi ? 'Miễn phí · Hoạt động trên mọi thiết bị' : 'Free · Works on all devices'}</span>
                 <span>·</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('/login')}>
+                <button className="btn btn-secondary btn-sm" onClick={() => navigate('/login')}>
                     {vi ? 'Đăng nhập' : 'Sign in'}
                 </button>
             </footer>

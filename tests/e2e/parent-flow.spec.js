@@ -64,33 +64,34 @@ test('parent can manage templates, tasks, and ledger', async ({ page }) => {
 
     await page.getByRole('button', { name: /choose from templates/i }).click()
     await expect(page).toHaveURL(/pick-templates/)
-    await expect(page.getByText('Make bed')).toBeVisible()
-    await expect(page.getByText('Pack school bag')).toBeVisible()
-    await page.getByRole('button', { name: /select all/i }).click()
-    await page.getByRole('button', { name: /add \d/i }).click()
+    await expect(page.getByText('Pack school bag').first()).toBeVisible()
+    await page.getByText('Pack school bag').first().click()
+    await page.getByText('Do homework').first().click()
+    await page.getByRole('button', { name: /add 2/i }).click()
     await expect(page).toHaveURL(/\/daily\/kid-1$/)
 
     await page.getByRole('button', { name: /add task/i }).click()
     await page.getByPlaceholder(/what needs to be done/i).fill('Brush teeth')
     await page.getByPlaceholder(/additional details/i).fill('Morning routine')
     await page.getByRole('button', { name: /^save$/i }).click()
-    await expect(page.getByText('Brush teeth')).toBeVisible()
+    await expect(page.getByText('Brush teeth').first()).toBeVisible()
 
     await page.getByRole('button', { name: /set rewards/i }).click()
     await page.getByRole('button', { name: /save settings/i }).click()
 
     const taskChecks = page.locator('.task-checkbox')
-    await expect(taskChecks).toHaveCount(3)
+    await expect(taskChecks).toHaveCount(4)
     await taskChecks.nth(0).click()
     await taskChecks.nth(1).click()
     await taskChecks.nth(2).click()
+    await taskChecks.nth(3).click()
 
     await page.getByRole('button', { name: /claim reward/i }).click()
     await expect(page.getByText(/all tasks completed/i)).toBeVisible()
 
     await page.getByRole('link', { name: /pocket ledger/i }).click()
     await expect(page.getByRole('heading', { name: /pocket ledger/i })).toBeVisible()
-    await expect(page.getByText(/all 3 tasks completed/i)).toBeVisible()
+    await expect(page.getByText(/all 4 tasks completed/i)).toBeVisible()
     await expect(page.getByText('+20k').first()).toBeVisible()
 })
 

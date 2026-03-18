@@ -37,6 +37,7 @@ function KidStreakBadge({ kid, dailyTasks, dayConfigs }) {
 }
 
 function KidReport({ kid, dailyTasks, period, lang }) {
+    const t = useT()
     const dates = useMemo(() => (
         Array.from({ length: period }, (_, i) =>
             format(subDays(new Date(), period - 1 - i), 'yyyy-MM-dd')
@@ -78,10 +79,10 @@ function KidReport({ kid, dailyTasks, period, lang }) {
                     <div style={{ fontWeight: 800, fontSize: 14 }}>{kid.displayName || kid.name}</div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                         {avgRate !== null
-                            ? `${lang === 'vi' ? 'TB' : 'Avg'} ${avgRate}%`
-                            : (lang === 'vi' ? 'Chưa có dữ liệu' : 'No data yet')
+                            ? t('dash.reportAvg', { pct: avgRate })
+                            : t('dash.reportNoData')
                         }
-                        {streak > 0 && <> · 🔥 {streak} {lang === 'vi' ? 'ngày' : 'day streak'}</>}
+                        {streak > 0 && <span> · 🔥 {t('dash.reportDayStreak', { count: streak })}</span>}
                     </div>
                 </div>
                 {avgRate !== null && (
@@ -116,10 +117,10 @@ function KidReport({ kid, dailyTasks, period, lang }) {
                 ) : (
                     <>
                         <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
-                            {lang === 'vi' ? '30 ngày qua' : 'Last 30 days'}
+                            {t('dash.reportLast30')}
                         </span>
                         <span style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'right' }}>
-                            {lang === 'vi' ? 'Hôm nay' : 'Today'}
+                            {t('dash.reportToday')}
                         </span>
                     </>
                 )}
@@ -270,7 +271,7 @@ export default function Dashboard() {
                     <p className="page-subtitle">{t('dash.subtitle')}</p>
                 </div>
                 <div className="row center" style={{ gap: 8, flexWrap: 'wrap' }}>
-                    <button className="btn btn-ghost" onClick={() => navigate('/report/weekly')}>
+                    <button className="btn btn-secondary" onClick={() => navigate('/report/weekly')}>
                         {t('weekly.openReportCta')}
                     </button>
                     <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('dash.addKid')}</button>
@@ -295,6 +296,31 @@ export default function Dashboard() {
                 <OnboardingWizard />
             ) : kids.length === 0 ? null : (
                 <>
+                    <div className="card" style={{ marginBottom: 18 }}>
+                        <div className="row between center wrap" style={{ gap: 10 }}>
+                            <div>
+                                <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.primaryActionsTitle')}</div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('dash.primaryActionsDesc')}</div>
+                            </div>
+                            <div className="row center" style={{ gap: 8, flexWrap: 'wrap' }}>
+                                <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+                                    {t('dash.addKid')}
+                                </button>
+                                <button className="btn btn-secondary" onClick={() => navigate('/report/weekly')}>
+                                    {t('weekly.openReportCta')}
+                                </button>
+                                <button className="btn btn-secondary" onClick={() => navigate('/templates')}>
+                                    {t('tmpl.title')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="card" style={{ marginBottom: 24 }}>
+                        <div className="row between center" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                            <div style={{ fontWeight: 800, fontSize: 16 }}>{t('dash.kidsSummaryTitle')}</div>
+                            <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('dash.kidsSummaryProfiles', { count: kids.length })}</span>
+                        </div>
                     <div className="card-grid">
                         {kids.map((kid) => (
                             <div
@@ -331,6 +357,26 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                    </div>
+
+                    <div className="card">
+                        <div className="row between center wrap" style={{ gap: 10 }}>
+                            <div>
+                                <div style={{ fontWeight: 800, fontSize: 16 }}>{t('weekly.title')}</div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                                    {t('weekly.modalWeek', { week: weeklyReportWeek })}
+                                </div>
+                            </div>
+                            <div className="row center" style={{ gap: 10, flexWrap: 'wrap' }}>
+                                <span className="badge badge-purple" style={{ fontSize: 12 }}>
+                                    {t('weekly.modalCompletion', { pct: weeklyReport.familyStats.completionRate })}
+                                </span>
+                                <button className="btn btn-primary btn-sm" onClick={handleOpenWeeklyReport}>
+                                    {t('weekly.openReportCta')}
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="card" style={{ marginTop: 24 }}>
@@ -402,10 +448,10 @@ export default function Dashboard() {
 
                         {/* Legend */}
                         <div className="report-legend">
-                            <span className="report-legend-dot" style={{ background: 'var(--accent-green)' }} /> {lang === 'vi' ? '100%' : '100%'}
-                            <span className="report-legend-dot" style={{ background: 'var(--accent-amber)', marginLeft: 12 }} /> {lang === 'vi' ? 'Một phần' : 'Partial'}
-                            <span className="report-legend-dot" style={{ background: 'var(--accent-red)', marginLeft: 12 }} /> {lang === 'vi' ? '0%' : '0%'}
-                            <span className="report-legend-dot" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', marginLeft: 12 }} /> {lang === 'vi' ? 'Không có' : 'No tasks'}
+                            <span className="report-legend-dot" style={{ background: 'var(--accent-green)' }} /> {t('dash.reportLegendFull')}
+                            <span className="report-legend-dot" style={{ background: 'var(--accent-amber)', marginLeft: 12 }} /> {t('dash.reportLegendPartial')}
+                            <span className="report-legend-dot" style={{ background: 'var(--accent-red)', marginLeft: 12 }} /> {t('dash.reportLegendNone')}
+                            <span className="report-legend-dot" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', marginLeft: 12 }} /> {t('dash.reportLegendNoTasks')}
                         </div>
                     </div>
                 </>
@@ -489,5 +535,6 @@ export default function Dashboard() {
         </div>
     )
 }
+
 
 
