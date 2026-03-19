@@ -17,6 +17,8 @@ export function useVoiceInput(lang = 'vi') {
   const chunksRef = useRef([])
   const modeRef = useRef('idle')
   const onFinalRef = useRef(null)
+  const latestTextRef = useRef('')
+  const finalizedRef = useRef(false)
 
   const hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
   const hasRecorder = !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder)
@@ -77,6 +79,8 @@ export function useVoiceInput(lang = 'vi') {
   const start = useCallback((onFinal) => {
     onFinalRef.current = onFinal
     modeRef.current = 'idle'
+    latestTextRef.current = ''
+    finalizedRef.current = false
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
 
     if (!SR) {
@@ -97,6 +101,13 @@ export function useVoiceInput(lang = 'vi') {
     recognition.continuous = false
     recognition.interimResults = true
 
+    const finalizeTranscript = (rawText) => {
+      const text = String(rawText || '').trim()
+      if (!text || finalizedRef.current) return
+      finalizedRef.current = true
+      onFinalRef.current?.(text, { mode: 'local' })
+    }
+
     recognition.onresult = (event) => {
       let final = ''
       let interim = ''
@@ -104,9 +115,11 @@ export function useVoiceInput(lang = 'vi') {
         if (event.results[i].isFinal) final += event.results[i][0].transcript
         else interim += event.results[i][0].transcript
       }
-      setLiveText((final || interim).trim())
-      if (final) {
-        onFinal?.(final.trim(), { mode: 'local' })
+      const merged = (final || interim).trim()
+      latestTextRef.current = merged
+      setLiveText(merged)
+      if (final.trim()) {
+        finalizeTranscript(final)
         setListening(false)
         setLiveText('')
       }
@@ -119,6 +132,9 @@ export function useVoiceInput(lang = 'vi') {
     }
 
     recognition.onend = () => {
+      if (!finalizedRef.current && latestTextRef.current.trim()) {
+        finalizeTranscript(latestTextRef.current)
+      }
       setListening(false)
       setLiveText('')
     }
@@ -146,7 +162,6 @@ export function useVoiceInput(lang = 'vi') {
 
     try { recognitionRef.current?.stop() } catch (_) {}
     setListening(false)
-    setLiveText('')
   }, [])
 
   return { listening, transcribing, liveText, error, hasSR, canUseVoice, currentMode: modeRef.current, start, stop }

@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../i18n/I18nContext'
 import SocialProofSection from '../components/SocialProofSection'
+import { useInstallPrompt } from '../hooks/useInstallPrompt'
 
 const FEATURES = [
     {
@@ -239,6 +240,30 @@ export default function LandingPage() {
     const [activeSlide, setActiveSlide] = useState(0)
     const [paused, setPaused] = useState(false)
 
+    const { isInstallable, isNativePromptAvailable, isIOS, isStandalone, isLandingCtaDismissed, handleInstall, dismissLandingCTA } = useInstallPrompt()
+    const [showIOSGuide, setShowIOSGuide] = useState(false)
+    const [ctaDismissed, setCtaDismissed] = useState(isLandingCtaDismissed)
+
+    const showInstallCTA = !isStandalone && isInstallable && !ctaDismissed
+
+    const handleLandingInstall = () => {
+        if (isIOS) {
+            setShowIOSGuide(true)
+        } else {
+            handleInstall()
+        }
+    }
+
+    const handleDismissLandingCTA = () => {
+        dismissLandingCTA()
+        setCtaDismissed(true)
+    }
+
+    const handleIOSGuideDone = () => {
+        setShowIOSGuide(false)
+        handleDismissLandingCTA()
+    }
+
     useEffect(() => {
         if (paused) return undefined
         const timer = setInterval(() => {
@@ -282,6 +307,27 @@ export default function LandingPage() {
                     <span className="landing-cta-hint">
                         {vi ? 'Không cần thẻ tín dụng · Chỉ 30 giây' : 'No credit card · Takes 30 seconds'}
                     </span>
+                    {showInstallCTA && (
+                        <div className="landing-cta-install-wrap" data-testid="landing-install-cta">
+                            <button
+                                className="btn btn-secondary landing-cta-install"
+                                onClick={handleLandingInstall}
+                                aria-label={vi ? 'Cài ứng dụng KidsTrack lên thiết bị' : 'Install KidsTrack app'}
+                            >
+                                📲 {isNativePromptAvailable
+                                    ? (vi ? 'Cài ứng dụng' : 'Install App')
+                                    : (vi ? 'Thêm vào màn hình chính' : 'Add to Home Screen')}
+                            </button>
+                            <button
+                                className="landing-cta-install__dismiss"
+                                onClick={handleDismissLandingCTA}
+                                aria-label={vi ? 'Đóng' : 'Dismiss'}
+                                title={vi ? 'Ẩn trong 24 giờ' : 'Hide for 24 hours'}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <SocialProofSection mode="trust" />
@@ -372,6 +418,42 @@ export default function LandingPage() {
                     {vi ? 'Đăng nhập' : 'Sign in'}
                 </button>
             </footer>
+
+            {showIOSGuide && (
+                <div
+                    className="landing-ios-guide-overlay"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={vi ? 'Hướng dẫn cài đặt ứng dụng' : 'App install guide'}
+                    data-testid="ios-install-guide"
+                    onClick={(e) => { if (e.target === e.currentTarget) setShowIOSGuide(false) }}
+                >
+                    <div className="landing-ios-guide">
+                        <div className="landing-ios-guide__title">
+                            {vi ? '📲 Thêm vào màn hình chính' : '📲 Add to Home Screen'}
+                        </div>
+                        <ol className="landing-ios-guide__steps">
+                            <li>{vi ? 'Nhấn biểu tượng Share ⎋ ở thanh dưới Safari' : 'Tap the Share ⎋ button at the bottom of Safari'}</li>
+                            <li>{vi ? 'Cuộn xuống và chọn "Thêm vào màn hình chính"' : 'Scroll down and tap "Add to Home Screen"'}</li>
+                            <li>{vi ? 'Nhấn "Thêm" để xác nhận' : 'Tap "Add" to confirm'}</li>
+                        </ol>
+                        <div className="landing-ios-guide__actions">
+                            <button
+                                className="btn btn-primary btn-sm"
+                                onClick={handleIOSGuideDone}
+                            >
+                                {vi ? 'Đã hiểu ✓' : 'Got it ✓'}
+                            </button>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => setShowIOSGuide(false)}
+                            >
+                                {vi ? 'Đóng' : 'Close'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -13,7 +13,9 @@ const adminAuth = getAuth();
 const googleAuth = new GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
 });
-const STT_LOCATION = process.env.STT_LOCATION || "asia-southeast1";
+// chirp_2 is only available in us-central1 and europe-west4.
+// asia-southeast1 does NOT support chirp_2 → use us-central1 as default.
+const STT_LOCATION = process.env.STT_LOCATION || "us-central1";
 const MAX_STT_AUDIO_BYTES = 10 * 1024 * 1024;
 
 function normalizeUsername(value) {

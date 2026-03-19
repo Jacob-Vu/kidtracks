@@ -7,6 +7,7 @@ import { useVoiceRecorder } from '../hooks/useVoiceRecorder'
 import { trackJournalSaved, trackVoiceRecordingUsed } from '../hooks/useAnalytics'
 import { format, parseISO } from 'date-fns'
 import Modal from './Modal'
+import VoiceMicButton from './VoiceMicButton'
 
 const toBase64 = (blob) => new Promise((resolve) => {
   const reader = new FileReader()
@@ -14,7 +15,11 @@ const toBase64 = (blob) => new Promise((resolve) => {
   reader.readAsDataURL(blob)
 })
 
-const formatDuration = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+const formatDuration = (s) => {
+  if (!isFinite(s) || isNaN(s) || s < 0) return '0:00'
+  const sec = Math.floor(s)
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
+}
 
 function AudioPlayer({ src }) {
   const t = useT()
@@ -26,7 +31,7 @@ function AudioPlayer({ src }) {
   useEffect(() => {
     const a = audioRef.current
     if (!a) return
-    const onLoaded = () => setTotal(Math.floor(a.duration))
+    const onLoaded = () => { if (isFinite(a.duration)) setTotal(Math.floor(a.duration)) }
     const onTime = () => setCurrent(Math.floor(a.currentTime))
     const onEnd = () => setPlaying(false)
     a.addEventListener('loadedmetadata', onLoaded)
@@ -76,9 +81,6 @@ export default function DayJournal({ kidId, date, role, kidName }) {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  // Track previous transcript for append logic when re-recording within editing
-  const prevTranscriptRef = useRef('')
-
   const docId = `${kidId}_${date}_${role}`
   const docPath = () => doc(db, 'families', familyId, 'dayJournal', docId)
 
@@ -101,7 +103,9 @@ export default function DayJournal({ kidId, date, role, kidName }) {
     }).catch(() => setViewState('empty'))
   }, [familyId, kidId, date, role])
 
-  // When recording stops and we get a blob → switch to review (editing) state
+  // When transcription completes (recState === 'done') → switch to review (editing) state.
+  // recState transitions: idle → recording → transcribing → done.
+  // transcript is guaranteed to be populated before 'done' fires (no race condition).
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (recState === 'done') {
@@ -111,7 +115,6 @@ export default function DayJournal({ kidId, date, role, kidName }) {
         if (!newPart) return prev
         return prev + ' ' + newPart
       })
-      prevTranscriptRef.current = transcript
       setViewState('editing')
     }
   }, [recState])
@@ -174,7 +177,6 @@ export default function DayJournal({ kidId, date, role, kidName }) {
 
   const handleRecord = async () => {
     clear()
-    prevTranscriptRef.current = ''
     setViewState('recording')
     await start()
   }
@@ -240,20 +242,32 @@ export default function DayJournal({ kidId, date, role, kidName }) {
         <div className="journal-recording">
           <div className="journal-rec-header">
             <span className="journal-rec-dot" />
-            <span style={{ fontWeight: 700, fontSize: 14 }}>{t('journal.recording')}</span>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>
+              {recState === 'transcribing' ? t('voice.transcribing') : t('journal.recording')}
+            </span>
             <span className="journal-rec-timer">{formatDuration(duration)}</span>
-            <button className="btn btn-danger btn-sm" style={{ marginLeft: 'auto' }} onClick={stop}>
-              ⏹ {t('journal.stop')}
-            </button>
+            {recState === 'transcribing' ? (
+              <span className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto', opacity: 0.6, cursor: 'default' }}>
+                ⏳
+              </span>
+            ) : (
+              <button className="btn btn-danger btn-sm" style={{ marginLeft: 'auto' }} onClick={stop}>
+                ⏹ {t('journal.stop')}
+              </button>
+            )}
           </div>
           <div className="voice-waveform">
             {Array.from({ length: 7 }).map((_, i) => (
               <div key={i} className="voice-bar" style={{ animationDelay: `${i * 0.1}s` }} />
             ))}
           </div>
-          {transcript && (
-            <p className="journal-live-transcript">{transcript}</p>
-          )}
+          <textarea
+            className="journal-textarea"
+            value={transcript || ''}
+            readOnly
+            rows={3}
+            placeholder={recState === 'transcribing' ? t('voice.transcribing') : t('journal.placeholder')}
+          />
         </div>
       )}
 
@@ -288,13 +302,11 @@ export default function DayJournal({ kidId, date, role, kidName }) {
               rows={4}
               autoFocus={recState !== 'done'}
             />
-            <button
-              className={`journal-mic-inline ${recState === 'recording' ? 'recording' : ''}`}
-              onClick={recState === 'recording' ? stop : handleRecord}
-              title={recState === 'recording' ? t('journal.stop') : t('journal.recordBtn')}
-            >
-              {recState === 'recording' ? '⏹' : '🎤'}
-            </button>
+            <VoiceMicButton
+              field="journal_entry"
+              role={role}
+              onAppend={(text) => setEditText((prev) => (prev ? prev + ' ' + text : text))}
+            />
           </div>
           <div className="row" style={{ gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
             {recState === 'done' && (

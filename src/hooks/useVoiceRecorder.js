@@ -50,6 +50,8 @@ export function useVoiceRecorder(lang = 'vi') {
 
       // If SpeechRecognition is unavailable or produced no transcript,
       // fallback to Firebase Function + Google STT.
+      // NOTE: setRecState('done') is called here, AFTER transcription completes,
+      // to avoid a race condition where DayJournal reads an empty transcript.
       if (!transcriptRef.current.trim()) {
         try {
           const text = await transcribeAudioBlob(blob, lang)
@@ -63,6 +65,7 @@ export function useVoiceRecorder(lang = 'vi') {
           if (!hasSR) setError('stt_failed')
         }
       }
+      setRecState('done')
     }
     recorder.start(200)
     recorderRef.current = recorder
@@ -101,8 +104,10 @@ export function useVoiceRecorder(lang = 'vi') {
   const stop = useCallback(() => {
     clearInterval(timerRef.current)
     try { recognitionRef.current?.stop() } catch (_) {}
-    if (recorderRef.current?.state === 'recording') recorderRef.current.stop()
-    setRecState('done')
+    if (recorderRef.current?.state === 'recording') {
+      setRecState('transcribing')
+      recorderRef.current.stop()
+    }
   }, [])
 
   const clear = useCallback(() => {

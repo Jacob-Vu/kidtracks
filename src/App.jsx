@@ -15,6 +15,7 @@ import { trackSessionStarted, usePageTracking } from './hooks/useAnalytics'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Templates = lazy(() => import('./pages/Templates'))
 const DailyView = lazy(() => import('./pages/DailyView'))
+const TaskEditorPage = lazy(() => import('./pages/TaskEditorPage'))
 const Ledger = lazy(() => import('./pages/Ledger'))
 const Login = lazy(() => import('./pages/Login'))
 const KidDashboard = lazy(() => import('./pages/KidDashboard'))
@@ -186,6 +187,8 @@ function ParentLayout() {
             <Route path="/templates" element={<Suspense fallback={<RouteLoader />}><Templates /></Suspense>} />
             <Route path="/daily" element={<Suspense fallback={<RouteLoader />}><DailyView /></Suspense>} />
             <Route path="/daily/:kidId" element={<Suspense fallback={<RouteLoader />}><DailyView /></Suspense>} />
+            <Route path="/daily/:kidId/task/new" element={<Suspense fallback={<RouteLoader />}><TaskEditorPage /></Suspense>} />
+            <Route path="/daily/:kidId/task/:taskId/edit" element={<Suspense fallback={<RouteLoader />}><TaskEditorPage /></Suspense>} />
             <Route path="/daily/:kidId/pick-templates" element={<Suspense fallback={<RouteLoader />}><TemplatePickerPage /></Suspense>} />
             <Route path="/ledger" element={<Suspense fallback={<RouteLoader />}><Ledger /></Suspense>} />
             <Route path="/ledger/:kidId" element={<Suspense fallback={<RouteLoader />}><Ledger /></Suspense>} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { format, addDays, subDays, parseISO } from 'date-fns'
 import ReactConfetti from 'react-confetti'
 import useStore from '../store/useStore'
@@ -15,11 +15,13 @@ import useStreak from '../hooks/useStreak'
 
 const REWARD_PRESETS = [10000, 20000, 50000]
 const PENALTY_PRESETS = [5000, 10000, 20000]
+const DATE_PARAM_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export default function DailyView() {
     const t = useT()
     const { kidId: paramKidId } = useParams()
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
     const { isParent } = useAuth()
     const { kids, templates, dailyTasks, dayConfigs } = useStore()
     const {
@@ -29,8 +31,10 @@ export default function DailyView() {
         saveRoutine, clearDayTasks, autoLoadRoutine,
     } = useFireActions()
 
+    const queryDate = searchParams.get('date')
+    const initialDate = DATE_PARAM_RE.test(queryDate || '') ? queryDate : format(new Date(), 'yyyy-MM-dd')
     const [selectedKidId, setSelectedKidId] = useState(paramKidId || kids[0]?.id || '')
-    const [currentDate, setCurrentDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+    const [currentDate, setCurrentDate] = useState(initialDate)
     const [showAddTask, setShowAddTask] = useState(false)
     const [editTask, setEditTask] = useState(null)
     const [taskTitle, setTaskTitle] = useState('')
@@ -49,6 +53,7 @@ export default function DailyView() {
     const [routineSaved, setRoutineSaved] = useState(false)
     const [showClearConfirm, setShowClearConfirm] = useState(false)
     const autoLoadKeyRef = useRef(null)
+    const isMobileLayout = windowSize.width <= 768
 
     useEffect(() => {
         if (paramKidId) setSelectedKidId(paramKidId)
@@ -57,6 +62,19 @@ export default function DailyView() {
     useEffect(() => {
         if (!selectedKidId && kids.length > 0) setSelectedKidId(kids[0].id)
     }, [kids])
+
+    useEffect(() => {
+        if (!DATE_PARAM_RE.test(queryDate || '')) return
+        if (queryDate === currentDate) return
+        setCurrentDate(queryDate)
+    }, [queryDate, currentDate])
+
+    useEffect(() => {
+        if (!isMobileLayout) return
+        if (!showAddTask && !editTask) return
+        setShowAddTask(false)
+        setEditTask(null)
+    }, [isMobileLayout, showAddTask, editTask])
 
     const kid = kids.find((k) => k.id === selectedKidId)
     const tasks = dailyTasks.filter((t) => t.kidId === selectedKidId && t.date === currentDate)
@@ -133,8 +151,27 @@ export default function DailyView() {
         }
     }, [selectedKidId, currentDate, tasks.length, isFinalized, kid?.routine])
 
-    const openAddTask = () => { setTaskTitle(''); setTaskDesc(''); setShowAddTask(true) }
-    const openEditTask = (t) => { setEditTask(t); setTaskTitle(t.title); setTaskDesc(t.description) }
+    const openAddTask = () => {
+        if (!selectedKidId) return
+        if (isMobileLayout) {
+            navigate(`/daily/${selectedKidId}/task/new?date=${currentDate}`)
+            return
+        }
+        setTaskTitle('')
+        setTaskDesc('')
+        setShowAddTask(true)
+    }
+
+    const openEditTask = (task) => {
+        if (!selectedKidId) return
+        if (isMobileLayout) {
+            navigate(`/daily/${selectedKidId}/task/${task.id}/edit?date=${currentDate}`)
+            return
+        }
+        setEditTask(task)
+        setTaskTitle(task.title)
+        setTaskDesc(task.description)
+    }
 
     const handleSaveRoutine = async () => {
         await saveRoutine(selectedKidId, tasks, currentDate)

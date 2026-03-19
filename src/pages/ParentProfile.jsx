@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import useStore from '../store/useStore'
 import { useT } from '../i18n/I18nContext'
 import { formatMoney } from '../utils/format'
+import { useTheme, THEMES } from '../contexts/ThemeContext'
 import NotificationSettings from '../components/NotificationSettings'
 import ClientVersionInfo from '../components/ClientVersionInfo'
 
@@ -13,6 +14,7 @@ export default function ParentProfile() {
     const [searchParams] = useSearchParams()
     const { user } = useAuth()
     const { kids } = useStore()
+    const { theme, setTheme, themeMode, customPrimary, setCustomPrimary, enableCustomTheme } = useTheme()
 
     const selectedKidId = searchParams.get('kidId') || ''
     const selectedKid = useMemo(() => {
@@ -34,6 +36,46 @@ export default function ParentProfile() {
                         <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>{user?.email || t('parent.noLinkedEmail')}</div>
                     </div>
                     <span className="badge badge-purple">{t('dash.kidsSummaryProfiles', { count: kids.length })}</span>
+                </div>
+            </div>
+
+            <div className="card" style={{ marginBottom: 16 }}>
+                <h3 style={{ fontWeight: 800, fontSize: 16, marginBottom: 6 }}>🎨 {t('theme.title')}</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 12 }}>{t('theme.desc')}</p>
+                <div className="theme-picker">
+                    {THEMES.map((th) => (
+                        <button
+                            key={th.id}
+                            className={`theme-swatch${theme === th.id ? ' theme-swatch--active' : ''}`}
+                            style={{ background: `linear-gradient(135deg, ${th.colors[0]}, ${th.colors[1]})` }}
+                            onClick={() => setTheme(th.id)}
+                            title={th.name}
+                            aria-label={th.name}
+                        >
+                            {th.emoji}
+                        </button>
+                    ))}
+                </div>
+                <div className="theme-custom-picker">
+                    <button
+                        type="button"
+                        className={`btn btn-sm ${themeMode === 'custom' ? 'btn-primary' : 'btn-ghost'}`}
+                        onClick={enableCustomTheme}
+                    >
+                        {t('theme.customBtn')}
+                    </button>
+                    <label className="theme-custom-picker__label">
+                        {t('theme.customPrimary')}
+                        <input
+                            type="color"
+                            value={customPrimary}
+                            onChange={(e) => setCustomPrimary(e.target.value)}
+                            aria-label={t('theme.customPrimary')}
+                        />
+                    </label>
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 8 }}>
+                    {theme === 'custom' ? t('theme.customActive') : t('theme.presetActive')}
                 </div>
             </div>
 

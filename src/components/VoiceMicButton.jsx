@@ -7,7 +7,14 @@ import { trackVoiceInputUsed } from '../hooks/useAnalytics'
 // Props:
 //   onAppend(text)  - called with final transcript to append to the field
 //   disabled        - disable the button
-export default function VoiceMicButton({ onAppend, disabled, field = 'unknown', role = 'parent' }) {
+//   showLiveText    - optionally show interim transcript under the mic button
+export default function VoiceMicButton({
+  onAppend,
+  disabled,
+  field = 'unknown',
+  role = 'parent',
+  showLiveText = false,
+}) {
   const t = useT()
   const { lang } = useLang()
   const {
@@ -79,10 +86,10 @@ export default function VoiceMicButton({ onAppend, disabled, field = 'unknown', 
         {listening ? '■' : transcribing ? '…' : '🎤'}
       </button>
       <span className="voice-input-label">{label}</span>
-      {(listening || transcribing) && liveText && (
+      {showLiveText && (listening || transcribing) && liveText && (
         <span className="voice-input-live">{liveText}</span>
       )}
-      {transcribing && (
+      {showLiveText && transcribing && (
         <span className="voice-input-live">{t('voice.processing')}</span>
       )}
       {error === 'mic_denied' && (
