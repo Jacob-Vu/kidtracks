@@ -501,10 +501,28 @@ export function useFireActions() {
             await call({ familyId, taskId });
         },
         toggleTaskStatus: async (taskId) => {
+            const previous = store.dailyTasks.find((task) => task.id === taskId)
             const updated = store.buildTaskToggle(taskId);
-            if (updated) {
+            if (!updated) return
+
+            // Optimistic local update so the checkbox responds immediately.
+            useStore.setState((state) => ({
+                dailyTasks: state.dailyTasks.map((task) => task.id === taskId ? updated : task),
+            }))
+
+            try {
                 const call = httpsCallable(functions, 'updateDailyTask');
                 await call({ familyId, taskId, updates: updated });
+            } catch (error) {
+                // Roll back only if the task is still in the optimistic state.
+                if (previous) {
+                    useStore.setState((state) => ({
+                        dailyTasks: state.dailyTasks.map((task) =>
+                            task.id === taskId && task.status === updated.status ? previous : task
+                        ),
+                    }))
+                }
+                throw error
             }
         },
         markTaskFailed: async (taskId) => {

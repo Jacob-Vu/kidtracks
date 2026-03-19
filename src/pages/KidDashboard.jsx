@@ -49,7 +49,9 @@ export default function KidDashboard() {
     const [routineSaved, setRoutineSaved] = useState(false)
     const [showGoalModal, setShowGoalModal] = useState(false)
     const [editGoal, setEditGoal] = useState(null)
+    const [pendingTaskIds, setPendingTaskIds] = useState(() => new Set())
     const autoLoadKeyRef = useRef(null)
+    const pendingTaskIdsRef = useRef(new Set())
     const { currentStreak, bestStreak } = useStreak(kid?.id, dailyTasks, dayConfigs)
     const { recentBadges, totalUnlocked, totalBadges, newlyUnlocked } = useBadges(kid?.id)
     const leaderboardData = useLeaderboard(kids, dailyTasks, ledger, dayConfigs)
@@ -183,6 +185,32 @@ export default function KidDashboard() {
         setEditGoal(null)
     }
 
+    const handleToggleTask = async (task) => {
+        if (pendingTaskIdsRef.current.has(task.id)) return
+        pendingTaskIdsRef.current.add(task.id)
+        setPendingTaskIds(new Set(pendingTaskIdsRef.current))
+
+        if (task.status !== 'completed') {
+            trackTaskCompleted({
+                kid_id: kid.id,
+                task_id: task.id,
+                date: today,
+                task_type: 'daily_task',
+                has_reward: !!(todayConfig && Number(todayConfig.rewardAmount) > 0),
+            })
+            notifyTaskComplete(task.id)
+        }
+
+        try {
+            await toggleTaskStatus(task.id)
+        } catch (error) {
+            console.error('Failed to toggle task status:', error)
+        } finally {
+            pendingTaskIdsRef.current.delete(task.id)
+            setPendingTaskIds(new Set(pendingTaskIdsRef.current))
+        }
+    }
+
     return (
         <div data-feedback-reduced-motion={reducedMotion ? 'true' : 'false'}>
             {/* Hero */}
@@ -256,31 +284,30 @@ export default function KidDashboard() {
                 </div>
             ) : (
                 <div className="col" style={{ marginBottom: 28 }}>
-                    {todayTasks.map((task) => (
-                        <div key={task.id} className={`task-item ${task.status}${taskPopId === task.id ? ' task-item--feedback-pop' : ''}`}>
-                            <div className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
-                                onClick={() => {
-                                    if (task.status !== 'completed') {
-                                        trackTaskCompleted({
-                                            kid_id: kid.id,
-                                            task_id: task.id,
-                                            date: today,
-                                            task_type: 'daily_task',
-                                            has_reward: !!(todayConfig && Number(todayConfig.rewardAmount) > 0),
-                                        })
-                                        notifyTaskComplete(task.id)
-                                    }
-                                    toggleTaskStatus(task.id)
-                                }}>
-                                {task.status === 'completed' ? '✓' : ''}
+                    {todayTasks.map((task) => {
+                        const isPending = pendingTaskIds.has(task.id)
+                        return (
+                            <div key={task.id} className={`task-item ${task.status}${taskPopId === task.id ? ' task-item--feedback-pop' : ''}${isPending ? ' task-item--pending' : ''}`}>
+                                <button
+                                    type="button"
+                                    className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}${isPending ? ' task-checkbox--pending' : ''}`}
+                                    onClick={() => handleToggleTask(task)}
+                                    disabled={isPending}
+                                    aria-busy={isPending ? 'true' : 'false'}
+                                    aria-pressed={task.status === 'completed'}
+                                    aria-label={isPending ? 'Updating task status' : 'Toggle task completion'}
+                                    title={isPending ? 'Updating task' : 'Toggle task completion'}
+                                >
+                                    {isPending ? <span className="task-checkbox-spinner" aria-hidden /> : (task.status === 'completed' ? '✓' : '')}
+                                </button>
+                                <div style={{ flex: 1 }}>
+                                    <div className={`task-title ${task.status}`}>{task.title}</div>
+                                    {task.description && <div className="task-desc">{task.description}</div>}
+                                </div>
+                                <button className="btn btn-ghost btn-sm" onClick={() => openEdit(task)} disabled={isPending}>✏️</button>
                             </div>
-                            <div style={{ flex: 1 }}>
-                                <div className={`task-title ${task.status}`}>{task.title}</div>
-                                {task.description && <div className="task-desc">{task.description}</div>}
-                            </div>
-                            <button className="btn btn-ghost btn-sm" onClick={() => openEdit(task)}>✏️</button>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             )}
 
