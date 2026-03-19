@@ -50,6 +50,11 @@ export default function KidDashboard() {
     const [showGoalModal, setShowGoalModal] = useState(false)
     const [editGoal, setEditGoal] = useState(null)
     const [pendingTaskIds, setPendingTaskIds] = useState(() => new Set())
+    const [pendingActions, setPendingActions] = useState({
+        saveRoutine: false,
+        saveTask: false,
+    })
+    const [windowWidth, setWindowWidth] = useState(() => window.innerWidth)
     const autoLoadKeyRef = useRef(null)
     const pendingTaskIdsRef = useRef(new Set())
     const { currentStreak, bestStreak } = useStreak(kid?.id, dailyTasks, dayConfigs)
@@ -69,6 +74,12 @@ export default function KidDashboard() {
             syncAssignedTemplatesForDay(kid.id, today)
         }
     }, [kid?.id, today])
+
+    useEffect(() => {
+        const onResize = () => setWindowWidth(window.innerWidth)
+        window.addEventListener('resize', onResize)
+        return () => window.removeEventListener('resize', onResize)
+    }, [])
 
     useEffect(() => {
         if (completedToday > 0 && completedToday === totalToday && totalToday > 0) {
@@ -138,9 +149,15 @@ export default function KidDashboard() {
     const openEdit = (task) => { setEditTask(task); setTaskTitle(task.title); setTaskDesc(task.description) }
 
     const handleSaveRoutine = async () => {
-        await saveRoutine(kid.id, todayTasks, today)
-        setRoutineSaved(true)
-        setTimeout(() => setRoutineSaved(false), 2500)
+        if (pendingActions.saveRoutine) return
+        setPendingActions((prev) => ({ ...prev, saveRoutine: true }))
+        try {
+            await saveRoutine(kid.id, todayTasks, today)
+            setRoutineSaved(true)
+            setTimeout(() => setRoutineSaved(false), 2500)
+        } finally {
+            setPendingActions((prev) => ({ ...prev, saveRoutine: false }))
+        }
     }
 
     const handleUndoRoutine = async () => {
@@ -150,19 +167,24 @@ export default function KidDashboard() {
     }
 
     const handleSave = async () => {
-        if (!taskTitle.trim()) return
-        if (editTask) {
-            await updateDailyTask(editTask.id, { title: taskTitle.trim(), description: taskDesc.trim() })
-            setEditTask(null)
-        } else {
-            await addDailyTask(kid.id, today, taskTitle.trim(), taskDesc.trim())
-            trackTaskCreated({
-                kid_id: kid.id,
-                source: 'manual',
-                has_description: !!taskDesc.trim(),
-                task_type: 'daily_task',
-            })
-            setShowAdd(false)
+        if (!taskTitle.trim() || pendingActions.saveTask) return
+        setPendingActions((prev) => ({ ...prev, saveTask: true }))
+        try {
+            if (editTask) {
+                await updateDailyTask(editTask.id, { title: taskTitle.trim(), description: taskDesc.trim() })
+                setEditTask(null)
+            } else {
+                await addDailyTask(kid.id, today, taskTitle.trim(), taskDesc.trim())
+                trackTaskCreated({
+                    kid_id: kid.id,
+                    source: 'manual',
+                    has_description: !!taskDesc.trim(),
+                    task_type: 'daily_task',
+                })
+                setShowAdd(false)
+            }
+        } finally {
+            setPendingActions((prev) => ({ ...prev, saveTask: false }))
         }
     }
 
@@ -212,7 +234,7 @@ export default function KidDashboard() {
     }
 
     return (
-        <div data-feedback-reduced-motion={reducedMotion ? 'true' : 'false'}>
+        <div className="page-with-mobile-sticky-bar" data-feedback-reduced-motion={reducedMotion ? 'true' : 'false'}>
             {/* Hero */}
             <div className="kid-hero-card">
                 <span className="kid-hero-avatar">{kid.avatar}</span>
@@ -270,8 +292,10 @@ export default function KidDashboard() {
                             className={`btn btn-ghost btn-sm routine-save-btn${routineSaved ? ' routine-save-btn--saved' : ''}`}
                             onClick={handleSaveRoutine}
                             title={kid?.routine ? t('routine.updateBtn') : t('routine.saveBtn')}
+                            disabled={pendingActions.saveRoutine}
+                            aria-busy={pendingActions.saveRoutine ? 'true' : 'false'}
                         >
-                            {routineSaved ? '✅' : '⭐'}
+                            {pendingActions.saveRoutine ? '⏳' : (routineSaved ? '✅' : '⭐')}
                         </button>
                     )}
                     <button className="btn btn-primary btn-sm" onClick={openAdd}>+ {t('daily.addTask')}</button>
@@ -304,12 +328,16 @@ export default function KidDashboard() {
                                     <div className={`task-title ${task.status}`}>{task.title}</div>
                                     {task.description && <div className="task-desc">{task.description}</div>}
                                 </div>
-                                <button className="btn btn-ghost btn-sm" onClick={() => openEdit(task)} disabled={isPending}>✏️</button>
+                                <button className="btn btn-ghost btn-sm icon-touch-btn" onClick={() => openEdit(task)} disabled={isPending} aria-label="Edit task">✏️</button>
                             </div>
                         )
                     })}
                 </div>
             )}
+
+            <div className="mobile-sticky-action-bar">
+                <button className="btn btn-primary" onClick={openAdd} disabled={pendingActions.saveTask}>+ {t('daily.addTask')}</button>
+            </div>
 
             {/* 10-day progress strip — secondary context */}
             <h2 className="section-title">📊 {t('kidDash.last10Days')}</h2>
@@ -379,7 +407,7 @@ export default function KidDashboard() {
 
             {/* Add/Edit modal */}
             {(showAdd || editTask) && (
-                <Modal title={editTask ? t('daily.editTask') : t('daily.addTaskTitle')} onClose={() => { setShowAdd(false); setEditTask(null) }}>
+                <Modal mobileSheet={windowWidth <= 768} title={editTask ? t('daily.editTask') : t('daily.addTaskTitle')} onClose={() => { setShowAdd(false); setEditTask(null) }}>
                     <div className="col">
                         <div className="form-group">
                             <label>{t('tmpl.taskTitle')}</label>
@@ -406,7 +434,9 @@ export default function KidDashboard() {
                         </div>
                         <div className="modal-footer">
                             <button className="btn btn-ghost" onClick={() => { setShowAdd(false); setEditTask(null) }}>{t('common.cancel')}</button>
-                            <button className="btn btn-primary" onClick={handleSave} disabled={!taskTitle.trim()}>{t('common.save')}</button>
+                            <button className="btn btn-primary" onClick={handleSave} disabled={!taskTitle.trim() || pendingActions.saveTask} aria-busy={pendingActions.saveTask ? 'true' : 'false'}>
+                                {pendingActions.saveTask ? t('common.loading') : t('common.save')}
+                            </button>
                         </div>
                     </div>
                 </Modal>

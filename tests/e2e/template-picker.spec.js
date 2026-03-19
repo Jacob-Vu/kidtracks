@@ -139,3 +139,14 @@ test('preview panel shows secondary language', async ({ page }) => {
     await expect(page.locator('.tpicker-preview-secondary')).toContainText('Rửa tay bằng xà phòng')
 })
 
+test('preview panel switches primary language in Vietnamese mode', async ({ page }) => {
+    await page.addInitScript(() => {
+        window.localStorage.setItem('kidstrack-lang', 'vi')
+    })
+    await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
+    await page.locator('.tpicker-chip-scroll .chip').first().click()
+    await page.locator('.tpicker-row-wrap', { hasText: 'Rửa tay bằng xà phòng' }).click()
+    await expect(page.locator('.tpicker-preview-desc')).toContainText('Rửa tay bằng xà phòng')
+    await expect(page.locator('.tpicker-preview-secondary')).toContainText('Use soap and water')
+})
+

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import useStore from '../store/useStore'
 import { useFireActions } from '../hooks/useFirebaseSync'
 import { useT, useLang } from '../i18n/I18nContext'
@@ -30,6 +30,17 @@ export default function Templates() {
     const [showPackDetail, setShowPackDetail] = useState(null)
     const [filterKidId, setFilterKidId] = useState('all')
     const [activeTab, setActiveTab] = useState('default')
+    const [savingTemplate, setSavingTemplate] = useState(false)
+    const [savingAssign, setSavingAssign] = useState(false)
+    const [importingSelected, setImportingSelected] = useState(false)
+    const [pendingTemplateIds, setPendingTemplateIds] = useState(() => new Set())
+    const [isMobileLayout, setIsMobileLayout] = useState(() => window.innerWidth <= 768)
+
+    useEffect(() => {
+        const onResize = () => setIsMobileLayout(window.innerWidth <= 768)
+        window.addEventListener('resize', onResize)
+        return () => window.removeEventListener('resize', onResize)
+    }, [])
 
     // Import selection modal state
     const [importPack, setImportPack] = useState(null)
@@ -66,25 +77,30 @@ export default function Templates() {
     }
 
     const handleSave = async () => {
-        if (!title.trim()) return
+        if (!title.trim() || savingTemplate) return
+        setSavingTemplate(true)
         const descriptions = { en: descriptionEn.trim(), vi: descriptionVi.trim() }
-        if (editItem) {
-            await updateTemplate(editItem.id, {
-                title: title.trim(),
-                descriptions,
-                description: descriptions.en || descriptions.vi || '',
-                assignedKidIds: assignKids,
-            })
-            setEditItem(null)
-        } else {
-            await addTemplate(title.trim(), descriptions)
-            setShowAdd(false)
-            setActiveTab('family')
+        try {
+            if (editItem) {
+                await updateTemplate(editItem.id, {
+                    title: title.trim(),
+                    descriptions,
+                    description: descriptions.en || descriptions.vi || '',
+                    assignedKidIds: assignKids,
+                })
+                setEditItem(null)
+            } else {
+                await addTemplate(title.trim(), descriptions)
+                setShowAdd(false)
+                setActiveTab('family')
+            }
+            setTitle('')
+            setDescriptionEn('')
+            setDescriptionVi('')
+            setAssignKids([])
+        } finally {
+            setSavingTemplate(false)
         }
-        setTitle('')
-        setDescriptionEn('')
-        setDescriptionVi('')
-        setAssignKids([])
     }
 
     // Open import selection modal (all tasks selected by default)
@@ -111,8 +127,9 @@ export default function Templates() {
     }
 
     const handleImportSelected = async () => {
-        if (!importPack || selectedTasks.length === 0) return
+        if (!importPack || selectedTasks.length === 0 || importingSelected) return
         const tasksToImport = importPack.tasks.filter((t) => selectedTasks.includes(t.title))
+        setImportingSelected(true)
         setImporting(importPack.id); setImportMsg(''); setImportPack(null)
         try {
             const count = await importDefaultPack(importPack, tasksToImport)
@@ -122,11 +139,31 @@ export default function Templates() {
                 : t('tmpl.importedAll', { name: getPackName(importPack) }))
             setTimeout(() => setImportMsg(''), 4000)
         } catch { setImportMsg(t('tmpl.importFailed')) }
-        finally { setImporting(null) }
+        finally {
+            setImporting(null)
+            setImportingSelected(false)
+        }
     }
 
     const openAssign = (tmpl) => { setShowAssign(tmpl); setAssignSelection(tmpl.assignedKidIds || []) }
-    const handleSaveAssign = async () => { if (showAssign) { await assignTemplateToKids(showAssign.id, assignSelection); setShowAssign(null) } }
+    const handleSaveAssign = async () => {
+        if (!showAssign) return
+        const id = showAssign.id
+        if (pendingTemplateIds.has(id) || savingAssign) return
+        setSavingAssign(true)
+        setPendingTemplateIds((prev) => new Set(prev).add(id))
+        try {
+            await assignTemplateToKids(showAssign.id, assignSelection)
+            setShowAssign(null)
+        } finally {
+            setSavingAssign(false)
+            setPendingTemplateIds((prev) => {
+                const next = new Set(prev)
+                next.delete(id)
+                return next
+            })
+        }
+    }
     const toggleKid = (kidId, setter) => setter((prev) => prev.includes(kidId) ? prev.filter((id) => id !== kidId) : [...prev, kidId])
 
     return (
@@ -242,9 +279,28 @@ export default function Templates() {
                                         </div>
                                     </div>
                                     <div className="task-actions" style={{ opacity: 1, gap: 4 }}>
-                                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => openAssign(tmpl)} title={t('tmpl.assignLabel')}>👤</button>
-                                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => openEdit(tmpl)}>✏️</button>
-                                        <button className="btn btn-danger btn-icon btn-sm" onClick={() => deleteTemplate(tmpl.id)}>🗑️</button>
+                                        <button className="btn btn-ghost btn-icon btn-sm icon-touch-btn" onClick={() => openAssign(tmpl)} title={t('tmpl.assignLabel')} disabled={pendingTemplateIds.has(tmpl.id)}>👤</button>
+                                        <button className="btn btn-ghost btn-icon btn-sm icon-touch-btn" onClick={() => openEdit(tmpl)} disabled={pendingTemplateIds.has(tmpl.id)}>✏️</button>
+                                        <button
+                                            className="btn btn-danger btn-icon btn-sm icon-touch-btn"
+                                            onClick={async () => {
+                                                if (pendingTemplateIds.has(tmpl.id)) return
+                                                setPendingTemplateIds((prev) => new Set(prev).add(tmpl.id))
+                                                try {
+                                                    await deleteTemplate(tmpl.id)
+                                                } finally {
+                                                    setPendingTemplateIds((prev) => {
+                                                        const next = new Set(prev)
+                                                        next.delete(tmpl.id)
+                                                        return next
+                                                    })
+                                                }
+                                            }}
+                                            disabled={pendingTemplateIds.has(tmpl.id)}
+                                            aria-busy={pendingTemplateIds.has(tmpl.id) ? 'true' : 'false'}
+                                        >
+                                            {pendingTemplateIds.has(tmpl.id) ? '⏳' : '🗑️'}
+                                        </button>
                                     </div>
                                 </div>
                             )
@@ -256,7 +312,7 @@ export default function Templates() {
 
             {/* Pack Preview (read-only) */}
             {showPackDetail && (
-                <Modal title={`${showPackDetail.icon} ${getPackName(showPackDetail)}`} onClose={() => setShowPackDetail(null)}>
+                <Modal mobileSheet={isMobileLayout} title={`${showPackDetail.icon} ${getPackName(showPackDetail)}`} onClose={() => setShowPackDetail(null)}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 16 }}>
                         {getPackDesc(showPackDetail)} • {showPackDetail.ageRange}
                     </p>
@@ -282,7 +338,7 @@ export default function Templates() {
 
             {/* Import Selection Modal */}
             {importPack && (
-                <Modal title={`📥 ${t('tmpl.importFrom')} "${getPackName(importPack)}"`} onClose={() => setImportPack(null)}>
+                <Modal mobileSheet={isMobileLayout} title={`📥 ${t('tmpl.importFrom')} "${getPackName(importPack)}"`} onClose={() => setImportPack(null)}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 12 }}>
                         {t('tmpl.selectTasksDesc')}
                     </p>
@@ -318,8 +374,11 @@ export default function Templates() {
                     <div className="modal-footer">
                         <button className="btn btn-ghost" onClick={() => setImportPack(null)}>{t('common.cancel')}</button>
                         <button className="btn btn-primary" onClick={handleImportSelected}
-                            disabled={selectedTasks.filter((title) => !templates.some((ft) => ft.title === title)).length === 0}>
-                            {t('tmpl.importBtn', { count: selectedTasks.filter((title) => !templates.some((ft) => ft.title === title)).length })}
+                            aria-busy={importingSelected ? 'true' : 'false'}
+                            disabled={importingSelected || selectedTasks.filter((title) => !templates.some((ft) => ft.title === title)).length === 0}>
+                            {importingSelected
+                                ? t('common.loading')
+                                : t('tmpl.importBtn', { count: selectedTasks.filter((title) => !templates.some((ft) => ft.title === title)).length })}
                         </button>
                     </div>
                 </Modal>
@@ -327,7 +386,7 @@ export default function Templates() {
 
             {/* Add/Edit Modal */}
             {(showAdd || editItem) && (
-                <Modal title={editItem ? t('tmpl.editTemplate') : t('tmpl.newTemplate')} onClose={() => { setShowAdd(false); setEditItem(null) }}>
+                <Modal mobileSheet={isMobileLayout} title={editItem ? t('tmpl.editTemplate') : t('tmpl.newTemplate')} onClose={() => { setShowAdd(false); setEditItem(null) }}>
                     <div className="col">
                         <div className="form-group">
                             <label>{t('tmpl.taskTitle')}</label>
@@ -355,7 +414,7 @@ export default function Templates() {
                         )}
                         <div className="modal-footer">
                             <button className="btn btn-ghost" onClick={() => { setShowAdd(false); setEditItem(null) }}>{t('common.cancel')}</button>
-                            <button className="btn btn-primary" onClick={handleSave} disabled={!title.trim()}>{t('common.save')}</button>
+                            <button className="btn btn-primary" onClick={handleSave} disabled={!title.trim() || savingTemplate} aria-busy={savingTemplate ? 'true' : 'false'}>{savingTemplate ? t('common.loading') : t('common.save')}</button>
                         </div>
                     </div>
                 </Modal>
@@ -363,7 +422,7 @@ export default function Templates() {
 
             {/* Assign Modal */}
             {showAssign && (
-                <Modal title={t('tmpl.assignTitle', { title: showAssign.title })} onClose={() => setShowAssign(null)}>
+                <Modal mobileSheet={isMobileLayout} title={t('tmpl.assignTitle', { title: showAssign.title })} onClose={() => setShowAssign(null)}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 16 }}>{t('tmpl.assignDesc')}</p>
                     <div className="col">
                         {kids.map((k) => (
@@ -378,7 +437,9 @@ export default function Templates() {
                     </div>
                     <div className="modal-footer">
                         <button className="btn btn-ghost" onClick={() => setShowAssign(null)}>{t('common.cancel')}</button>
-                        <button className="btn btn-primary" onClick={handleSaveAssign}>{t('tmpl.saveAssign')}</button>
+                        <button className="btn btn-primary" onClick={handleSaveAssign} disabled={savingAssign} aria-busy={savingAssign ? 'true' : 'false'}>
+                            {savingAssign ? t('common.loading') : t('tmpl.saveAssign')}
+                        </button>
                     </div>
                 </Modal>
             )}

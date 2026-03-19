@@ -239,16 +239,24 @@ export default function LandingPage() {
     const vi = lang.startsWith('vi')
     const [activeSlide, setActiveSlide] = useState(0)
     const [paused, setPaused] = useState(false)
+    const [isInstalling, setIsInstalling] = useState(false)
 
     const { isInstallable, isNativePromptAvailable, isIOS, isStandalone, handleInstall } = useInstallPrompt()
     const [showIOSGuide, setShowIOSGuide] = useState(false)
+    const installLabel = isNativePromptAvailable
+        ? (vi ? 'Cài ứng dụng' : 'Install App')
+        : (vi ? 'Thêm vào màn hình chính' : 'Add to Home Screen')
+    const installDisabledHint = vi
+        ? 'Trình duyệt hiện tại chưa hỗ trợ cài trực tiếp. Hãy mở bằng Safari (iPhone) hoặc Chrome (Android/Desktop).'
+        : 'Direct install is not supported in this browser. Open in Safari (iPhone) or Chrome (Android/Desktop).'
 
     const handleLandingInstall = () => {
-        if (!isInstallable) return
+        if (!isInstallable || isInstalling) return
         if (isIOS) {
             setShowIOSGuide(true)
         } else {
-            handleInstall()
+            setIsInstalling(true)
+            Promise.resolve(handleInstall()).finally(() => setIsInstalling(false))
         }
     }
 
@@ -305,12 +313,16 @@ export default function LandingPage() {
                                 className="btn btn-secondary landing-cta-install"
                                 onClick={handleLandingInstall}
                                 aria-label={vi ? 'Cài ứng dụng KidsTrack lên thiết bị' : 'Install KidsTrack app'}
-                                disabled={!isInstallable}
+                                aria-busy={isInstalling ? 'true' : 'false'}
+                                disabled={!isInstallable || isInstalling}
                             >
-                                📲 {isNativePromptAvailable
-                                    ? (vi ? 'Cài ứng dụng' : 'Install App')
-                                    : (vi ? 'Thêm vào màn hình chính' : 'Add to Home Screen')}
+                                📲 {isInstalling ? (vi ? 'Đang cài...' : 'Installing...') : installLabel}
                             </button>
+                            {!isInstallable && (
+                                <p className="landing-cta-install-hint" aria-live="polite">
+                                    {installDisabledHint}
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>

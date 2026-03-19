@@ -53,8 +53,18 @@ export default function DailyView() {
     const [routineSaved, setRoutineSaved] = useState(false)
     const [showClearConfirm, setShowClearConfirm] = useState(false)
     const [pendingTaskIds, setPendingTaskIds] = useState(() => new Set())
+    const [pendingActions, setPendingActions] = useState({
+        saveRoutine: false,
+        clearDay: false,
+        saveConfig: false,
+        finalizeDay: false,
+        saveTask: false,
+    })
     const autoLoadKeyRef = useRef(null)
     const pendingTaskIdsRef = useRef(new Set())
+    const kidChipsRef = useRef(null)
+    const [kidCanScrollLeft, setKidCanScrollLeft] = useState(false)
+    const [kidCanScrollRight, setKidCanScrollRight] = useState(false)
     const isMobileLayout = windowSize.width <= 768
 
     useEffect(() => {
@@ -94,6 +104,18 @@ export default function DailyView() {
         window.addEventListener('resize', handler)
         return () => window.removeEventListener('resize', handler)
     }, [])
+
+    const updateKidChipHints = () => {
+        const el = kidChipsRef.current
+        if (!el) return
+        const maxScrollLeft = Math.max(0, el.scrollWidth - el.clientWidth)
+        setKidCanScrollLeft(el.scrollLeft > 2)
+        setKidCanScrollRight(el.scrollLeft < maxScrollLeft - 2)
+    }
+
+    useEffect(() => {
+        updateKidChipHints()
+    }, [kids.length, selectedKidId, windowSize.width])
 
     useEffect(() => {
         if (!selectedKidId) return
@@ -176,16 +198,28 @@ export default function DailyView() {
     }
 
     const handleSaveRoutine = async () => {
-        await saveRoutine(selectedKidId, tasks, currentDate)
-        setRoutineSaved(true)
-        setTimeout(() => setRoutineSaved(false), 2500)
+        if (pendingActions.saveRoutine) return
+        setPendingActions((prev) => ({ ...prev, saveRoutine: true }))
+        try {
+            await saveRoutine(selectedKidId, tasks, currentDate)
+            setRoutineSaved(true)
+            setTimeout(() => setRoutineSaved(false), 2500)
+        } finally {
+            setPendingActions((prev) => ({ ...prev, saveRoutine: false }))
+        }
     }
 
     const handleClearAll = async () => {
-        autoLoadKeyRef.current = `${selectedKidId}-${currentDate}`
-        await clearDayTasks(selectedKidId, currentDate)
-        setShowClearConfirm(false)
-        setRoutineBanner(0)
+        if (pendingActions.clearDay) return
+        setPendingActions((prev) => ({ ...prev, clearDay: true }))
+        try {
+            autoLoadKeyRef.current = `${selectedKidId}-${currentDate}`
+            await clearDayTasks(selectedKidId, currentDate)
+            setShowClearConfirm(false)
+            setRoutineBanner(0)
+        } finally {
+            setPendingActions((prev) => ({ ...prev, clearDay: false }))
+        }
     }
 
     const handleUndoRoutine = async () => {
@@ -195,19 +229,24 @@ export default function DailyView() {
     }
 
     const handleSaveTask = async () => {
-        if (!taskTitle.trim()) return
-        if (editTask) {
-            await updateDailyTask(editTask.id, { title: taskTitle.trim(), description: taskDesc.trim() })
-            setEditTask(null)
-        } else {
-            await addDailyTask(selectedKidId, currentDate, taskTitle.trim(), taskDesc.trim())
-            trackTaskCreated({
-                kid_id: selectedKidId,
-                source: 'manual',
-                has_description: !!taskDesc.trim(),
-                task_type: 'daily_task',
-            })
-            setShowAddTask(false)
+        if (!taskTitle.trim() || pendingActions.saveTask) return
+        setPendingActions((prev) => ({ ...prev, saveTask: true }))
+        try {
+            if (editTask) {
+                await updateDailyTask(editTask.id, { title: taskTitle.trim(), description: taskDesc.trim() })
+                setEditTask(null)
+            } else {
+                await addDailyTask(selectedKidId, currentDate, taskTitle.trim(), taskDesc.trim())
+                trackTaskCreated({
+                    kid_id: selectedKidId,
+                    source: 'manual',
+                    has_description: !!taskDesc.trim(),
+                    task_type: 'daily_task',
+                })
+                setShowAddTask(false)
+            }
+        } finally {
+            setPendingActions((prev) => ({ ...prev, saveTask: false }))
         }
     }
 
@@ -235,20 +274,51 @@ export default function DailyView() {
         }
     }
 
+    const handleMarkFailed = async (taskId) => {
+        if (isFinalized || pendingTaskIdsRef.current.has(taskId)) return
+        pendingTaskIdsRef.current.add(taskId)
+        setPendingTaskIds(new Set(pendingTaskIdsRef.current))
+        try {
+            await markTaskFailed(taskId)
+        } finally {
+            pendingTaskIdsRef.current.delete(taskId)
+            setPendingTaskIds(new Set(pendingTaskIdsRef.current))
+        }
+    }
+
+    const handleDeleteTask = async (taskId) => {
+        if (isFinalized || pendingTaskIdsRef.current.has(taskId)) return
+        pendingTaskIdsRef.current.add(taskId)
+        setPendingTaskIds(new Set(pendingTaskIdsRef.current))
+        try {
+            await deleteDailyTask(taskId)
+        } finally {
+            pendingTaskIdsRef.current.delete(taskId)
+            setPendingTaskIds(new Set(pendingTaskIdsRef.current))
+        }
+    }
+
     const handleOpenConfig = () => {
         if (config) { setRewardAmount(config.rewardAmount); setPenaltyAmount(config.penaltyAmount) }
         setShowConfig(true)
     }
 
     const handleSaveConfig = async () => {
-        const r = customReward ? parseInt(customReward) * 1000 : rewardAmount
-        const p = customPenalty ? parseInt(customPenalty) * 1000 : penaltyAmount
-        await setDayConfig(selectedKidId, currentDate, r, p)
-        setCustomReward(''); setCustomPenalty('')
-        setShowConfig(false)
+        if (pendingActions.saveConfig) return
+        setPendingActions((prev) => ({ ...prev, saveConfig: true }))
+        try {
+            const r = customReward ? parseInt(customReward) * 1000 : rewardAmount
+            const p = customPenalty ? parseInt(customPenalty) * 1000 : penaltyAmount
+            await setDayConfig(selectedKidId, currentDate, r, p)
+            setCustomReward(''); setCustomPenalty('')
+            setShowConfig(false)
+        } finally {
+            setPendingActions((prev) => ({ ...prev, saveConfig: false }))
+        }
     }
 
     const handleFinalize = async () => {
+        if (pendingActions.finalizeDay) return
         if (!config) { setShowConfig(true); return }
         if (isFinalized) return
         const hasPending = tasks.some((t) => t.status === 'pending')
@@ -256,18 +326,29 @@ export default function DailyView() {
             setShowFinalizeConfirm(true)
             return
         }
-        const result = await finalizeDay(selectedKidId, currentDate)
-        setFinalizeResult(result)
-        if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
-        setTimeout(() => setFinalizeResult(null), 5000)
+        setPendingActions((prev) => ({ ...prev, finalizeDay: true }))
+        try {
+            const result = await finalizeDay(selectedKidId, currentDate)
+            setFinalizeResult(result)
+            if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
+            setTimeout(() => setFinalizeResult(null), 5000)
+        } finally {
+            setPendingActions((prev) => ({ ...prev, finalizeDay: false }))
+        }
     }
 
     const confirmFinalizeWithPending = async () => {
+        if (pendingActions.finalizeDay) return
         setShowFinalizeConfirm(false)
-        const result = await finalizeDay(selectedKidId, currentDate)
-        setFinalizeResult(result)
-        if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
-        setTimeout(() => setFinalizeResult(null), 5000)
+        setPendingActions((prev) => ({ ...prev, finalizeDay: true }))
+        try {
+            const result = await finalizeDay(selectedKidId, currentDate)
+            setFinalizeResult(result)
+            if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
+            setTimeout(() => setFinalizeResult(null), 5000)
+        } finally {
+            setPendingActions((prev) => ({ ...prev, finalizeDay: false }))
+        }
     }
 
     if (kids.length === 0) {
@@ -282,7 +363,7 @@ export default function DailyView() {
     }
 
     return (
-        <div>
+        <div className="page-with-mobile-sticky-bar">
             {showConfetti && (
                 <ReactConfetti width={windowSize.width} height={windowSize.height} recycle={false} numberOfPieces={300}
                     colors={['#7c3aed', '#ec4899', '#10b981', '#f59e0b', '#06b6d4']} />
@@ -322,7 +403,12 @@ export default function DailyView() {
             )}
 
             <div className="row wrap center between" style={{ marginBottom: 24, gap: 12 }}>
-                <div className="chip-group" style={{ alignItems: 'center' }}>
+                <div
+                    ref={kidChipsRef}
+                    className={`chip-group chip-group--scroll chip-group--hint${kidCanScrollLeft ? ' has-left' : ''}${kidCanScrollRight ? ' has-right' : ''}`}
+                    style={{ alignItems: 'center' }}
+                    onScroll={updateKidChipHints}
+                >
                     {kids.map((k) => (
                         <button key={k.id} className={`chip ${k.id === selectedKidId ? 'selected' : ''}`}
                             onClick={() => { setSelectedKidId(k.id); navigate(`/daily/${k.id}`) }}>
@@ -336,9 +422,9 @@ export default function DailyView() {
                     )}
                 </div>
                 <div className="date-nav">
-                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))} aria-label="Previous day">◀</button>
+                    <button className="btn btn-ghost btn-icon icon-touch-btn" onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))} aria-label="Previous day">◀</button>
                     <span>{format(parseISO(currentDate), 'MMM d, yyyy')}</span>
-                    <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate(format(addDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))} aria-label="Next day">▶</button>
+                    <button className="btn btn-ghost btn-icon icon-touch-btn" onClick={() => setCurrentDate(format(addDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))} aria-label="Next day">▶</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => setCurrentDate(format(new Date(), 'yyyy-MM-dd'))}>{t('daily.today')}</button>
                 </div>
             </div>
@@ -393,12 +479,14 @@ export default function DailyView() {
                         className={`btn btn-ghost btn-sm routine-save-btn${routineSaved ? ' routine-save-btn--saved' : ''}`}
                         onClick={handleSaveRoutine}
                         title={kid?.routine ? t('routine.updateBtn') : t('routine.saveBtn')}
+                        disabled={pendingActions.saveRoutine}
+                        aria-busy={pendingActions.saveRoutine ? 'true' : 'false'}
                     >
-                        {routineSaved ? '✅' : '⭐'} {kid?.routine ? t('routine.updateBtn') : t('routine.saveBtn')}
+                        {pendingActions.saveRoutine ? t('common.loading') : `${routineSaved ? '✅' : '⭐'} ${kid?.routine ? t('routine.updateBtn') : t('routine.saveBtn')}`}
                     </button>
                 )}
                 {tasks.length > 0 && !isFinalized && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setShowClearConfirm(true)} style={{ color: 'var(--accent-red)' }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setShowClearConfirm(true)} style={{ color: 'var(--accent-red)' }} disabled={pendingActions.clearDay}>
                         🗑️ {t('daily.clearAll')}
                     </button>
                 )}
@@ -409,8 +497,26 @@ export default function DailyView() {
                 )}
                 {isParent && (
                     <button className={`btn ${allDone ? 'btn-green' : 'btn-danger'}`} onClick={handleFinalize}
-                        disabled={isFinalized || total === 0} style={{ marginLeft: 'auto' }}>
-                        {isFinalized ? t('daily.finalized') : allDone ? t('daily.claimReward') : t('daily.finalizeDay')}
+                        disabled={isFinalized || total === 0 || pendingActions.finalizeDay}
+                        aria-busy={pendingActions.finalizeDay ? 'true' : 'false'}
+                        style={{ marginLeft: 'auto' }}>
+                        {pendingActions.finalizeDay ? t('common.loading') : isFinalized ? t('daily.finalized') : allDone ? t('daily.claimReward') : t('daily.finalizeDay')}
+                    </button>
+                )}
+            </div>
+
+            <div className="mobile-sticky-action-bar">
+                <button className="btn btn-primary" onClick={openAddTask} disabled={isFinalized}>
+                    {t('daily.addTask')}
+                </button>
+                {isParent && (
+                    <button
+                        className={`btn ${allDone ? 'btn-green' : 'btn-danger'}`}
+                        onClick={handleFinalize}
+                        disabled={isFinalized || total === 0 || pendingActions.finalizeDay}
+                        aria-busy={pendingActions.finalizeDay ? 'true' : 'false'}
+                    >
+                        {pendingActions.finalizeDay ? t('common.loading') : isFinalized ? t('daily.finalized') : allDone ? t('daily.claimReward') : t('daily.finalizeDay')}
                     </button>
                 )}
             </div>
@@ -442,13 +548,13 @@ export default function DailyView() {
                                     <div className={`task-title ${task.status}`}>{task.title}</div>
                                     {task.description && <div className="task-desc">{task.description}</div>}
                                 </div>
-                                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                                     {!isFinalized && (
                                         <>
-                                            <button className={`btn btn-sm ${task.status === 'failed' ? 'btn-danger' : 'btn-ghost'}`}
-                                                onClick={() => markTaskFailed(task.id)} title="Mark as failed" aria-label="Mark as failed" disabled={isPending}>❌</button>
-                                            <button className="btn btn-ghost btn-sm" onClick={() => openEditTask(task)} aria-label="Edit task" disabled={isPending}>✏️</button>
-                                            <button className="btn btn-ghost btn-sm" onClick={() => deleteDailyTask(task.id)} aria-label="Delete task" disabled={isPending}>🗑️</button>
+                                            <button className={`btn btn-sm icon-touch-btn ${task.status === 'failed' ? 'btn-danger' : 'btn-ghost'}`}
+                                                onClick={() => handleMarkFailed(task.id)} title="Mark as failed" aria-label="Mark as failed" disabled={isPending} aria-busy={isPending ? 'true' : 'false'}>❌</button>
+                                            <button className="btn btn-ghost btn-sm icon-touch-btn" onClick={() => openEditTask(task)} aria-label="Edit task" disabled={isPending}>✏️</button>
+                                            <button className="btn btn-ghost btn-sm icon-touch-btn" onClick={() => handleDeleteTask(task.id)} aria-label="Delete task" disabled={isPending} aria-busy={isPending ? 'true' : 'false'}>🗑️</button>
                                         </>
                                     )}
                                     {task.status === 'failed' && isFinalized && <span className="badge badge-red">Failed</span>}
@@ -462,7 +568,7 @@ export default function DailyView() {
             )}
 
             {(showAddTask || editTask) && (
-                <Modal title={editTask ? t('daily.editTask') : t('daily.addTaskTitle')} onClose={() => { setShowAddTask(false); setEditTask(null) }}>
+                <Modal mobileSheet={isMobileLayout} title={editTask ? t('daily.editTask') : t('daily.addTaskTitle')} onClose={() => { setShowAddTask(false); setEditTask(null) }}>
                     <div className="col">
                         <div className="form-group">
                             <label>{t('tmpl.taskTitle')}</label>
@@ -489,14 +595,16 @@ export default function DailyView() {
                         </div>
                         <div className="modal-footer">
                             <button className="btn btn-ghost" onClick={() => { setShowAddTask(false); setEditTask(null) }}>{t('common.cancel')}</button>
-                            <button className="btn btn-primary" onClick={handleSaveTask} disabled={!taskTitle.trim()}>{t('common.save')}</button>
+                            <button className="btn btn-primary" onClick={handleSaveTask} disabled={!taskTitle.trim() || pendingActions.saveTask} aria-busy={pendingActions.saveTask ? 'true' : 'false'}>
+                                {pendingActions.saveTask ? t('common.loading') : t('common.save')}
+                            </button>
                         </div>
                     </div>
                 </Modal>
             )}
 
             {showConfig && (
-                <Modal title={t('daily.rewardTitle')} onClose={() => setShowConfig(false)}>
+                <Modal mobileSheet={isMobileLayout} title={t('daily.rewardTitle')} onClose={() => setShowConfig(false)}>
                     <div className="col">
                         <div className="form-group">
                             <label>{t('daily.rewardLabel')}</label>
@@ -527,7 +635,9 @@ export default function DailyView() {
                         </div>
                         <div className="modal-footer">
                             <button className="btn btn-ghost" onClick={() => setShowConfig(false)}>{t('common.cancel')}</button>
-                            <button className="btn btn-primary" onClick={handleSaveConfig}>{t('daily.saveSettings')}</button>
+                            <button className="btn btn-primary" onClick={handleSaveConfig} disabled={pendingActions.saveConfig} aria-busy={pendingActions.saveConfig ? 'true' : 'false'}>
+                                {pendingActions.saveConfig ? t('common.loading') : t('daily.saveSettings')}
+                            </button>
                         </div>
                     </div>
                 </Modal>
@@ -540,7 +650,9 @@ export default function DailyView() {
                     </p>
                     <div className="modal-footer">
                         <button className="btn btn-ghost" onClick={() => setShowFinalizeConfirm(false)}>{t('common.cancel')}</button>
-                        <button className="btn btn-danger" onClick={confirmFinalizeWithPending}>{t('daily.finalizeDay')}</button>
+                        <button className="btn btn-danger" onClick={confirmFinalizeWithPending} disabled={pendingActions.finalizeDay} aria-busy={pendingActions.finalizeDay ? 'true' : 'false'}>
+                            {pendingActions.finalizeDay ? t('common.loading') : t('daily.finalizeDay')}
+                        </button>
                     </div>
                 </Modal>
             )}
@@ -552,7 +664,9 @@ export default function DailyView() {
                     </p>
                     <div className="modal-footer">
                         <button className="btn btn-ghost" onClick={() => setShowClearConfirm(false)}>{t('common.cancel')}</button>
-                        <button className="btn btn-danger" onClick={handleClearAll}>{t('daily.clearAll')}</button>
+                        <button className="btn btn-danger" onClick={handleClearAll} disabled={pendingActions.clearDay} aria-busy={pendingActions.clearDay ? 'true' : 'false'}>
+                            {pendingActions.clearDay ? t('common.loading') : t('daily.clearAll')}
+                        </button>
                     </div>
                 </Modal>
             )}

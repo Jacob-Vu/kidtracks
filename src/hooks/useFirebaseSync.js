@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { subscribeToCol } from '../firebase/db'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { app } from '../firebase/config'
@@ -70,6 +70,17 @@ export function useFireActions() {
     const { lang } = useLang()
     const isVi = lang.startsWith('vi')
     const store = useStore()
+    const inFlightActionsRef = useRef(new Set())
+
+    const runLocked = async (lockKey, action) => {
+        if (inFlightActionsRef.current.has(lockKey)) return
+        inFlightActionsRef.current.add(lockKey)
+        try {
+            return await action()
+        } finally {
+            inFlightActionsRef.current.delete(lockKey)
+        }
+    }
 
     const getTemplateDescription = (template) => {
         if (isVi && !template?.descriptions?.vi) {
@@ -461,11 +472,11 @@ export function useFireActions() {
             const call = httpsCallable(functions, 'assignTemplateToKids');
             await call({ familyId, templateId, kidIds });
         },
-        addDailyTask: async (kidId, date, title, description) => {
+        addDailyTask: async (kidId, date, title, description) => runLocked(`addDailyTask:${kidId}:${date}:${title}`, async () => {
             const task = store.buildDailyTask(kidId, date, title, description);
             const call = httpsCallable(functions, 'addDailyTask');
             await call({ familyId, task });
-        },
+        }),
         loadTemplatesForDay: async (kidId, date) => {
             const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title);
             const tasksToCreate = store.templates.filter((t) => {
@@ -492,15 +503,16 @@ export function useFireActions() {
                 await call({ familyId, tasksToCreate });
             }
         },
-        updateDailyTask: async (taskId, updates) => {
+        updateDailyTask: async (taskId, updates) => runLocked(`updateDailyTask:${taskId}`, async () => {
             const call = httpsCallable(functions, 'updateDailyTask');
             await call({ familyId, taskId, updates });
-        },
-        deleteDailyTask: async (taskId) => {
+        }),
+        deleteDailyTask: async (taskId) => runLocked(`deleteDailyTask:${taskId}`, async () => {
             const call = httpsCallable(functions, 'deleteDailyTask');
             await call({ familyId, taskId });
-        },
+        }),
         toggleTaskStatus: async (taskId) => {
+            if (inFlightActionsRef.current.has(`toggleTaskStatus:${taskId}`)) return
             const previous = store.dailyTasks.find((task) => task.id === taskId)
             if (!previous) return
 
@@ -513,6 +525,7 @@ export function useFireActions() {
                 ),
             }))
 
+            inFlightActionsRef.current.add(`toggleTaskStatus:${taskId}`)
             try {
                 const call = httpsCallable(functions, 'updateDailyTask');
                 await call({ familyId, taskId, updates: { status: nextStatus } });
@@ -526,21 +539,23 @@ export function useFireActions() {
                     ),
                 }))
                 throw error
+            } finally {
+                inFlightActionsRef.current.delete(`toggleTaskStatus:${taskId}`)
             }
         },
-        markTaskFailed: async (taskId) => {
+        markTaskFailed: async (taskId) => runLocked(`markTaskFailed:${taskId}`, async () => {
             const updated = store.buildTaskFailed(taskId);
             if (updated) {
                 const call = httpsCallable(functions, 'updateDailyTask');
                 await call({ familyId, taskId, updates: updated });
             }
-        },
-        setDayConfig: async (kidId, date, rewardAmount, penaltyAmount) => {
+        }),
+        setDayConfig: async (kidId, date, rewardAmount, penaltyAmount) => runLocked(`setDayConfig:${kidId}:${date}`, async () => {
             const config = store.buildDayConfig(kidId, date, rewardAmount, penaltyAmount);
             const call = httpsCallable(functions, 'setDayConfig');
             await call({ familyId, config });
-        },
-        finalizeDay: async (kidId, date) => {
+        }),
+        finalizeDay: async (kidId, date) => runLocked(`finalizeDay:${kidId}:${date}`, async () => {
             const result = store.computeFinalize(kidId, date);
             if (!result.success) return result;
             
@@ -552,7 +567,7 @@ export function useFireActions() {
                 ledgerEntries: result.ledgerEntries 
             });
             return result;
-        },
+        }),
         addManualTransaction: async (kidId, amount, label) => {
             const result = store.buildManualTransaction(kidId, amount, label);
             if (!result) return;
@@ -584,7 +599,7 @@ export function useFireActions() {
             const call = httpsCallable(functions, 'upsertBadge')
             await call({ familyId, badge })
         },
-        saveRoutine: async (kidId, tasks, fromDate) => {
+        saveRoutine: async (kidId, tasks, fromDate) => runLocked(`saveRoutine:${kidId}`, async () => {
             const routine = {
                 tasks: tasks.map(({ title, description }) => ({ title, description: description || '' })),
                 savedAt: new Date().toISOString(),
@@ -592,15 +607,15 @@ export function useFireActions() {
             }
             const call = httpsCallable(functions, 'updateKid')
             await call({ familyId, kidId, updates: { routine } })
-        },
-        clearDayTasks: async (kidId, date) => {
+        }),
+        clearDayTasks: async (kidId, date) => runLocked(`clearDayTasks:${kidId}:${date}`, async () => {
             const taskIds = store.dailyTasks
                 .filter((t) => t.kidId === kidId && t.date === date)
                 .map((t) => t.id)
             if (taskIds.length === 0) return
             const call = httpsCallable(functions, 'clearDayTasks')
             await call({ familyId, taskIds })
-        },
+        }),
         autoLoadRoutine: async (kidId, date, routineTasks) => {
             const existing = store.dailyTasks.filter((t) => t.kidId === kidId && t.date === date).map((t) => t.title)
             const tasksToCreate = routineTasks

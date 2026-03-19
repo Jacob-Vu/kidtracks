@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import useStore from '../store/useStore'
@@ -30,21 +30,34 @@ function getDesc(task, lang) {
     return task.description || task.descriptionVi || ''
 }
 
-function getPrimaryText(task, lang) {
+function getRowPrimaryText(task, lang) {
     const isVi = lang.startsWith('vi')
-    if (isVi && task.descriptionVi) return task.descriptionVi
+    if (isVi) return task.descriptionVi || task.title || task.description || ''
     return task.title
 }
 
-function getSecondaryText(task, lang) {
+function getRowSecondaryText(task, lang) {
     const isVi = lang.startsWith('vi')
-    return isVi ? (task.description || task.title) : getDesc(task, lang)
+    if (isVi) return task.description || ''
+    return getDesc(task, lang)
+}
+
+function getPreviewPrimaryText(task, lang) {
+    const isVi = lang.startsWith('vi')
+    if (isVi) return task.descriptionVi || task.description || task.title || ''
+    return task.description || task.title || task.descriptionVi || ''
+}
+
+function getPreviewSecondaryText(task, lang) {
+    const isVi = lang.startsWith('vi')
+    if (isVi) return task.description || task.title || ''
+    return task.descriptionVi || ''
 }
 
 function TemplateRow({ tmpl, selected, alreadyAdded, onToggle, lang }) {
     const t = useT()
-    const primary = getPrimaryText(tmpl, lang)
-    const secondary = getSecondaryText(tmpl, lang)
+    const primary = getRowPrimaryText(tmpl, lang)
+    const secondary = getRowSecondaryText(tmpl, lang)
     return (
         <div
             className={`tpicker-row${selected ? ' tpicker-row--selected' : ''}${alreadyAdded ? ' tpicker-row--done' : ''}`}
@@ -88,6 +101,27 @@ export default function TemplatePickerPage() {
     const [selected, setSelected] = useState(new Set())
     const [adding, setAdding] = useState(false)
     const [previewId, setPreviewId] = useState(null)
+    const chipScrollRef = useRef(null)
+    const [chipCanScrollLeft, setChipCanScrollLeft] = useState(false)
+    const [chipCanScrollRight, setChipCanScrollRight] = useState(true)
+
+    const updateChipScrollHints = () => {
+        const el = chipScrollRef.current
+        if (!el) return
+        const maxScrollLeft = Math.max(0, el.scrollWidth - el.clientWidth)
+        setChipCanScrollLeft(el.scrollLeft > 2)
+        setChipCanScrollRight(el.scrollLeft < maxScrollLeft - 2)
+    }
+
+    useEffect(() => {
+        updateChipScrollHints()
+    }, [filterPack, lang])
+
+    useEffect(() => {
+        const onResize = () => updateChipScrollHints()
+        window.addEventListener('resize', onResize)
+        return () => window.removeEventListener('resize', onResize)
+    }, [])
 
     const filtered = useMemo(() => {
         const isVi = lang.startsWith('vi')
@@ -107,6 +141,7 @@ export default function TemplatePickerPage() {
     const selectableFiltered = filtered.filter((tmpl) => !existingTaskTitles.includes(tmpl.title))
 
     const toggle = (id) => {
+        if (adding) return
         setSelected((prev) => {
             const next = new Set(prev)
             if (next.has(id)) next.delete(id)
@@ -116,6 +151,7 @@ export default function TemplatePickerPage() {
     }
 
     const toggleAll = () => {
+        if (adding) return
         const allIds = selectableFiltered.map((tmpl) => tmpl.id)
         const allSelected = allIds.every((id) => selected.has(id))
         setSelected(allSelected ? new Set() : new Set(allIds))
@@ -142,11 +178,8 @@ export default function TemplatePickerPage() {
 
     const previewTmpl = previewId ? ALL_TASKS.find((tmpl) => tmpl.id === previewId) : null
     const previewPack = previewTmpl ? DEFAULT_PACKS.find((p) => p.id === previewTmpl.packId) : null
-    const isVi = lang.startsWith('vi')
-    const otherLang = isVi ? 'en' : 'vi'
-
     return (
-        <div className="tpicker-page">
+        <div className={`tpicker-page page-with-mobile-sticky-bar${adding ? ' tpicker-page--busy' : ''}`}>
             {/* Header */}
             <div className="tpicker-page-header">
                 <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/daily/${kidId}`)}>
@@ -165,8 +198,12 @@ export default function TemplatePickerPage() {
                     onChange={(e) => setSearch(e.target.value)}
                     autoFocus
                 />
-                <div className="tpicker-chip-scroll-wrap">
-                    <div className="chip-group tpicker-chip-scroll">
+                <div className={`tpicker-chip-scroll-wrap${chipCanScrollLeft ? ' has-left' : ''}${chipCanScrollRight ? ' has-right' : ''}`}>
+                    <div
+                        ref={chipScrollRef}
+                        className={`chip-group tpicker-chip-scroll${chipCanScrollLeft ? ' has-left' : ''}${chipCanScrollRight ? ' has-right' : ''}`}
+                        onScroll={updateChipScrollHints}
+                    >
                         <button
                             className={`chip chip--sm${filterPack === 'all' ? ' selected' : ''}`}
                             onClick={() => setFilterPack('all')}
@@ -216,8 +253,8 @@ export default function TemplatePickerPage() {
                             <div
                                 key={tmpl.id}
                                 className={`tpicker-row-wrap${previewTmpl?.id === tmpl.id ? ' tpicker-row-wrap--active' : ''}`}
-                                onMouseEnter={() => setPreviewId(tmpl.id)}
-                                onClick={() => setPreviewId(tmpl.id)}
+                                onMouseEnter={() => !adding && setPreviewId(tmpl.id)}
+                                onClick={() => !adding && setPreviewId(tmpl.id)}
                             >
                                 <TemplateRow
                                     tmpl={tmpl}
@@ -235,13 +272,13 @@ export default function TemplatePickerPage() {
                 <div className="tpicker-preview">
                     {previewTmpl ? (
                         <>
-                            <div className="tpicker-preview-title">📌 {getPrimaryText(previewTmpl, lang)}</div>
-                            {getSecondaryText(previewTmpl, lang) && (
-                                <p className="tpicker-preview-desc">{getSecondaryText(previewTmpl, lang)}</p>
+                            <div className="tpicker-preview-title">📌 {getRowPrimaryText(previewTmpl, lang)}</div>
+                            {getPreviewPrimaryText(previewTmpl, lang) && (
+                                <p className="tpicker-preview-desc">{getPreviewPrimaryText(previewTmpl, lang)}</p>
                             )}
                             {(() => {
-                                const secondary = getDesc(previewTmpl, otherLang)
-                                const primary = getSecondaryText(previewTmpl, lang)
+                                const secondary = getPreviewSecondaryText(previewTmpl, lang)
+                                const primary = getPreviewPrimaryText(previewTmpl, lang)
                                 if (secondary && secondary !== primary) {
                                     return <p className="tpicker-preview-secondary">{secondary}</p>
                                 }
@@ -292,7 +329,20 @@ export default function TemplatePickerPage() {
                     onClick={handleAdd}
                     disabled={selectedCount === 0 || adding}
                 >
-                    {adding ? '⏳' : t('picker.addBtn', { count: selectedCount })}
+                    {adding ? t('common.loading') : t('picker.addBtn', { count: selectedCount })}
+                </button>
+            </div>
+            <div className="mobile-sticky-action-bar">
+                <button className="btn btn-ghost" onClick={() => navigate(`/daily/${kidId}`)} disabled={adding}>
+                    {t('common.cancel')}
+                </button>
+                <button
+                    className="btn btn-primary"
+                    onClick={handleAdd}
+                    disabled={selectedCount === 0 || adding}
+                    aria-busy={adding ? 'true' : 'false'}
+                >
+                    {adding ? t('common.loading') : t('picker.addBtn', { count: selectedCount })}
                 </button>
             </div>
         </div>
