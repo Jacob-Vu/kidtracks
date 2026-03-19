@@ -13,7 +13,7 @@ const defaultTaskViByTitle = new Map(
 export default function Templates() {
     const t = useT()
     const { lang } = useLang()
-    const isVi = lang !== 'en'
+    const isVi = lang.startsWith('vi')
     const { templates, kids } = useStore()
     const { addTemplate, updateTemplate, deleteTemplate, importDefaultPack, assignTemplateToKids } = useFireActions()
 
@@ -262,14 +262,12 @@ export default function Templates() {
                     </p>
                     <div className="col">
                         {showPackDetail.tasks.map((task, i) => {
-                            const viDesc = task.descriptionVi
-                            const useVi = isVi && viDesc
                             return (
                                 <div key={i} className="task-item" style={{ padding: '10px 14px' }}>
                                     <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>{i + 1}.</span>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{useVi ? viDesc : task.title}</div>
-                                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{useVi ? task.title : task.description}</div>
+                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{task.title}</div>
+                                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{getPackTaskDesc(task)}</div>
                                     </div>
                                 </div>
                             )
@@ -300,8 +298,6 @@ export default function Templates() {
                         {importPack.tasks.map((task, i) => {
                             const alreadyImported = templates.some((ft) => ft.title === task.title)
                             const isSelected = selectedTasks.includes(task.title)
-                            const viDesc = task.descriptionVi
-                            const useVi = isVi && viDesc
                             return (
                                 <div key={i} className={`task-item ${alreadyImported ? 'imported' : ''}`}
                                     style={{ cursor: alreadyImported ? 'default' : 'pointer', padding: '10px 14px', opacity: alreadyImported ? 0.5 : 1 }}
@@ -311,8 +307,8 @@ export default function Templates() {
                                         {alreadyImported ? '✓' : isSelected ? '✓' : ''}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{useVi ? viDesc : task.title}</div>
-                                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{useVi ? task.title : task.description}</div>
+                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{task.title}</div>
+                                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{getPackTaskDesc(task)}</div>
                                     </div>
                                     {alreadyImported && <span className="badge badge-gray" style={{ fontSize: 10 }}>{t('tmpl.alreadyExists')}</span>}
                                 </div>

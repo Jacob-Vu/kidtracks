@@ -24,16 +24,27 @@ const ALL_TASKS = DEFAULT_PACKS.flatMap((pack) =>
 function normalize(str) {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
-
 function getDesc(task, lang) {
-    const isVi = lang !== 'en'
+    const isVi = lang.startsWith('vi')
     if (isVi && task.descriptionVi) return task.descriptionVi
     return task.description || task.descriptionVi || ''
 }
 
+function getPrimaryText(task, lang) {
+    const isVi = lang.startsWith('vi')
+    if (isVi && task.descriptionVi) return task.descriptionVi
+    return task.title
+}
+
+function getSecondaryText(task, lang) {
+    const isVi = lang.startsWith('vi')
+    return isVi ? (task.description || task.title) : getDesc(task, lang)
+}
+
 function TemplateRow({ tmpl, selected, alreadyAdded, onToggle, lang }) {
     const t = useT()
-    const primary = getDesc(tmpl, lang)
+    const primary = getPrimaryText(tmpl, lang)
+    const secondary = getSecondaryText(tmpl, lang)
     return (
         <div
             className={`tpicker-row${selected ? ' tpicker-row--selected' : ''}${alreadyAdded ? ' tpicker-row--done' : ''}`}
@@ -47,8 +58,8 @@ function TemplateRow({ tmpl, selected, alreadyAdded, onToggle, lang }) {
                 {(selected || alreadyAdded) ? '✓' : ''}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="tpicker-row-title">{tmpl.title}</div>
-                {primary && <div className="tpicker-row-desc">{primary}</div>}
+                {primary && <div className="tpicker-row-title">{primary}</div>}
+                {secondary && secondary !== primary && <div className="tpicker-row-desc">{secondary}</div>}
             </div>
             {alreadyAdded && (
                 <span className="badge badge-gray" style={{ fontSize: 10, flexShrink: 0 }}>{t('picker.alreadyAddedBadge')}</span>
@@ -79,10 +90,16 @@ export default function TemplatePickerPage() {
     const [previewId, setPreviewId] = useState(null)
 
     const filtered = useMemo(() => {
+        const isVi = lang.startsWith('vi')
         const q = normalize(search.trim())
         return ALL_TASKS.filter((tmpl) => {
             if (filterPack !== 'all' && tmpl.packId !== filterPack) return false
             if (!q) return true
+            if (isVi) {
+                return normalize(tmpl.descriptionVi || '').includes(q)
+                    || normalize(tmpl.title).includes(q)
+                    || normalize(tmpl.description || '').includes(q)
+            }
             return normalize(tmpl.title).includes(q) || normalize(getDesc(tmpl, lang)).includes(q)
         })
     }, [filterPack, search, lang])
@@ -113,16 +130,19 @@ export default function TemplatePickerPage() {
         const toAdd = ALL_TASKS.filter((tmpl) => selected.has(tmpl.id) && !existingTaskTitles.includes(tmpl.title))
         if (toAdd.length === 0) return
         setAdding(true)
-        for (const tmpl of toAdd) {
-            await addDailyTask(kidId, date, tmpl.title, getDesc(tmpl, lang))
+        try {
+            for (const tmpl of toAdd) {
+                await addDailyTask(kidId, date, tmpl.title, getDesc(tmpl, lang))
+            }
+            navigate(`/daily/${kidId}`)
+        } finally {
+            setAdding(false)
         }
-        setAdding(false)
-        navigate(`/daily/${kidId}`)
     }
 
     const previewTmpl = previewId ? ALL_TASKS.find((tmpl) => tmpl.id === previewId) : null
     const previewPack = previewTmpl ? DEFAULT_PACKS.find((p) => p.id === previewTmpl.packId) : null
-    const isVi = lang !== 'en'
+    const isVi = lang.startsWith('vi')
     const otherLang = isVi ? 'en' : 'vi'
 
     return (
@@ -215,13 +235,13 @@ export default function TemplatePickerPage() {
                 <div className="tpicker-preview">
                     {previewTmpl ? (
                         <>
-                            <div className="tpicker-preview-title">📌 {previewTmpl.title}</div>
-                            {getDesc(previewTmpl, lang) && (
-                                <p className="tpicker-preview-desc">{getDesc(previewTmpl, lang)}</p>
+                            <div className="tpicker-preview-title">📌 {getPrimaryText(previewTmpl, lang)}</div>
+                            {getSecondaryText(previewTmpl, lang) && (
+                                <p className="tpicker-preview-desc">{getSecondaryText(previewTmpl, lang)}</p>
                             )}
                             {(() => {
                                 const secondary = getDesc(previewTmpl, otherLang)
-                                const primary = getDesc(previewTmpl, lang)
+                                const primary = getSecondaryText(previewTmpl, lang)
                                 if (secondary && secondary !== primary) {
                                     return <p className="tpicker-preview-secondary">{secondary}</p>
                                 }
@@ -278,3 +298,4 @@ export default function TemplatePickerPage() {
         </div>
     )
 }
+

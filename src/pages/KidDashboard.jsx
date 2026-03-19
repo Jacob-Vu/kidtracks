@@ -144,9 +144,9 @@ export default function KidDashboard() {
     }
 
     const handleUndoRoutine = async () => {
+        autoLoadKeyRef.current = `${kid.id}-${today}`
         await clearDayTasks(kid.id, today)
         setRoutineBanner(0)
-        autoLoadKeyRef.current = null
     }
 
     const handleSave = async () => {

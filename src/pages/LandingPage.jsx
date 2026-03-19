@@ -240,13 +240,11 @@ export default function LandingPage() {
     const [activeSlide, setActiveSlide] = useState(0)
     const [paused, setPaused] = useState(false)
 
-    const { isInstallable, isNativePromptAvailable, isIOS, isStandalone, isLandingCtaDismissed, handleInstall, dismissLandingCTA } = useInstallPrompt()
+    const { isInstallable, isNativePromptAvailable, isIOS, isStandalone, handleInstall } = useInstallPrompt()
     const [showIOSGuide, setShowIOSGuide] = useState(false)
-    const [ctaDismissed, setCtaDismissed] = useState(isLandingCtaDismissed)
-
-    const showInstallCTA = !isStandalone && isInstallable && !ctaDismissed
 
     const handleLandingInstall = () => {
+        if (!isInstallable) return
         if (isIOS) {
             setShowIOSGuide(true)
         } else {
@@ -254,14 +252,8 @@ export default function LandingPage() {
         }
     }
 
-    const handleDismissLandingCTA = () => {
-        dismissLandingCTA()
-        setCtaDismissed(true)
-    }
-
     const handleIOSGuideDone = () => {
         setShowIOSGuide(false)
-        handleDismissLandingCTA()
     }
 
     useEffect(() => {
@@ -307,24 +299,17 @@ export default function LandingPage() {
                     <span className="landing-cta-hint">
                         {vi ? 'Không cần thẻ tín dụng · Chỉ 30 giây' : 'No credit card · Takes 30 seconds'}
                     </span>
-                    {showInstallCTA && (
+                    {!isStandalone && (
                         <div className="landing-cta-install-wrap" data-testid="landing-install-cta">
                             <button
                                 className="btn btn-secondary landing-cta-install"
                                 onClick={handleLandingInstall}
                                 aria-label={vi ? 'Cài ứng dụng KidsTrack lên thiết bị' : 'Install KidsTrack app'}
+                                disabled={!isInstallable}
                             >
                                 📲 {isNativePromptAvailable
                                     ? (vi ? 'Cài ứng dụng' : 'Install App')
                                     : (vi ? 'Thêm vào màn hình chính' : 'Add to Home Screen')}
-                            </button>
-                            <button
-                                className="landing-cta-install__dismiss"
-                                onClick={handleDismissLandingCTA}
-                                aria-label={vi ? 'Đóng' : 'Dismiss'}
-                                title={vi ? 'Ẩn trong 24 giờ' : 'Hide for 24 hours'}
-                            >
-                                ✕
                             </button>
                         </div>
                     )}

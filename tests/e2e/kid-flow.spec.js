@@ -95,5 +95,5 @@ test('kid can complete tasks, add a task, browse profile, and sign out', async (
 
     await page.getByRole('button', { name: /log out/i }).click()
     // After log out, kid route shows auth-gate (not a redirect to /login)
-    await expect(page.getByRole('heading', { name: /sign in to continue/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /sign in required/i })).toBeVisible()
 })

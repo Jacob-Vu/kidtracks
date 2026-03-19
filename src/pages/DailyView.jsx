@@ -52,7 +52,9 @@ export default function DailyView() {
     const [routineBanner, setRoutineBanner] = useState(0) // count of auto-loaded tasks
     const [routineSaved, setRoutineSaved] = useState(false)
     const [showClearConfirm, setShowClearConfirm] = useState(false)
+    const [pendingTaskIds, setPendingTaskIds] = useState(() => new Set())
     const autoLoadKeyRef = useRef(null)
+    const pendingTaskIdsRef = useRef(new Set())
     const isMobileLayout = windowSize.width <= 768
 
     useEffect(() => {
@@ -180,15 +182,16 @@ export default function DailyView() {
     }
 
     const handleClearAll = async () => {
+        autoLoadKeyRef.current = `${selectedKidId}-${currentDate}`
         await clearDayTasks(selectedKidId, currentDate)
         setShowClearConfirm(false)
         setRoutineBanner(0)
     }
 
     const handleUndoRoutine = async () => {
+        autoLoadKeyRef.current = `${selectedKidId}-${currentDate}`
         await clearDayTasks(selectedKidId, currentDate)
         setRoutineBanner(0)
-        autoLoadKeyRef.current = null // allow re-trigger if user navigates away and back
     }
 
     const handleSaveTask = async () => {
@@ -205,6 +208,30 @@ export default function DailyView() {
                 task_type: 'daily_task',
             })
             setShowAddTask(false)
+        }
+    }
+
+    const handleToggleTask = async (task) => {
+        if (isFinalized || pendingTaskIdsRef.current.has(task.id)) return
+
+        pendingTaskIdsRef.current.add(task.id)
+        setPendingTaskIds(new Set(pendingTaskIdsRef.current))
+
+        if (task.status !== 'completed') {
+            trackTaskCompleted({
+                kid_id: selectedKidId,
+                task_id: task.id,
+                date: currentDate,
+                task_type: 'daily_task',
+                has_reward: !!(config && Number(config.rewardAmount) > 0),
+            })
+        }
+
+        try {
+            await toggleTaskStatus(task.id)
+        } finally {
+            pendingTaskIdsRef.current.delete(task.id)
+            setPendingTaskIds(new Set(pendingTaskIdsRef.current))
         }
     }
 
@@ -396,49 +423,41 @@ export default function DailyView() {
                 </div>
             ) : (
                 <div className="col">
-                    {tasks.map((task, i) => (
-                        <div key={task.id} className={`task-item ${task.status}`} style={{ animationDelay: `${i * 30}ms` }}>
-                            <button
-                                type="button"
-                                className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}`}
-                                onClick={() => {
-                                    if (isFinalized) return
-                                    if (task.status !== 'completed') {
-                                        trackTaskCompleted({
-                                            kid_id: selectedKidId,
-                                            task_id: task.id,
-                                            date: currentDate,
-                                            task_type: 'daily_task',
-                                            has_reward: !!(config && Number(config.rewardAmount) > 0),
-                                        })
-                                    }
-                                    toggleTaskStatus(task.id)
-                                }}
-                                title="Mark complete"
-                                aria-label="Mark complete"
-                                disabled={isFinalized}
-                            >
-                                {task.status === 'completed' ? '✓' : ''}
-                            </button>
-                            <div style={{ flex: 1 }}>
-                                <div className={`task-title ${task.status}`}>{task.title}</div>
-                                {task.description && <div className="task-desc">{task.description}</div>}
+                    {tasks.map((task, i) => {
+                        const isPending = pendingTaskIds.has(task.id)
+                        return (
+                            <div key={task.id} className={`task-item ${task.status}${isPending ? ' task-item--pending' : ''}`} style={{ animationDelay: `${i * 30}ms` }}>
+                                <button
+                                    type="button"
+                                    className={`task-checkbox ${task.status === 'completed' ? 'completed' : ''}${isPending ? ' task-checkbox--pending' : ''}`}
+                                    onClick={() => handleToggleTask(task)}
+                                    title={isPending ? 'Updating task status' : 'Mark complete'}
+                                    aria-label={isPending ? 'Updating task status' : 'Mark complete'}
+                                    aria-busy={isPending ? 'true' : 'false'}
+                                    disabled={isFinalized || isPending}
+                                >
+                                    {isPending ? <span className="task-checkbox-spinner" aria-hidden /> : (task.status === 'completed' ? '✓' : '')}
+                                </button>
+                                <div style={{ flex: 1 }}>
+                                    <div className={`task-title ${task.status}`}>{task.title}</div>
+                                    {task.description && <div className="task-desc">{task.description}</div>}
+                                </div>
+                                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                    {!isFinalized && (
+                                        <>
+                                            <button className={`btn btn-sm ${task.status === 'failed' ? 'btn-danger' : 'btn-ghost'}`}
+                                                onClick={() => markTaskFailed(task.id)} title="Mark as failed" aria-label="Mark as failed" disabled={isPending}>❌</button>
+                                            <button className="btn btn-ghost btn-sm" onClick={() => openEditTask(task)} aria-label="Edit task" disabled={isPending}>✏️</button>
+                                            <button className="btn btn-ghost btn-sm" onClick={() => deleteDailyTask(task.id)} aria-label="Delete task" disabled={isPending}>🗑️</button>
+                                        </>
+                                    )}
+                                    {task.status === 'failed' && isFinalized && <span className="badge badge-red">Failed</span>}
+                                    {task.status === 'completed' && isFinalized && <span className="badge badge-green">Done</span>}
+                                    {task.status === 'pending' && isFinalized && <span className="badge badge-amber">Skipped</span>}
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                {!isFinalized && (
-                                    <>
-                                        <button className={`btn btn-sm ${task.status === 'failed' ? 'btn-danger' : 'btn-ghost'}`}
-                                            onClick={() => markTaskFailed(task.id)} title="Mark as failed" aria-label="Mark as failed">❌</button>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => openEditTask(task)} aria-label="Edit task">✏️</button>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => deleteDailyTask(task.id)} aria-label="Delete task">🗑️</button>
-                                    </>
-                                )}
-                                {task.status === 'failed' && isFinalized && <span className="badge badge-red">Failed</span>}
-                                {task.status === 'completed' && isFinalized && <span className="badge badge-green">Done</span>}
-                                {task.status === 'pending' && isFinalized && <span className="badge badge-amber">Skipped</span>}
-                            </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             )}
 

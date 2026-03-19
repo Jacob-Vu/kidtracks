@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+﻿import { test, expect } from '@playwright/test'
 
 const baseState = {
     user: {
@@ -43,7 +43,7 @@ test('search filters templates by title (exact match)', async ({ page }) => {
     await expect(page.getByText('Make your bed')).toBeVisible()
 
     await page.locator('.tpicker-search').fill('Wash')
-    await expect(page.getByText('Wash hands before meals')).toBeVisible()
+    await expect(page.getByText('Use soap and water')).toBeVisible()
     await expect(page.getByText('Make your bed')).not.toBeVisible()
 })
 
@@ -59,9 +59,9 @@ test('search is diacritic-insensitive (Vietnamese)', async ({ page }) => {
         window.localStorage.setItem('kidstrack-lang', 'vi')
     })
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
-    // "rua tay" (no diacritics) should match "Rửa tay bằng xà phòng" in VI description
+    // "rua tay" (no diacritics) should match the Vietnamese description text
     await page.locator('.tpicker-search').fill('rua tay')
-    await expect(page.getByText('Wash hands before meals')).toBeVisible()
+    await expect(page.getByText('Use soap and water')).toBeVisible()
     await expect(page.getByText('Make your bed')).not.toBeVisible()
 })
 
@@ -73,7 +73,7 @@ test('search shows no-results message for garbage input', async ({ page }) => {
 
 test('filter chip by pack shows only tasks from that pack', async ({ page }) => {
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
-    // Click the 🐣 Little Star pack chip to filter by that pack
+    // Click the Little Star pack chip to filter by that pack
     await page.getByRole('button', { name: /little star/i }).click()
     // Tasks from Little Star pack should be visible
     await expect(page.getByText('Brush teeth (morning)')).toBeVisible()
@@ -124,7 +124,7 @@ test('already-added tasks show badge and cannot be selected', async ({ page }) =
     }, stateWithTask)
     await page.goto('/daily/kid-1/pick-templates?date=2026-03-17&e2e=1')
     await page.getByRole('button', { name: /^all$/i }).click()
-    // "Đã có" badge should appear on Brush teeth (morning) row
+    // "Already added" badge should appear on Brush teeth (morning) row
     const brushRow = page.locator('.tpicker-row', { hasText: 'Brush teeth (morning)' })
     await expect(brushRow).toHaveClass(/tpicker-row--done/)
 })
@@ -138,3 +138,4 @@ test('preview panel shows secondary language', async ({ page }) => {
     await expect(page.locator('.tpicker-preview-desc')).toContainText('Use soap and water')
     await expect(page.locator('.tpicker-preview-secondary')).toContainText('Rửa tay bằng xà phòng')
 })
+
