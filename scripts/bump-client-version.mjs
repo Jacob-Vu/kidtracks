@@ -27,6 +27,20 @@ function resolveCommitHash() {
   }
 }
 
+function to2Digits(value) {
+  return String(value).padStart(2, '0')
+}
+
+function formatReleaseStamp(dateInput) {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput)
+  if (Number.isNaN(date.getTime())) return ''
+  const mm = to2Digits(date.getUTCMonth() + 1)
+  const dd = to2Digits(date.getUTCDate())
+  const hh = to2Digits(date.getUTCHours())
+  const min = to2Digits(date.getUTCMinutes())
+  return `${mm}.${dd}.${hh}.${min}`
+}
+
 const packageJson = readJsonSafe(await readFile(packageJsonPath, 'utf8'), {})
 const existingState = readJsonSafe(
   await readFile(versionStatePath, 'utf8').catch(() => '{}'),
@@ -35,7 +49,9 @@ const existingState = readJsonSafe(
 
 const previousBuildNumber = Number(existingState.buildNumber) || 0
 const buildNumber = previousBuildNumber + 1
-const deployedAt = new Date().toISOString()
+const deployedDate = new Date()
+const deployedAt = deployedDate.toISOString()
+const releaseStamp = formatReleaseStamp(deployedDate)
 const appVersion = String(packageJson.version || '0.0.0')
 const channel = String(process.env.CLIENT_RELEASE_CHANNEL || 'production')
 const commitHash = resolveCommitHash()
@@ -46,6 +62,7 @@ const versionPayload = {
   channel,
   commitHash,
   deployedAt,
+  releaseStamp,
   display: `v${appVersion}+${buildNumber}`,
 }
 
@@ -53,4 +70,4 @@ await writeFile(versionStatePath, `${JSON.stringify(versionPayload, null, 2)}\n`
 await mkdir(path.dirname(generatedVersionPath), { recursive: true })
 await writeFile(generatedVersionPath, `${JSON.stringify(versionPayload, null, 2)}\n`)
 
-console.log(`[client-version] ${versionPayload.display} (${channel}) ${deployedAt}`)
+console.log(`[client-version] ${versionPayload.display} (${channel}) ${deployedAt} ${releaseStamp}`)

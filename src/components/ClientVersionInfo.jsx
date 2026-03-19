@@ -2,13 +2,29 @@ import { useMemo, useState } from 'react'
 import { useT } from '../i18n/I18nContext'
 import clientVersion from '../generated/client-version.json'
 
+function to2Digits(value) {
+    return String(value).padStart(2, '0')
+}
+
+function formatReleaseStamp(isoText) {
+    if (!isoText) return ''
+    const date = new Date(isoText)
+    if (Number.isNaN(date.getTime())) return ''
+    const mm = to2Digits(date.getUTCMonth() + 1)
+    const dd = to2Digits(date.getUTCDate())
+    const hh = to2Digits(date.getUTCHours())
+    const min = to2Digits(date.getUTCMinutes())
+    return `${mm}.${dd}.${hh}.${min}`
+}
+
 export default function ClientVersionInfo() {
     const t = useT()
     const [copied, setCopied] = useState(false)
 
     const versionText = useMemo(() => {
-        const suffix = clientVersion.commitHash ? ` (${clientVersion.commitHash})` : ''
-        return `${clientVersion.display}${suffix}`
+        const commitPart = clientVersion.commitHash ? `commit:${clientVersion.commitHash}` : ''
+        const releaseStamp = clientVersion.releaseStamp || formatReleaseStamp(clientVersion.deployedAt)
+        return [clientVersion.display, commitPart, releaseStamp].filter(Boolean).join(' | ')
     }, [])
 
     const handleCopyVersion = async () => {
