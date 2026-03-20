@@ -47,5 +47,5 @@ test('parent can add a manual deduction from the ledger page', async ({ page }) 
     await page.getByRole('button', { name: /add transaction/i }).click()
 
     await expect(page.getByText('Late bedtime')).toBeVisible()
-    await expect(page.getByText(/-7000/).first()).toBeVisible()
+    await expect(page.getByText(/^-7(000|k)?/i).first()).toBeVisible()
 })

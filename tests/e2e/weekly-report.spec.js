@@ -134,7 +134,8 @@ test('unauthenticated user is blocked from weekly report route', async ({ page }
 
     await page.goto('/report/weekly?e2e=1')
 
-    await expect(page.getByRole('heading', { name: /sign in to continue/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /sign in required/i })).toBeVisible()
+    await expect(page.getByText(/sign in to continue/i)).toBeVisible()
     await expect(page.getByRole('heading', { name: /weekly report/i })).toHaveCount(0)
 })
 

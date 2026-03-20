@@ -1,11 +1,19 @@
 {
   "projects": {
-    "default": "kidtracks-e50ac"
+    "default": "kidstrack-71632",
+    "dev": "kidtracks-e50ac"
   },
   "targets": {
-    "kidtracks-e50ac": {
+    "kidstrack-71632": {
       "hosting": {
         "production": [
+          "kidstrack-71632"
+        ]
+      }
+    },
+    "kidtracks-e50ac": {
+      "hosting": {
+        "development": [
           "kidtracks-e50ac"
         ]
       }

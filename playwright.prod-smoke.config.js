@@ -6,7 +6,7 @@ export default defineConfig({
     reporter: 'line',
     timeout: 60000,
     use: {
-        baseURL: 'https://kidtracks-e50ac.web.app',
+        baseURL: 'https://kidstrack-71632.web.app',
         trace: 'retain-on-failure',
     },
     projects: [

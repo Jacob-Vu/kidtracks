@@ -13,6 +13,15 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
+const PROD_PROJECT_ID = 'kidstrack-71632'
+const allowProdInDev = import.meta.env.VITE_ALLOW_PROD_IN_DEV === 'true'
+if (import.meta.env.DEV && firebaseConfig.projectId === PROD_PROJECT_ID && !allowProdInDev) {
+    throw new Error(
+        'Safety check: local development is pointing to production Firebase project. ' +
+            'Use .env.development.local with a dev Firebase project, or set VITE_ALLOW_PROD_IN_DEV=true to override intentionally.',
+    )
+}
+
 export const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
 export const auth = getAuth(app)
