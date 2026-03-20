@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Modal from '../components/Modal'
 import { useAuth } from '../contexts/AuthContext'
 import { useT } from '../i18n/I18nContext'
 import useStore from '../store/useStore'
@@ -7,8 +8,9 @@ import { useFireActions } from '../hooks/useFirebaseSync'
 import { useTheme, THEMES } from '../contexts/ThemeContext'
 import useBadges from '../hooks/useBadges'
 import BadgeGallery from '../components/BadgeGallery'
-import { LS_FEEDBACK_SOUND, LS_LOW_STIMULATION } from '../hooks/useKidFeedback'
+import { AUDIO_UNLOCK_EVENT, LS_FEEDBACK_SOUND, LS_LOW_STIMULATION } from '../hooks/useKidFeedback'
 import ClientVersionInfo from '../components/ClientVersionInfo'
+import useKidFeedback from '../hooks/useKidFeedback'
 
 const AVATARS = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏿', '👦🏿', '👧🏿', '🦸', '🦸‍♂️', '🦸‍♀️', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐯', '🐰', '🐻']
 
@@ -36,6 +38,7 @@ export default function KidProfile() {
     const [emailCurrentPw, setEmailCurrentPw] = useState('')
     const [emailBusy, setEmailBusy] = useState(false)
     const [emailMsg, setEmailMsg] = useState(null)
+    const { ensureAudioUnlocked } = useKidFeedback()
     const [feedbackSoundEnabled, setFeedbackSoundEnabled] = useState(() => {
         try {
             const raw = localStorage.getItem(LS_FEEDBACK_SOUND)
@@ -52,6 +55,7 @@ export default function KidProfile() {
             return false
         }
     })
+    const [showAudioPermissionModal, setShowAudioPermissionModal] = useState(false)
 
     useEffect(() => {
         if (!kid) return
@@ -59,18 +63,36 @@ export default function KidProfile() {
         setAvatar(kid.avatar || '🧒')
     }, [kid])
 
+    useEffect(() => {
+        const handleAudioUnlockNeeded = () => setShowAudioPermissionModal(true)
+        window.addEventListener(AUDIO_UNLOCK_EVENT, handleAudioUnlockNeeded)
+        return () => window.removeEventListener(AUDIO_UNLOCK_EVENT, handleAudioUnlockNeeded)
+    }, [])
+
     if (!kid) return null
 
-    const handleFeedbackSoundToggle = () => {
-        setFeedbackSoundEnabled((prev) => {
-            const next = !prev
-            try {
-                localStorage.setItem(LS_FEEDBACK_SOUND, next ? 'true' : 'false')
-            } catch {
-                // Ignore localStorage failures.
+    const handleGrantAudioPermission = async () => {
+        const unlocked = await ensureAudioUnlocked()
+        if (unlocked) {
+            setShowAudioPermissionModal(false)
+        }
+    }
+
+    const handleFeedbackSoundToggle = async () => {
+        const next = !feedbackSoundEnabled
+        try {
+            localStorage.setItem(LS_FEEDBACK_SOUND, next ? 'true' : 'false')
+        } catch {
+            // Ignore localStorage failures.
+        }
+        setFeedbackSoundEnabled(next)
+
+        if (next) {
+            const unlocked = await ensureAudioUnlocked()
+            if (!unlocked) {
+                setShowAudioPermissionModal(true)
             }
-            return next
-        })
+        }
     }
 
     const handleLowStimulationToggle = () => {
@@ -135,6 +157,23 @@ export default function KidProfile() {
 
     return (
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
+            {showAudioPermissionModal && (
+                <Modal title={t('feedback.soundLabel')} onClose={() => setShowAudioPermissionModal(false)}>
+                    <div className="col" style={{ gap: 12 }}>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+                            Tap allow/enable sound once so the app can play completion sounds on mobile.
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-ghost" onClick={() => setShowAudioPermissionModal(false)}>
+                                {t('common.cancel')}
+                            </button>
+                            <button className="btn btn-primary" onClick={handleGrantAudioPermission}>
+                                Enable sound
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
             <h1 className="page-title" style={{ marginBottom: 24 }}>{t('kidProf.title')}</h1>
 
             <div className="card" style={{ marginBottom: 24 }}>

@@ -12,6 +12,7 @@ import DayJournal from '../components/DayJournal'
 import VoiceMicButton from '../components/VoiceMicButton'
 import { trackTemplateImported, trackTaskCompleted, trackTaskCreated, trackStreakMilestone } from '../hooks/useAnalytics'
 import useStreak from '../hooks/useStreak'
+import useKidFeedback from '../hooks/useKidFeedback'
 
 const REWARD_PRESETS = [10000, 20000, 50000]
 const PENALTY_PRESETS = [5000, 10000, 20000]
@@ -81,17 +82,11 @@ export default function DailyView() {
         setCurrentDate(queryDate)
     }, [queryDate, currentDate])
 
-    useEffect(() => {
-        if (!isMobileLayout) return
-        if (!showAddTask && !editTask) return
-        setShowAddTask(false)
-        setEditTask(null)
-    }, [isMobileLayout, showAddTask, editTask])
-
     const kid = kids.find((k) => k.id === selectedKidId)
     const tasks = dailyTasks.filter((t) => t.kidId === selectedKidId && t.date === currentDate)
     const config = dayConfigs.find((c) => c.kidId === selectedKidId && c.date === currentDate)
     const { currentStreak } = useStreak(selectedKidId, dailyTasks, dayConfigs)
+    const { notifyTaskComplete, notifyDayComplete } = useKidFeedback()
 
     useEffect(() => {
         if (selectedKidId && currentDate && !config?.isFinalized) {
@@ -177,10 +172,6 @@ export default function DailyView() {
 
     const openAddTask = () => {
         if (!selectedKidId) return
-        if (isMobileLayout) {
-            navigate(`/daily/${selectedKidId}/task/new?date=${currentDate}`)
-            return
-        }
         setTaskTitle('')
         setTaskDesc('')
         setShowAddTask(true)
@@ -268,6 +259,9 @@ export default function DailyView() {
 
         try {
             await toggleTaskStatus(task.id)
+            if (task.status !== 'completed') {
+                notifyTaskComplete(task.id)
+            }
         } finally {
             pendingTaskIdsRef.current.delete(task.id)
             setPendingTaskIds(new Set(pendingTaskIdsRef.current))
@@ -321,29 +315,17 @@ export default function DailyView() {
         if (pendingActions.finalizeDay) return
         if (!config) { setShowConfig(true); return }
         if (isFinalized) return
-        const hasPending = tasks.some((t) => t.status === 'pending')
-        if (hasPending) {
-            setShowFinalizeConfirm(true)
-            return
-        }
-        setPendingActions((prev) => ({ ...prev, finalizeDay: true }))
-        try {
-            const result = await finalizeDay(selectedKidId, currentDate)
-            setFinalizeResult(result)
-            if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
-            setTimeout(() => setFinalizeResult(null), 5000)
-        } finally {
-            setPendingActions((prev) => ({ ...prev, finalizeDay: false }))
-        }
+        setShowFinalizeConfirm(true)
     }
 
-    const confirmFinalizeWithPending = async () => {
+    const confirmFinalizeDay = async () => {
         if (pendingActions.finalizeDay) return
         setShowFinalizeConfirm(false)
         setPendingActions((prev) => ({ ...prev, finalizeDay: true }))
         try {
             const result = await finalizeDay(selectedKidId, currentDate)
             setFinalizeResult(result)
+            notifyDayComplete()
             if (result.allCompleted) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 6000) }
             setTimeout(() => setFinalizeResult(null), 5000)
         } finally {
@@ -363,7 +345,7 @@ export default function DailyView() {
     }
 
     return (
-        <div className="page-with-mobile-sticky-bar">
+        <div>
             {showConfetti && (
                 <ReactConfetti width={windowSize.width} height={windowSize.height} recycle={false} numberOfPieces={300}
                     colors={['#7c3aed', '#ec4899', '#10b981', '#f59e0b', '#06b6d4']} />
@@ -505,22 +487,6 @@ export default function DailyView() {
                 )}
             </div>
 
-            <div className="mobile-sticky-action-bar">
-                <button className="btn btn-primary" onClick={openAddTask} disabled={isFinalized}>
-                    {t('daily.addTask')}
-                </button>
-                {isParent && (
-                    <button
-                        className={`btn ${allDone ? 'btn-green' : 'btn-danger'}`}
-                        onClick={handleFinalize}
-                        disabled={isFinalized || total === 0 || pendingActions.finalizeDay}
-                        aria-busy={pendingActions.finalizeDay ? 'true' : 'false'}
-                    >
-                        {pendingActions.finalizeDay ? t('common.loading') : isFinalized ? t('daily.finalized') : allDone ? t('daily.claimReward') : t('daily.finalizeDay')}
-                    </button>
-                )}
-            </div>
-
             {tasks.length === 0 ? (
                 <div className="empty-state">
                     <span className="empty-state-icon">📭</span>
@@ -568,7 +534,7 @@ export default function DailyView() {
             )}
 
             {(showAddTask || editTask) && (
-                <Modal mobileSheet={isMobileLayout} title={editTask ? t('daily.editTask') : t('daily.addTaskTitle')} onClose={() => { setShowAddTask(false); setEditTask(null) }}>
+                <Modal title={editTask ? t('daily.editTask') : t('daily.addTaskTitle')} onClose={() => { setShowAddTask(false); setEditTask(null) }}>
                     <div className="col">
                         <div className="form-group">
                             <label>{t('tmpl.taskTitle')}</label>
@@ -646,11 +612,15 @@ export default function DailyView() {
             {showFinalizeConfirm && (
                 <Modal title={t('daily.finalizeDay')} onClose={() => setShowFinalizeConfirm(false)}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
-                        {t('daily.pendingConfirm', { count: pendingCount })}
+                        {pendingCount > 0
+                            ? t('daily.pendingConfirm', { count: pendingCount })
+                            : allDone
+                                ? t('daily.finalizeReward', { amount: formatMoney(effectiveReward), name: kid?.displayName || kid?.name })
+                                : t('daily.penalties')}
                     </p>
                     <div className="modal-footer">
                         <button className="btn btn-ghost" onClick={() => setShowFinalizeConfirm(false)}>{t('common.cancel')}</button>
-                        <button className="btn btn-danger" onClick={confirmFinalizeWithPending} disabled={pendingActions.finalizeDay} aria-busy={pendingActions.finalizeDay ? 'true' : 'false'}>
+                        <button className="btn btn-danger" onClick={confirmFinalizeDay} disabled={pendingActions.finalizeDay} aria-busy={pendingActions.finalizeDay ? 'true' : 'false'}>
                             {pendingActions.finalizeDay ? t('common.loading') : t('daily.finalizeDay')}
                         </button>
                     </div>

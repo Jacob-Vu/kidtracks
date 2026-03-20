@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export const LS_FEEDBACK_SOUND = 'kidstrack-feedback-sound-enabled'
 export const LS_LOW_STIMULATION = 'kidstrack-low-stimulation-mode'
 const AUDIO_DEBUG_EVENT = 'kidstrack:feedback-audio'
+export const AUDIO_UNLOCK_EVENT = 'kidstrack:feedback-audio-unlock-needed'
 
 const readSoundSetting = () => {
     if (typeof window === 'undefined') return true
@@ -66,6 +67,7 @@ export default function useKidFeedback() {
     const taskPopTimerRef = useRef(null)
     const badgeTimerRef = useRef(null)
     const audioContextRef = useRef(null)
+    const unlockRequestedRef = useRef(false)
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -108,11 +110,43 @@ export default function useKidFeedback() {
         if (badgeTimerRef.current) clearTimeout(badgeTimerRef.current)
     }, [])
 
-    const playSound = useCallback((eventType) => {
-        if (!soundEnabled || lowStimulationMode || typeof window === 'undefined') return
+    const ensureAudioUnlocked = useCallback(async () => {
+        if (typeof window === 'undefined') return false
 
         const AudioCtx = window.AudioContext || window.webkitAudioContext
-        if (!AudioCtx) return
+        if (!AudioCtx) return false
+
+        try {
+            if (!audioContextRef.current) {
+                audioContextRef.current = new AudioCtx()
+            }
+
+            const ctx = audioContextRef.current
+            if (ctx.state === 'running') {
+                unlockRequestedRef.current = false
+                return true
+            }
+
+            await ctx.resume()
+            unlockRequestedRef.current = false
+            return ctx.state === 'running'
+        } catch {
+            return false
+        }
+    }, [])
+
+    const requestAudioUnlock = useCallback((eventType) => {
+        if (typeof window === 'undefined') return
+        if (unlockRequestedRef.current) return
+        unlockRequestedRef.current = true
+        window.dispatchEvent(new CustomEvent(AUDIO_UNLOCK_EVENT, { detail: { eventType } }))
+    }, [])
+
+    const playSound = useCallback(async (eventType) => {
+        if (!soundEnabled || lowStimulationMode || typeof window === 'undefined') return false
+
+        const AudioCtx = window.AudioContext || window.webkitAudioContext
+        if (!AudioCtx) return false
 
         // Dispatch debug event first so tests can always detect when sound was requested,
         // even if the actual AudioContext operations fail in headless/test environments.
@@ -123,9 +157,14 @@ export default function useKidFeedback() {
                 audioContextRef.current = new AudioCtx()
             }
 
-            const ctx = audioContextRef.current
-            if (ctx.state === 'suspended') {
-                ctx.resume().catch(() => {})
+            let ctx = audioContextRef.current
+            if (ctx.state !== 'running') {
+                const unlocked = await ensureAudioUnlocked()
+                ctx = audioContextRef.current
+                if (!unlocked || !ctx || ctx.state !== 'running') {
+                    requestAudioUnlock(eventType)
+                    return false
+                }
             }
 
             if (eventType === 'task_complete') {
@@ -133,8 +172,10 @@ export default function useKidFeedback() {
             }
 
             if (eventType === 'day_complete') {
-                createTone(ctx, { frequency: 660, duration: 0.11, gain: 0.02, type: 'triangle' })
-                createTone(ctx, { frequency: 880, duration: 0.15, gain: 0.022, delay: 0.1, type: 'triangle' })
+                createTone(ctx, { frequency: 523, duration: 0.12, gain: 0.03, type: 'triangle' })
+                createTone(ctx, { frequency: 659, duration: 0.14, gain: 0.034, delay: 0.08, type: 'triangle' })
+                createTone(ctx, { frequency: 784, duration: 0.18, gain: 0.038, delay: 0.18, type: 'triangle' })
+                createTone(ctx, { frequency: 1047, duration: 0.26, gain: 0.045, delay: 0.3, type: 'sine' })
             }
 
             if (eventType === 'badge_unlock') {
@@ -142,10 +183,12 @@ export default function useKidFeedback() {
                 createTone(ctx, { frequency: 780, duration: 0.1, gain: 0.018, delay: 0.08, type: 'sine' })
                 createTone(ctx, { frequency: 1040, duration: 0.13, gain: 0.02, delay: 0.15, type: 'sine' })
             }
+            return true
         } catch {
-            // Ignore audio API failures.
+            requestAudioUnlock(eventType)
+            return false
         }
-    }, [soundEnabled, lowStimulationMode])
+    }, [soundEnabled, lowStimulationMode, ensureAudioUnlocked, requestAudioUnlock])
 
     const notifyTaskComplete = useCallback((taskId) => {
         playSound('task_complete')
@@ -179,6 +222,7 @@ export default function useKidFeedback() {
         reducedMotion,
         taskPopId,
         badgeUnlock,
+        ensureAudioUnlocked,
         notifyTaskComplete,
         notifyDayComplete,
         notifyBadgeUnlock,
